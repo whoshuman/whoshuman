@@ -1,3 +1,8 @@
+# whoshuman
+
+## Estructura del proyecto
+
+```text
 whoshuman/
 │
 ├── apps/
@@ -33,3 +38,4 @@ whoshuman/
 ├── package.json
 ├── pnpm-workspace.yaml
 └── README.md
+```
