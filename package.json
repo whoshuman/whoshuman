@@ -1,0 +1,16 @@
+{
+  "name": "whoshuman",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "docker compose up --build",
+    "lint": "eslint \"apps/**/*.ts\" \"packages/**/*.ts\"",
+    "format": "prettier --write \"apps/**/*.ts\" \"packages/**/*.ts\"",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
