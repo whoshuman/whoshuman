@@ -1,16 +1,23 @@
 {
   "name": "whoshuman",
-  "version": "0.0.1",
   "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "docker compose up --build",
-    "lint": "eslint \"apps/**/*.ts\" \"packages/**/*.ts\"",
-    "format": "prettier --write \"apps/**/*.ts\" \"packages/**/*.ts\"",
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck"
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
-  "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=9.0.0"
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "eslint": "^9.28.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.1"
+
   }
 }
