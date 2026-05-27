@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build outputs
+dist/
+build/
+.next/
+
+# environment — NUNCA subir .env al repo
+.env
+.env.local
+.env.*.local
+
+# SSL certs generados localmente
+infrastructure/nginx/certs/
+
+# editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+npm-debug.log*
+
+# prisma
+prisma/migrations/
+
+# docker
+docker-compose.override.yml
