@@ -1,6 +1,7 @@
 # dependencies
 node_modules/
 .pnpm-store/
+package-lock.json
 
 # build outputs
 dist/
@@ -30,8 +31,6 @@ Thumbs.db
 npm-debug.log*
 pnpm-debug.log*
 
-# prisma
-prisma/migrations/
 
 # docker
 docker-compose.override.yml

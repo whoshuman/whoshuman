@@ -1,14 +1,16 @@
 # ---- deps ----
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY package*.json ./
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/frontend/package*.json ./apps/frontend/
 COPY packages/ ./packages/
-RUN npm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --shamefully-hoist
 
 # ---- build ----
 FROM node:20-alpine AS builder
 WORKDIR /app
+RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
 COPY tsconfig.json ./
 COPY packages ./packages
@@ -21,7 +23,7 @@ COPY apps/frontend ./apps/frontend
 #   ENV VITE_API_URL=$VITE_API_URL
 #   ENV VITE_WS_URL=$VITE_WS_URL
 WORKDIR /app/apps/frontend
-RUN npm run build
+RUN pnpm build
 
 # ---- serve ----
 FROM nginx:alpine AS runner
