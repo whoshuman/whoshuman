@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import eslintConfigPrettier from "eslint-config-prettier";
+import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -16,6 +17,11 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname
       }
     }
+  },
+  {
+    files: ["apps/frontend/**/*.{ts,tsx}"],
+    plugins: { "react-hooks": reactHooks },
+    rules: reactHooks.configs.recommended.rules
   },
   {
     files: ["**/*.{js,mjs,cjs}"],
