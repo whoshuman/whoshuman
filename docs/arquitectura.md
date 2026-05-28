@@ -5,6 +5,7 @@
 Este proyecto será una plataforma multijugador web inspirada en el juego Just Act Natural.
 
 La arquitectura estará enfocada en:
+
 - realtime
 - multiplayer
 - microservicios
@@ -72,12 +73,14 @@ React fue seleccionado porque:
 ## Three.js
 
 Ventajas:
+
 - flexible
 - enorme comunidad
 - integración perfecta con React
 - más ligero
 
 Desventajas:
+
 - más manual
 - requiere más arquitectura
 
@@ -86,10 +89,12 @@ Desventajas:
 ## Babylon.js
 
 Ventajas:
+
 - más parecido a un game engine
 - muchas herramientas integradas
 
 Desventajas:
+
 - menos flexible
 - ecosistema menor
 - menos integración con React
@@ -157,6 +162,7 @@ El gateway se encarga de:
 ## api-gateway
 
 Responsabilidades:
+
 - entrada HTTP
 - auth
 - validaciones
@@ -167,6 +173,7 @@ Responsabilidades:
 ## realtime-gateway
 
 Responsabilidades:
+
 - WebSockets
 - realtime
 - rooms
@@ -177,6 +184,7 @@ Responsabilidades:
 ## auth-service
 
 Responsabilidades:
+
 - login
 - register
 - JWT
@@ -187,6 +195,7 @@ Responsabilidades:
 ## user-service
 
 Responsabilidades:
+
 - perfiles
 - amigos
 - estadísticas
@@ -196,6 +205,7 @@ Responsabilidades:
 ## game-service
 
 Responsabilidades:
+
 - lógica gameplay
 - estado realtime
 - sincronización
@@ -206,6 +216,7 @@ Responsabilidades:
 ## matchmaking-service
 
 Responsabilidades:
+
 - colas
 - matchmaking
 - creación de partidas
@@ -215,6 +226,7 @@ Responsabilidades:
 ## chat-service
 
 Responsabilidades:
+
 - chat realtime
 - mensajes
 - historial
@@ -226,10 +238,12 @@ Responsabilidades:
 El servidor controla el estado real del juego.
 
 El cliente:
+
 - envía input
 - renderiza
 
 El servidor:
+
 - valida
 - sincroniza
 - decide
@@ -377,6 +391,7 @@ game.protocol.ts
 ## PostgreSQL
 
 Ventajas:
+
 - relacional
 - transacciones
 - estable
@@ -387,6 +402,7 @@ Ventajas:
 ## Prisma
 
 Ventajas:
+
 - type-safe
 - excelente con TypeScript
 - migraciones simples
@@ -494,11 +510,13 @@ nginx
 # 17. Recomendaciones
 
 NO intentar:
+
 - gráficos AAA
 - físicas ultra complejas
 - demasiados microservicios
 
 Priorizar:
+
 - gameplay
 - realtime
 - sincronización
