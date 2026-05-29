@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  username     String    @unique
+  passwordHash String
+  sessions     Session[]
+  scores       Score[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshToken String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Game {
+  id        String   @id @default(uuid())
+  status    String
+  rounds    Round[]
+  scores    Score[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Round {
+  id        String   @id @default(uuid())
+  gameId    String
+  number    Int
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+}
+
+model Score {
+  id        String   @id @default(uuid())
+  gameId    String
+  userId    String
+  points    Int      @default(0)
+  createdAt DateTime @default(now())
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId])
+}
