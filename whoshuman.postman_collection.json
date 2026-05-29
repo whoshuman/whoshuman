@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "f8a53de3-20c9-4c30-944d-6c48b03b36df",
     "name": "whoshuman",
-    "description": "Endpoints HTTP actuales expuestos por Nginx hacia el api-gateway. En desarrollo local usa HTTPS con certificado self-signed, por lo que Postman debe tener desactivada la verificacion SSL o aceptar el certificado local.",
+    "description": "Endpoints HTTP actuales expuestos por Nginx hacia el api-gateway. En desarrollo local usa HTTPS con certificado self-signed, por lo que Postman debe tener desactivada la verificación SSL o aceptar el certificado local.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [

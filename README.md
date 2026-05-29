@@ -33,9 +33,9 @@ make dev
 
 > **Nota:** El certificado SSL es self-signed para desarrollo local. Cada desarrollador genera el suyo propio — no se sube al repo.
 
-> **Backend:** los microservicios NestJS usan NATS como transporte interno. En esta fase solo existe el scaffolding y la conexion base; no hay endpoints ni handlers funcionales implementados.
+> **Backend:** los microservicios NestJS usan NATS como transporte interno. En esta fase solo existe el scaffolding y la conexión base; no hay endpoints ni handlers funcionales implementados.
 
-> **Docker:** `docker-compose.yml` usa los `Dockerfile.dev` para desarrollo local con `start:dev`. Los `Dockerfile` sin sufijo quedan reservados para builds de produccion/CI.
+> **Docker:** `docker-compose.yml` usa los `Dockerfile.dev` para desarrollo local con `start:dev`. Los `Dockerfile` sin sufijo quedan reservados para builds de producción/CI.
 
 ---
 
