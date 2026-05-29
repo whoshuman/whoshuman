@@ -16,7 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages ./packages
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.nest.json ./
 COPY apps/matchmaking-service ./apps/matchmaking-service
-RUN pnpm --filter @whoshuman/matchmaking-service build
+RUN pnpm --filter @whoshuman/shared-events build && pnpm --filter @whoshuman/matchmaking-service build
 
 # ---- runner ----
 FROM node:20-alpine AS runner
@@ -29,6 +29,7 @@ COPY prisma ./prisma
 COPY packages ./packages
 COPY apps/matchmaking-service/package.json ./apps/matchmaking-service/package.json
 RUN pnpm install --prod --frozen-lockfile --ignore-scripts --filter @whoshuman/matchmaking-service
+COPY --from=builder /app/packages/shared-events/dist ./packages/shared-events/dist
 WORKDIR /app/apps/matchmaking-service
 COPY --from=builder /app/apps/matchmaking-service/dist ./dist
 CMD ["node", "dist/main.js"]

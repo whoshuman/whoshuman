@@ -12,6 +12,7 @@ COPY packages ./packages
 COPY apps/auth-service/package.json ./apps/auth-service/package.json
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @whoshuman/shared-events build
 
 COPY apps/auth-service ./apps/auth-service
 

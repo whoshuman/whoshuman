@@ -12,6 +12,7 @@ COPY packages ./packages
 COPY apps/realtime-gateway/package.json ./apps/realtime-gateway/package.json
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @whoshuman/shared-events build
 
 COPY apps/realtime-gateway ./apps/realtime-gateway
 

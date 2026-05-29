@@ -12,6 +12,7 @@ COPY packages ./packages
 COPY apps/chat-service/package.json ./apps/chat-service/package.json
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @whoshuman/shared-events build
 
 COPY apps/chat-service ./apps/chat-service
 
