@@ -13,8 +13,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:reset": "prisma migrate reset",
+    "db:studio": "prisma studio",
+    "prisma:generate": "pnpm db:generate",
+    "prisma:migrate": "pnpm db:migrate"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

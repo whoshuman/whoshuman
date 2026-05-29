@@ -16,6 +16,7 @@ pnpm install
 make certs
 
 # 4. Copiar las variables de entorno y editarlas
+cp .env.example .env
 cp infrastructure/postgres/.env.example infrastructure/postgres/.env
 cp apps/api-gateway/.env.example apps/api-gateway/.env
 cp apps/realtime-gateway/.env.example apps/realtime-gateway/.env
@@ -104,7 +105,7 @@ Hay ciertos comandos y configuraciones que se comportan diferente según si los 
 | Migraciones Prisma  | `make migrate` (desde Mac)        | No se ejecutan dentro del contenedor |
 | Prisma Studio       | `make studio` (abre en navegador) | No aplica                            |
 | SSL certs           | Generados con `make certs`        | Montados como volumen read-only      |
-| Node.js / npm       | Instalado en el sistema           | Incluido en cada imagen Docker       |
+| Node.js / pnpm      | Instalado en el sistema           | Incluido en cada imagen Docker       |
 
 > **Regla general:** Las migraciones, Prisma Studio y los comandos `make` se ejecutan **siempre desde tu Mac**. Los servicios NestJS corren **dentro de Docker** y usan la red interna con el hostname `postgres`.
 
@@ -112,20 +113,20 @@ Hay ciertos comandos y configuraciones que se comportan diferente según si los 
 
 ## Solución de problemas
 
-### `npm install` se queda colgado en Mac (Apple Silicon M1/M2/M3/M4)
+### `pnpm install` se queda colgado en Mac (Apple Silicon M1/M2/M3/M4)
 
-A veces `npm install` se congela sin dar ningún error, especialmente en Macs con chip Apple Silicon. Solución:
+A veces `pnpm install` se congela sin dar ningún error, especialmente en Macs con chip Apple Silicon. Solución:
 
 ```bash
-# 1. Matar procesos npm zombies
-pkill -f "npm install" 2>/dev/null || true
+# 1. Matar procesos pnpm zombies
+pkill -f "pnpm install" 2>/dev/null || true
 
-# 2. Limpiar completamente
-rm -rf node_modules package-lock.json
-npm cache clean --force
+# 2. Limpiar dependencias locales
+rm -rf node_modules
+pnpm store prune
 
 # 3. Reinstalar
-npm install
+pnpm install
 ```
 
 > Si el problema persiste, prueba cerrando y reabriendo el terminal antes del paso 3.
