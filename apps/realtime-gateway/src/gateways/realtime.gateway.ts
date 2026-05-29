@@ -1,11 +1,12 @@
 import { Logger } from "@nestjs/common";
 import { OnGatewayInit, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server } from "socket.io";
+import { envs } from "../config";
 
 @WebSocketGateway({
   cors: {
-    origin: true,
-    credentials: true
+    origin: envs.corsOrigins,
+    credentials: envs.corsCredentials
   }
 })
 export class RealtimeGateway implements OnGatewayInit {
