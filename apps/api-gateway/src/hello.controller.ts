@@ -1,4 +1,4 @@
-import { Controller, Get, Inject } from "@nestjs/common";
+import { Controller, GatewayTimeoutException, Get, Inject } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import {
   AuthSubjects,
@@ -9,7 +9,7 @@ import {
   RealtimeSubjects,
   UserSubjects
 } from "@whoshuman/shared-events";
-import { firstValueFrom, timeout } from "rxjs";
+import { firstValueFrom, TimeoutError, timeout } from "rxjs";
 import { NATS_SERVICE } from "./config";
 
 const REQUEST_TIMEOUT_MS = 3000;
@@ -84,12 +84,20 @@ export class HelloController {
   }
 
   private async send(pattern: string): Promise<HelloResponse> {
-    return firstValueFrom(
-      this.natsClient
-        .send<HelloResponse, HelloRequest>(pattern, {
-          requester: "api-gateway"
-        })
-        .pipe(timeout(REQUEST_TIMEOUT_MS))
-    );
+    try {
+      return await firstValueFrom(
+        this.natsClient
+          .send<HelloResponse, HelloRequest>(pattern, {
+            requester: "api-gateway"
+          })
+          .pipe(timeout(REQUEST_TIMEOUT_MS))
+      );
+    } catch (error) {
+      if (error instanceof TimeoutError) {
+        throw new GatewayTimeoutException(`Microservice did not respond for pattern: ${pattern}`);
+      }
+
+      throw error;
+    }
   }
 }
