@@ -11,3 +11,4 @@ coverage
 **/.env
 *.log
 *.tsbuildinfo
+**/*.tsbuildinfo
