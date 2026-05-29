@@ -1,0 +1,20 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+ENV HUSKY=0
+
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.nest.json ./
+COPY prisma ./prisma
+COPY packages ./packages
+COPY apps/game-service/package.json ./apps/game-service/package.json
+
+RUN pnpm install --frozen-lockfile
+
+COPY apps/game-service ./apps/game-service
+
+WORKDIR /app/apps/game-service
+
+CMD ["pnpm", "start:dev"]

@@ -1,0 +1,20 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+ENV HUSKY=0
+
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.nest.json ./
+COPY prisma ./prisma
+COPY packages ./packages
+COPY apps/api-gateway/package.json ./apps/api-gateway/package.json
+
+RUN pnpm install --frozen-lockfile
+
+COPY apps/api-gateway ./apps/api-gateway
+
+WORKDIR /app/apps/api-gateway
+
+CMD ["pnpm", "start:dev"]

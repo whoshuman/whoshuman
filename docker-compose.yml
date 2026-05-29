@@ -1,18 +1,16 @@
 services:
-
   # ─── Infrastructure ───────────────────────────────────────────────
 
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    env_file:
+      - path: ./infrastructure/postgres/.env
+        required: false
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -46,12 +44,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: apps/frontend/Dockerfile
-      # TODO (task: frontend-setup): mover VITE_* aquí como build.args
-      # Las variables Vite se incrustan en build time, no son env de runtime.
-      # args:
-      #   VITE_API_URL: ${VITE_API_URL}
-      #   VITE_WS_URL: ${VITE_WS_URL}
+      dockerfile: apps/frontend/Dockerfile.dev
     restart: unless-stopped
     networks:
       - internal
@@ -61,13 +54,13 @@ services:
   api-gateway:
     build:
       context: .
-      dockerfile: apps/api-gateway/Dockerfile
+      dockerfile: apps/api-gateway/Dockerfile.dev
     restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: 3000
-      NATS_URL: nats://nats:4222
-      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ./apps/api-gateway/src:/app/apps/api-gateway/src
+    env_file:
+      - path: ./apps/api-gateway/.env
+        required: false
     depends_on:
       - nats
     networks:
@@ -78,13 +71,13 @@ services:
   realtime-gateway:
     build:
       context: .
-      dockerfile: apps/realtime-gateway/Dockerfile
+      dockerfile: apps/realtime-gateway/Dockerfile.dev
     restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: 3000
-      NATS_URL: nats://nats:4222
-      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ./apps/realtime-gateway/src:/app/apps/realtime-gateway/src
+    env_file:
+      - path: ./apps/realtime-gateway/.env
+        required: false
     depends_on:
       - nats
     networks:
@@ -95,17 +88,13 @@ services:
   auth-service:
     build:
       context: .
-      dockerfile: apps/auth-service/Dockerfile
+      dockerfile: apps/auth-service/Dockerfile.dev
     restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      NATS_URL: nats://nats:4222
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN}
+    volumes:
+      - ./apps/auth-service/src:/app/apps/auth-service/src
+    env_file:
+      - path: ./apps/auth-service/.env
+        required: false
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,13 +106,13 @@ services:
   user-service:
     build:
       context: .
-      dockerfile: apps/user-service/Dockerfile
+      dockerfile: apps/user-service/Dockerfile.dev
     restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      NATS_URL: nats://nats:4222
+    volumes:
+      - ./apps/user-service/src:/app/apps/user-service/src
+    env_file:
+      - path: ./apps/user-service/.env
+        required: false
     depends_on:
       postgres:
         condition: service_healthy
@@ -135,13 +124,13 @@ services:
   game-service:
     build:
       context: .
-      dockerfile: apps/game-service/Dockerfile
+      dockerfile: apps/game-service/Dockerfile.dev
     restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      NATS_URL: nats://nats:4222
+    volumes:
+      - ./apps/game-service/src:/app/apps/game-service/src
+    env_file:
+      - path: ./apps/game-service/.env
+        required: false
     depends_on:
       postgres:
         condition: service_healthy
@@ -153,12 +142,13 @@ services:
   matchmaking-service:
     build:
       context: .
-      dockerfile: apps/matchmaking-service/Dockerfile
+      dockerfile: apps/matchmaking-service/Dockerfile.dev
     restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: 3000
-      NATS_URL: nats://nats:4222
+    volumes:
+      - ./apps/matchmaking-service/src:/app/apps/matchmaking-service/src
+    env_file:
+      - path: ./apps/matchmaking-service/.env
+        required: false
     depends_on:
       - nats
     networks:
@@ -167,13 +157,13 @@ services:
   chat-service:
     build:
       context: .
-      dockerfile: apps/chat-service/Dockerfile
+      dockerfile: apps/chat-service/Dockerfile.dev
     restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      NATS_URL: nats://nats:4222
+    volumes:
+      - ./apps/chat-service/src:/app/apps/chat-service/src
+    env_file:
+      - path: ./apps/chat-service/.env
+        required: false
     depends_on:
       postgres:
         condition: service_healthy
@@ -185,12 +175,13 @@ services:
   notification-service:
     build:
       context: .
-      dockerfile: apps/notification-service/Dockerfile
+      dockerfile: apps/notification-service/Dockerfile.dev
     restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: 3000
-      NATS_URL: nats://nats:4222
+    volumes:
+      - ./apps/notification-service/src:/app/apps/notification-service/src
+    env_file:
+      - path: ./apps/notification-service/.env
+        required: false
     depends_on:
       - nats
     networks:
