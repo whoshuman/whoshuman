@@ -13,11 +13,19 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
-    "*.{js,mjs,cjs}": ["prettier --write"],
-    "*.{json,md,yml,yaml}": ["prettier --write"]
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,mjs,cjs}": [
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
+    "@whoshuman/prettier-config": "workspace:*",
     "@eslint/js": "^9.28.0",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^9.1.0",
