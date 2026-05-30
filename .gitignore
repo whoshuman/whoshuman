@@ -1,6 +1,7 @@
 # dependencies
 node_modules/
 .pnpm-store/
+package-lock.json
 
 # build outputs
 dist/
@@ -39,8 +40,6 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# prisma
-prisma/migrations/
 
 # docker
 docker-compose.override.yml
