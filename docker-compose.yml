@@ -46,7 +46,10 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: apps/frontend/Dockerfile.dev
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://localhost/api}
+        VITE_WS_URL: ${VITE_WS_URL:-https://localhost}
     restart: unless-stopped
     networks:
       - internal

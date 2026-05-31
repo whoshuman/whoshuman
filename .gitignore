@@ -8,6 +8,8 @@ dist/
 **/dist/
 build/
 .next/
+.turbo/
+coverage/
 *.tsbuildinfo
 
 # environment
@@ -23,16 +25,28 @@ infrastructure/nginx/certs/
 .idea/
 *.swp
 *.swo
+*.orig
 
 # OS
 .DS_Store
+.DS_Store?
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 
 # docker
 docker-compose.override.yml
+
+# claude
+.claude/settings.local.json
+*.claude_memory
+CLAUDE.md.original
+CLAUDE.md
