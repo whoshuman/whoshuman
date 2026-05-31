@@ -3,16 +3,27 @@
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@11.1.1",
+  "engines": {
+    "node": ">=22.13.0",
+    "pnpm": ">=11.1.1"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
+    "build": "pnpm -r --if-present build",
     "check": "pnpm format:check && pnpm lint",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
-    "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset"
+    "prisma:generate": "pnpm db:generate",
+    "prisma:migrate": "pnpm db:migrate"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -28,26 +39,23 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
-    "@types/pg": "^8.20.0",
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
     "@whoshuman/prettier-config": "workspace:*",
+    "@types/node": "^22.10.7",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
     "prettier": "^3.6.2",
+    "prisma": "^6.8.2",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.33.1"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
-    "pg": "^8.21.0",
-    "prisma": "^7.8.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "prisma"
-    ]
+    "@prisma/client": "^6.8.2"
   }
 }

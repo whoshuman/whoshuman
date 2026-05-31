@@ -2,5 +2,12 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
-  "@prisma/engines": false
-  prisma: false
+  "@nestjs/core": true
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
+onlyBuiltDependencies:
+  - "@nestjs/core"
+  - "@prisma/client"
+  - "@prisma/engines"
+  - prisma

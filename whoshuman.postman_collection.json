@@ -1,0 +1,134 @@
+{
+  "info": {
+    "_postman_id": "f8a53de3-20c9-4c30-944d-6c48b03b36df",
+    "name": "whoshuman",
+    "description": "Endpoints HTTP actuales expuestos por Nginx hacia el api-gateway. En desarrollo local usa HTTPS con certificado self-signed, por lo que Postman debe tener desactivada la verificación SSL o aceptar el certificado local.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Hello",
+      "item": [
+        {
+          "name": "API Gateway",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hello",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hello"]
+            },
+            "description": "Comprueba que el api-gateway responde por HTTP."
+          },
+          "response": []
+        },
+        {
+          "name": "Auth Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hello/auth",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hello", "auth"]
+            },
+            "description": "Comprueba el flujo HTTP api-gateway -> NATS -> auth-service."
+          },
+          "response": []
+        },
+        {
+          "name": "User Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hello/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hello", "users"]
+            },
+            "description": "Comprueba el flujo HTTP api-gateway -> NATS -> user-service."
+          },
+          "response": []
+        },
+        {
+          "name": "Game Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hello/game",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hello", "game"]
+            },
+            "description": "Comprueba el flujo HTTP api-gateway -> NATS -> game-service."
+          },
+          "response": []
+        },
+        {
+          "name": "Matchmaking Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hello/matchmaking",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hello", "matchmaking"]
+            },
+            "description": "Comprueba el flujo HTTP api-gateway -> NATS -> matchmaking-service."
+          },
+          "response": []
+        },
+        {
+          "name": "Chat Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hello/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hello", "chat"]
+            },
+            "description": "Comprueba el flujo HTTP api-gateway -> NATS -> chat-service."
+          },
+          "response": []
+        },
+        {
+          "name": "Notification Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hello/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hello", "notifications"]
+            },
+            "description": "Comprueba el flujo HTTP api-gateway -> NATS -> notification-service."
+          },
+          "response": []
+        },
+        {
+          "name": "Realtime Gateway",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hello/realtime",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hello", "realtime"]
+            },
+            "description": "Comprueba el flujo HTTP api-gateway -> NATS -> realtime-gateway."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://localhost",
+      "type": "string"
+    }
+  ]
+}

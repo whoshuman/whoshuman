@@ -4,52 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-}
-
-// ─── User ────────────────────────────────────────────────────────────────────
-
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  username  String   @unique
-  password  String
-  avatar    String?
-  bio       String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  sessions Session[]
-  scores   Score[]
-
-  @@map("users")
-}
-
-// ─── Session ─────────────────────────────────────────────────────────────────
-
-model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  refreshToken String   @unique
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-// ─── Game ────────────────────────────────────────────────────────────────────
-
-model Game {
-  id        String     @id @default(cuid())
-  status    GameStatus @default(WAITING)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  rounds Round[]
-  scores Score[]
-
-  @@map("games")
+  url      = env("DATABASE_URL")
 }
 
 enum GameStatus {
@@ -58,39 +13,70 @@ enum GameStatus {
   ENDED
 }
 
-// ─── Round ───────────────────────────────────────────────────────────────────
+enum RoundStatus {
+  ACTIVE
+  ENDED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  username     String    @unique
+  passwordHash String    @map("password")
+  avatar       String?
+  bio          String?
+  sessions     Session[]
+  scores       Score[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Game {
+  id        String     @id @default(uuid())
+  status    GameStatus @default(WAITING)
+  rounds    Round[]
+  scores    Score[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("games")
+}
 
 model Round {
-  id        String      @id @default(cuid())
+  id        String      @id @default(uuid())
   gameId    String
   number    Int
   status    RoundStatus @default(ACTIVE)
   timeLimit Int         @default(180)
   startedAt DateTime?
   endedAt   DateTime?
-
-  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  game      Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   @@map("rounds")
 }
 
-enum RoundStatus {
-  ACTIVE
-  ENDED
-}
-
-// ─── Score ───────────────────────────────────────────────────────────────────
-
 model Score {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   userId    String
   gameId    String
   points    Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   @@unique([userId, gameId])
   @@map("scores")
