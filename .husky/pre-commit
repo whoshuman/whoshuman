@@ -1,1 +1,4 @@
-lint-staged
+# 1. Lint + formato de los archivos staged (eslint --fix + prettier).
+# 2. Tests de todo el monorepo. Si algún test falla, el commit se aborta.
+# El && encadena: si lint-staged falla, los tests no corren y el commit no pasa.
+lint-staged && pnpm test
