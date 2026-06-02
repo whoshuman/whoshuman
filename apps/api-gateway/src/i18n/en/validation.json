@@ -1,0 +1,7 @@
+{
+  "isEmail": "The {property} field must be a valid email",
+  "isString": "The {property} field must be text",
+  "isNotEmpty": "The {property} field is required",
+  "minLength": "The {property} field must be at least {constraints.0} characters long",
+  "maxLength": "The {property} field must not exceed {constraints.0} characters"
+}

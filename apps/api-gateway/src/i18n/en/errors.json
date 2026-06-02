@@ -1,0 +1,13 @@
+{
+  "invalidCredentials": "Invalid credentials",
+  "emailInUse": "Email already in use",
+  "usernameTaken": "Username already taken",
+  "refreshInvalid": "Refresh token expired or invalid",
+  "sessionNotFound": "Session not found",
+  "invalidToken": "Invalid token",
+  "userNotFound": "User not found",
+  "tokenMissing": "Missing Authorization: Bearer <token> header",
+  "tokenInvalidOrExpired": "Invalid or expired token",
+  "serviceUnavailable": "The service did not respond in time",
+  "unexpected": "Unexpected error"
+}
