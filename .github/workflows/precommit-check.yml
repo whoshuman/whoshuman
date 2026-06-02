@@ -29,5 +29,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # El lint es type-aware: necesita los tipos generados de Prisma para no marcar
+      # PrismaClient como `any`. Sin este paso, el lint falla con errores no-unsafe-*.
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
       - name: Run precommit checks
         run: pnpm run check
