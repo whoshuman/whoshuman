@@ -93,7 +93,31 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   ) {
     const user = this.requireUser(socket);
     const lobbyId = this.rooms.lobbyId(payload?.lobbyId);
+    const currentLobbyId = socket.data.lobbyId;
     const room = this.rooms.lobbyRoom(lobbyId);
+
+    if (currentLobbyId === lobbyId) {
+      socket.emit(ServerSocketEvents.lobbyJoined, { lobbyId });
+      return;
+    }
+
+    if (currentLobbyId) {
+      const leftPreviousLobby = await this.publishToNats(MatchmakingSubjects.leaveQueue, {
+        userId: user.sub,
+        lobbyId: currentLobbyId,
+        socketId: socket.id
+      });
+
+      if (!leftPreviousLobby) {
+        socket.emit(ServerSocketEvents.gatewayError, {
+          message: "Unable to leave current matchmaking queue"
+        });
+        return;
+      }
+
+      await socket.leave(this.rooms.lobbyRoom(currentLobbyId));
+      socket.data.lobbyId = undefined;
+    }
 
     await socket.join(room);
     socket.data.lobbyId = lobbyId;
