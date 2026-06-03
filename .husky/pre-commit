@@ -1,2 +1,1 @@
-# Lint + formato de los archivos staged (eslint --fix + prettier).
-lint-staged
+pnpm exec lint-staged

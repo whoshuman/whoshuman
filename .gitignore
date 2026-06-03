@@ -51,5 +51,6 @@ docker-compose.override.yml
 CLAUDE.md.original
 CLAUDE.md
 
-# local agent context
+#Codex
 AGENTS.md
+
