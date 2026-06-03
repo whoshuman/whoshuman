@@ -2,6 +2,14 @@ import { randomUUID } from "node:crypto";
 import { Injectable } from "@nestjs/common";
 import { JwtService, type JwtSignOptions } from "@nestjs/jwt";
 import { RpcException } from "@nestjs/microservices";
+import type {
+  AuthLogoutResponse,
+  AuthRefreshResponse,
+  AuthSessionResponse,
+  AuthTokenPayload,
+  AuthVerifyResponse,
+  PublicUser
+} from "@whoshuman/shared-types";
 import * as bcrypt from "bcrypt";
 import ms from "ms";
 import { envs } from "../config";
@@ -17,17 +25,6 @@ import { RegisterDto } from "./dto/register.dto";
  * de fuerza bruta, pero rápido para el usuario al hacer login.
  */
 const SALT_ROUNDS = 10;
-
-// Tipo mínimo del usuario tal como viene de Prisma (lo que necesitamos exponer).
-interface UserRecord {
-  id: string;
-  email: string;
-  username: string;
-  avatar: string | null;
-  bio: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 /**
  * AuthService concentra TODA la lógica de autenticación.
@@ -55,7 +52,7 @@ export class AuthService {
    * mismos campos MENOS el passwordHash. Es la única forma en que un usuario
    * sale de este servicio, así garantizamos que el hash nunca se filtra.
    */
-  private toPublicUser(user: UserRecord) {
+  private toPublicUser(user: PublicUser): PublicUser {
     return {
       id: user.id,
       email: user.email,
@@ -72,7 +69,7 @@ export class AuthService {
    * en el payload y se firma con JWT_SECRET. Es el token que el frontend manda en
    * cada petición. Al ser de vida corta, limita el daño si se filtra.
    */
-  private signAccessToken(payload: { sub: string; email: string; username: string }) {
+  private signAccessToken(payload: AuthTokenPayload) {
     const options: JwtSignOptions = {
       secret: envs.jwtSecret,
       expiresIn: envs.jwtExpiresIn
@@ -125,7 +122,7 @@ export class AuthService {
    * 3. Crea el usuario y abre su primera sesión.
    * 4. Devuelve el usuario público + el par de tokens.
    */
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto): Promise<AuthSessionResponse> {
     // Un único query con OR detecta colisión de email O de username.
     const existing = await this.prisma.user.findFirst({
       where: { OR: [{ email: dto.email }, { username: dto.username }] }
@@ -165,7 +162,7 @@ export class AuthService {
    * SIEMPRE el mismo mensaje genérico ("Invalid credentials"). Así un atacante no
    * puede averiguar qué emails están registrados (evita user enumeration).
    */
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto): Promise<AuthSessionResponse> {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
 
     if (!user) {
@@ -201,7 +198,7 @@ export class AuthService {
    * víctima lo usa antes, el del atacante deja de funcionar (y al revés). Esto
    * detecta y corta el reuso de tokens robados.
    */
-  async refresh(refreshToken: string) {
+  async refresh(refreshToken: string): Promise<AuthRefreshResponse> {
     const session = await this.prisma.session.findUnique({ where: { refreshToken } });
 
     // La sesión no existe (token falso o ya rotado) o ha expirado.
@@ -236,7 +233,7 @@ export class AuthService {
    * esto es inherente a los JWT stateless y es un riesgo aceptado a cambio de no tener
    * que consultar la BD en cada petición.
    */
-  async logout(refreshToken: string) {
+  async logout(refreshToken: string): Promise<AuthLogoutResponse> {
     const session = await this.prisma.session.findUnique({ where: { refreshToken } });
 
     if (!session) {
@@ -254,13 +251,10 @@ export class AuthService {
    * Devuelve { valid: false } en vez de lanzar error: validar un token inválido
    * es un resultado normal, no una excepción.
    */
-  verify(token: string): {
-    valid: boolean;
-    payload?: { sub: string; email: string; username: string };
-  } {
+  verify(token: string): AuthVerifyResponse {
     // jwt.verify es SÍNCRONO (no toca la BD), por eso este método no es async.
     try {
-      const payload = this.jwt.verify<{ sub: string; email: string; username: string }>(token, {
+      const payload = this.jwt.verify<AuthTokenPayload>(token, {
         secret: envs.jwtSecret
       });
       return {

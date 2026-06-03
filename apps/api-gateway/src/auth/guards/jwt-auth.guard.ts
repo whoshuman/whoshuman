@@ -1,14 +1,9 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { AuthSubjects } from "@whoshuman/shared-events";
+import type { AuthVerifyResponse } from "@whoshuman/shared-types";
 import { I18nContext } from "nestjs-i18n";
 import { MessagingService } from "../../common";
-import type { AuthenticatedRequest, AuthUser } from "../auth-user.types";
-
-// Lo que devuelve el auth-service al validar un token (auth.verify).
-interface VerifyResponse {
-  valid: boolean;
-  payload?: AuthUser;
-}
+import type { AuthenticatedRequest } from "../auth-user.types";
 
 /**
  * JwtAuthGuard protege las rutas que lo usan (@UseGuards(JwtAuthGuard)).
@@ -29,7 +24,7 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const token = this.extractToken(request);
 
-    const result = await this.messaging.request<VerifyResponse>(AuthSubjects.verify, { token });
+    const result = await this.messaging.request<AuthVerifyResponse>(AuthSubjects.verify, { token });
 
     if (!result.valid || !result.payload) {
       throw new UnauthorizedException(this.translate("tokenInvalidOrExpired"));

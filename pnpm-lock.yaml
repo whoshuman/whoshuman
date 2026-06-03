@@ -80,6 +80,9 @@ importers:
       "@whoshuman/shared-events":
         specifier: workspace:*
         version: link:../../packages/shared-events
+      "@whoshuman/shared-types":
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -135,6 +138,9 @@ importers:
       "@whoshuman/shared-events":
         specifier: workspace:*
         version: link:../../packages/shared-events
+      "@whoshuman/shared-types":
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
@@ -232,6 +238,9 @@ importers:
       "@tanstack/react-router":
         specifier: ^1.170.10
         version: 1.170.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      "@whoshuman/shared-types":
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       axios:
         specifier: ^1.16.1
         version: 1.16.1
@@ -419,6 +428,9 @@ importers:
       "@whoshuman/shared-events":
         specifier: workspace:*
         version: link:../../packages/shared-events
+      "@whoshuman/shared-types":
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1

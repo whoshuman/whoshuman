@@ -1,14 +1,10 @@
+import type { PublicUser } from "@whoshuman/shared-types";
 import { create } from "zustand";
-
-type User = {
-  id: number;
-  username: string;
-};
 
 interface AuthState {
   isAuthenticated: boolean;
-  user: User | null;
-  setUser: (user: User | null) => void;
+  user: PublicUser | null;
+  setUser: (user: PublicUser | null) => void;
   setAuthenticated: (isAuthenticated: boolean) => void;
 }
 

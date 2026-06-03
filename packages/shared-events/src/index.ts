@@ -48,6 +48,25 @@ export const RealtimeSubjects = {
   health: "realtime.health"
 } as const;
 
+export const ClientSocketEvents = {
+  lobbyJoin: "lobby:join",
+  lobbyLeave: "lobby:leave",
+  gameJoin: "game:join",
+  gameLeave: "game:leave",
+  playerInput: "game:player-input"
+} as const;
+
+export const ServerSocketEvents = {
+  gatewayReady: "gateway:ready",
+  gatewayError: "gateway:error",
+  lobbyJoined: "lobby:joined",
+  lobbyLeft: "lobby:left",
+  matchFound: "matchmaking:match-found",
+  gameJoined: "game:joined",
+  gameLeft: "game:left",
+  gameState: "game:state"
+} as const;
+
 export type AuthSubject = (typeof AuthSubjects)[keyof typeof AuthSubjects];
 export type UserSubject = (typeof UserSubjects)[keyof typeof UserSubjects];
 export type GameSubject = (typeof GameSubjects)[keyof typeof GameSubjects];
@@ -55,3 +74,5 @@ export type MatchmakingSubject = (typeof MatchmakingSubjects)[keyof typeof Match
 export type ChatSubject = (typeof ChatSubjects)[keyof typeof ChatSubjects];
 export type NotificationSubject = (typeof NotificationSubjects)[keyof typeof NotificationSubjects];
 export type RealtimeSubject = (typeof RealtimeSubjects)[keyof typeof RealtimeSubjects];
+export type ClientSocketEvent = (typeof ClientSocketEvents)[keyof typeof ClientSocketEvents];
+export type ServerSocketEvent = (typeof ServerSocketEvents)[keyof typeof ServerSocketEvents];
