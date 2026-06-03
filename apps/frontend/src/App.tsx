@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Lobby from "./pages/Lobby";
 import Game from "./pages/Game";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/lobby" element={<Lobby />} />
         <Route path="/game" element={<Game />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

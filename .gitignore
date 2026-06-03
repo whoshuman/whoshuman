@@ -50,3 +50,7 @@ docker-compose.override.yml
 *.claude_memory
 CLAUDE.md.original
 CLAUDE.md
+
+#Codex
+AGENTS.md
+
