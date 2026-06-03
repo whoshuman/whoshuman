@@ -238,6 +238,9 @@ importers:
       react-dom:
         specifier: ^19.2.6
         version: 19.2.6(react@19.2.6)
+      react-router-dom:
+        specifier: ^7.16.0
+        version: 7.16.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       zustand:
         specifier: ^5.0.14
         version: 5.0.14(@types/react@19.2.15)(react@19.2.6)
@@ -5869,6 +5872,29 @@ packages:
         integrity: sha512-XjBR15BhXuylgWGuslhDKqlSayuqvqBX91BP8pauG8kd1zY8kotkNWbXksTCNRarse4kuGbe2kIY05ARtwNIvw==
       }
 
+  react-router-dom@7.16.0:
+    resolution:
+      {
+        integrity: sha512-rWz1T7DNZtRV9el41qq6E1QaeCR7uMAnAkxEVyfKFptRnp8+IYncqGXNS0CM5AkT09oFKUx/zqb0mpV7UNpY+Q==
+      }
+    engines: { node: ">=20.0.0" }
+    peerDependencies:
+      react: ">=18"
+      react-dom: ">=18"
+
+  react-router@7.16.0:
+    resolution:
+      {
+        integrity: sha512-d7b5O5XJsf8h2tKUL9D/AIZ6qvAfTffqS9AHQS4LQ7nUuN2dBjnnquzSIKm9Eo2oMsZvaVEIUnM4Zx9dKEDyXg==
+      }
+    engines: { node: ">=20.0.0" }
+    peerDependencies:
+      react: ">=18"
+      react-dom: ">=18"
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+
   react@19.2.6:
     resolution:
       {
@@ -6051,6 +6077,12 @@ packages:
         integrity: sha512-xRXBn0pPqQTVQiC8wyQrKs2MOlX24zQ0POGaj0kultvoOCstBQM5yvOhAVSUwOMjQtTvsPWoNCHfPGwaaQJhTw==
       }
     engines: { node: ">= 18" }
+
+  set-cookie-parser@2.7.2:
+    resolution:
+      {
+        integrity: sha512-bqVhL7KD0wSeRhf1pm65/zA2VD8btpfrL7yHXBCq1rNGcUP5YmY5G5foUMaBgNX2a+3Hfh7yFDu8BnKhcqpvng==
+      }
 
   setprototypeof@1.2.0:
     resolution:
@@ -10654,6 +10686,20 @@ snapshots:
 
   react-is@19.2.6: {}
 
+  react-router-dom@7.16.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+    dependencies:
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
+      react-router: 7.16.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+
+  react-router@7.16.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+    dependencies:
+      cookie: 1.1.1
+      react: 19.2.6
+      set-cookie-parser: 2.7.2
+    optionalDependencies:
+      react-dom: 19.2.6(react@19.2.6)
+
   react@19.2.6: {}
 
   readable-stream@3.6.2:
@@ -10784,6 +10830,8 @@ snapshots:
       - supports-color
 
   setprototypeof@1.2.0: {}
+
+  set-cookie-parser@2.7.2: {}
 
   shebang-command@2.0.0:
     dependencies:
