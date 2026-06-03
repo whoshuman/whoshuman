@@ -1,14 +1,25 @@
 import "dotenv/config";
 import * as joi from "joi";
+import ms from "ms";
 
 interface EnvVars {
   NATS_SERVERS: string[];
   DATABASE_URL: string;
   JWT_SECRET: string;
-  JWT_EXPIRES_IN: string;
+  JWT_EXPIRES_IN: ms.StringValue;
   JWT_REFRESH_SECRET: string;
-  JWT_REFRESH_EXPIRES_IN: string;
+  JWT_REFRESH_EXPIRES_IN: ms.StringValue;
 }
+
+const durationSchema = joi.string().custom((value: string, helpers) => {
+  const durationMs = ms(value as ms.StringValue) as number | undefined;
+
+  if (durationMs === undefined) {
+    return helpers.error("any.invalid");
+  }
+
+  return value;
+});
 
 const envSchema = joi
   .object<EnvVars>({
@@ -18,9 +29,9 @@ const envSchema = joi
       .uri({ scheme: [/postgresql/] })
       .required(),
     JWT_SECRET: joi.string().min(1).required(),
-    JWT_EXPIRES_IN: joi.string().default("15m"),
+    JWT_EXPIRES_IN: durationSchema.default("15m"),
     JWT_REFRESH_SECRET: joi.string().min(1).required(),
-    JWT_REFRESH_EXPIRES_IN: joi.string().default("7d")
+    JWT_REFRESH_EXPIRES_IN: durationSchema.default("7d")
   })
   .unknown(true);
 

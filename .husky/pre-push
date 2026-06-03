@@ -1,0 +1,2 @@
+# Tests de todo el monorepo antes de subir la rama al remoto.
+pnpm test

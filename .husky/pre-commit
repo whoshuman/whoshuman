@@ -1,1 +1,2 @@
+# Lint + formato de los archivos staged (eslint --fix + prettier).
 lint-staged
