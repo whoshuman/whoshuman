@@ -1,4 +1,4 @@
-.PHONY: help all clean fclean re install certs dev dev-d db down purge logs ps stats images prune shell migrate generate studio reset
+.PHONY: help all clean fclean re build install certs dev dev-d db down purge logs ps stats images prune shell migrate generate studio reset
 
 # ─── Colors ───────────────────────────────────────────────────────────────────
 CYAN  = \033[0;36m
@@ -26,6 +26,9 @@ fclean: down clean ## Para Docker, borra dist/ y node_modules
 	docker compose down -v --remove-orphans
 
 re: fclean all ## Limpia todo y vuelve a construir desde cero
+
+build: ## Compila todos los proyectos
+	pnpm build
 
 # ─── Setup ────────────────────────────────────────────────────────────────────
 
