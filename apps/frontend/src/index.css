@@ -5,8 +5,15 @@
 /* Define fuentes, colores y estilos base para toda la aplicación. */
 :root {
   font-family: Inter, system-ui, sans-serif;
-  color: #eff6ff;
-  background: #030712;
+
+  --color-bg: #030712;
+  --color-text: #eff6ff;
+  --color-text-muted: #c7d8ea;
+  --color-neon-cyan: #22d3ee;
+  --color-neon-cyan-rgb: 34 211 238;
+
+  color: var(--color-text);
+  background: var(--color-bg);
 }
 
 /* Establece el marco mínimo de la aplicación de escritorio. */
@@ -15,9 +22,9 @@ body {
   min-width: 1024px;
   min-height: 100vh;
   background:
-    linear-gradient(90deg, rgb(34 211 238 / 0.16) 1px, transparent 1px),
-    linear-gradient(rgb(34 211 238 / 0.12) 1px, transparent 1px),
-    #030712;
+    linear-gradient(90deg, rgb(var(--color-neon-cyan-rgb) / 0.16) 1px, transparent 1px),
+    linear-gradient(rgb(var(--color-neon-cyan-rgb) / 0.12) 1px, transparent 1px),
+	var(--color-bg);
   background-size: 4rem 4rem;
 }
 
@@ -41,7 +48,7 @@ body {
 /* Texto pequeño superior del hero. */
 .home-kicker {
   margin: 0;
-  color: #22d3ee;
+  color: var(--color-neon-cyan);
   font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -57,6 +64,6 @@ body {
 /* Frase principal bajo el título. */
 .home-lead {
   margin: 0;
-  color: #c7d8ea;
+  color: var(--color-text-muted);
   font-size: 1.35rem;
 }
