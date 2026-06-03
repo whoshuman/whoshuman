@@ -26,6 +26,11 @@ import { RegisterDto } from "./dto/register.dto";
  */
 const SALT_ROUNDS = 10;
 
+type UserRecord = Omit<PublicUser, "createdAt" | "updatedAt"> & {
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 /**
  * AuthService concentra TODA la lógica de autenticación.
  *
@@ -52,15 +57,15 @@ export class AuthService {
    * mismos campos MENOS el passwordHash. Es la única forma en que un usuario
    * sale de este servicio, así garantizamos que el hash nunca se filtra.
    */
-  private toPublicUser(user: PublicUser): PublicUser {
+  private toPublicUser(user: UserRecord): PublicUser {
     return {
       id: user.id,
       email: user.email,
       username: user.username,
       avatar: user.avatar,
       bio: user.bio,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      createdAt: user.createdAt.toISOString(),
+      updatedAt: user.updatedAt.toISOString()
     };
   }
 

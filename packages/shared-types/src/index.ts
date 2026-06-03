@@ -19,8 +19,8 @@ export interface PublicUser {
   username: string;
   avatar: string | null;
   bio: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthTokenPayload {

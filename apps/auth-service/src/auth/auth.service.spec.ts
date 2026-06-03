@@ -103,6 +103,8 @@ describe("AuthService", () => {
       const result = await service.register(dto);
 
       expect(result.user.email).toBe(dto.email);
+      expect(result.user.createdAt).toBe("2026-01-01T00:00:00.000Z");
+      expect(result.user.updatedAt).toBe("2026-01-01T00:00:00.000Z");
       expect(result.tokens.accessToken).toBeDefined();
       expect(result.tokens.refreshToken).toBeDefined();
 
