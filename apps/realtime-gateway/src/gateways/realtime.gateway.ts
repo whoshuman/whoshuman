@@ -121,7 +121,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     @MessageBody() payload?: LobbyLeavePayload
   ) {
     const user = this.requireUser(socket);
-    const lobbyId = this.rooms.lobbyId(payload?.lobbyId ?? socket.data.lobbyId);
+    const lobbyId = this.requireId(socket, payload?.lobbyId ?? socket.data.lobbyId, "lobbyId");
 
     await socket.leave(this.rooms.lobbyRoom(lobbyId));
     socket.data.lobbyId = undefined;
