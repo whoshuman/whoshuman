@@ -3,6 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { JwtService, type JwtSignOptions } from "@nestjs/jwt";
 import { RpcException } from "@nestjs/microservices";
 import * as bcrypt from "bcrypt";
+import ms from "ms";
 import { envs } from "../config";
 import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
@@ -16,31 +17,6 @@ import { RegisterDto } from "./dto/register.dto";
  * de fuerza bruta, pero rápido para el usuario al hacer login.
  */
 const SALT_ROUNDS = 10;
-
-/**
- * Convierte duraciones tipo JWT_REFRESH_EXPIRES_IN ("15m", "7d", "1h") a ms para
- * calcular expiresAt en BD con la misma configuración usada al firmar el JWT.
- */
-function expirationToMs(value: string) {
-  const match = value.trim().match(/^(\d+)(ms|s|m|h|d|w)?$/);
-
-  if (!match) {
-    throw new Error(`Invalid token expiration format: ${value}`);
-  }
-
-  const amount = Number(match[1]);
-  const unit = match[2] ?? "ms";
-  const multipliers: Record<string, number> = {
-    ms: 1,
-    s: 1000,
-    m: 60 * 1000,
-    h: 60 * 60 * 1000,
-    d: 24 * 60 * 60 * 1000,
-    w: 7 * 24 * 60 * 60 * 1000
-  };
-
-  return amount * multipliers[unit];
-}
 
 // Tipo mínimo del usuario tal como viene de Prisma (lo que necesitamos exponer).
 interface UserRecord {
@@ -97,13 +73,10 @@ export class AuthService {
    * cada petición. Al ser de vida corta, limita el daño si se filtra.
    */
   private signAccessToken(payload: { sub: string; email: string; username: string }) {
-    // El cast a JwtSignOptions es necesario porque @nestjs/jwt tipa expiresIn con un
-    // tipo especial del paquete "ms" (ej. "15m"), no con un string genérico. Nuestros
-    // valores vienen del .env validados como string, así que el cast es seguro.
     const options: JwtSignOptions = {
       secret: envs.jwtSecret,
       expiresIn: envs.jwtExpiresIn
-    } as JwtSignOptions;
+    };
     return this.jwt.sign(payload, options);
   }
 
@@ -122,7 +95,7 @@ export class AuthService {
       secret: envs.jwtRefreshSecret,
       expiresIn: envs.jwtRefreshExpiresIn,
       jwtid: randomUUID()
-    } as JwtSignOptions;
+    };
     return this.jwt.sign(payload, options);
   }
 
@@ -133,7 +106,8 @@ export class AuthService {
    */
   private async createSession(userId: string) {
     const refreshToken = this.signRefreshToken({ sub: userId });
-    const expiresAt = new Date(Date.now() + expirationToMs(envs.jwtRefreshExpiresIn));
+    const refreshExpiresMs = ms(envs.jwtRefreshExpiresIn);
+    const expiresAt = new Date(Date.now() + refreshExpiresMs);
 
     await this.prisma.session.create({
       data: { userId, refreshToken, expiresAt }
