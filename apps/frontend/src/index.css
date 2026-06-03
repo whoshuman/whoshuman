@@ -23,8 +23,7 @@ body {
   min-height: 100vh;
   background:
     linear-gradient(90deg, rgb(var(--color-neon-cyan-rgb) / 0.16) 1px, transparent 1px),
-    linear-gradient(rgb(var(--color-neon-cyan-rgb) / 0.12) 1px, transparent 1px),
-	var(--color-bg);
+    linear-gradient(rgb(var(--color-neon-cyan-rgb) / 0.12) 1px, transparent 1px), var(--color-bg);
   background-size: 4rem 4rem;
 }
 
