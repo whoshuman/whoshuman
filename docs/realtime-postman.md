@@ -8,9 +8,11 @@ Esta guia explica como probar el `realtime-gateway` con un request Socket.IO en 
 2. En Postman ejecuta `Auth > Login` o `Auth > Register`.
 3. Confirma que la variable `accessToken` tenga valor.
 
-## Crear el request Socket.IO
+## Abrir la conexion Socket.IO
 
-En Postman crea un request nuevo de tipo `Socket.IO`.
+En Postman abre la conexion Socket.IO guardada para el `realtime-gateway`.
+
+La configuracion esperada de esa conexion es:
 
 URL:
 
@@ -26,7 +28,7 @@ Handshake path: /socket.io
 SSL certificate verification: OFF
 ```
 
-Si Postman no muestra `Handshake path`, deja el default. Socket.IO usa `/socket.io`.
+Si la conexion falla, revisa que esos valores sigan iguales. Socket.IO usa `/socket.io` como path default.
 
 ## Event listeners
 
