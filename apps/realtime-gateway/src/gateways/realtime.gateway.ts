@@ -166,8 +166,34 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   ) {
     const user = this.requireUser(socket);
     const gameId = this.requireId(socket, payload?.gameId, "gameId");
+    const currentGameId = socket.data.gameId;
 
-    await socket.join(this.rooms.gameRoom(gameId));
+    if (currentGameId === gameId) {
+      socket.emit(ServerSocketEvents.gameJoined, { gameId });
+      return;
+    }
+
+    if (currentGameId) {
+      const leftPreviousGame = await this.publishToNats(GameSubjects.leave, {
+        userId: user.sub,
+        gameId: currentGameId,
+        socketId: socket.id
+      });
+
+      if (!leftPreviousGame) {
+        socket.emit(ServerSocketEvents.gatewayError, {
+          message: "Unable to leave current game"
+        });
+        return;
+      }
+
+      await socket.leave(this.rooms.gameRoom(currentGameId));
+      socket.data.gameId = undefined;
+    }
+
+    const room = this.rooms.gameRoom(gameId);
+
+    await socket.join(room);
     socket.data.gameId = gameId;
 
     const published = await this.publishToNats(GameSubjects.join, {
@@ -178,7 +204,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     });
 
     if (!published) {
-      await socket.leave(this.rooms.gameRoom(gameId));
+      await socket.leave(room);
       socket.data.gameId = undefined;
       socket.emit(ServerSocketEvents.gatewayError, { message: "Unable to join game" });
       return;
