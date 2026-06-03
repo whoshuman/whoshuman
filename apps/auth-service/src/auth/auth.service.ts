@@ -18,11 +18,29 @@ import { RegisterDto } from "./dto/register.dto";
 const SALT_ROUNDS = 10;
 
 /**
- * Vida del refresh token en milisegundos (7 días). Se usa para calcular la fecha
- * de expiración que guardamos en la tabla Session. Debe coincidir en concepto con
- * JWT_REFRESH_EXPIRES_IN del .env.
+ * Convierte duraciones tipo JWT_REFRESH_EXPIRES_IN ("15m", "7d", "1h") a ms para
+ * calcular expiresAt en BD con la misma configuración usada al firmar el JWT.
  */
-const REFRESH_TOKEN_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
+function expirationToMs(value: string) {
+  const match = value.trim().match(/^(\d+)(ms|s|m|h|d|w)?$/);
+
+  if (!match) {
+    throw new Error(`Invalid token expiration format: ${value}`);
+  }
+
+  const amount = Number(match[1]);
+  const unit = match[2] ?? "ms";
+  const multipliers: Record<string, number> = {
+    ms: 1,
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+    w: 7 * 24 * 60 * 60 * 1000
+  };
+
+  return amount * multipliers[unit];
+}
 
 // Tipo mínimo del usuario tal como viene de Prisma (lo que necesitamos exponer).
 interface UserRecord {
@@ -115,7 +133,7 @@ export class AuthService {
    */
   private async createSession(userId: string) {
     const refreshToken = this.signRefreshToken({ sub: userId });
-    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_MS);
+    const expiresAt = new Date(Date.now() + expirationToMs(envs.jwtRefreshExpiresIn));
 
     await this.prisma.session.create({
       data: { userId, refreshToken, expiresAt }

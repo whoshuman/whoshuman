@@ -43,6 +43,11 @@ function firstCreateArg(mock: jest.Mock): { data: { passwordHash: string } } {
   return calls[0][0];
 }
 
+function firstSessionCreateArg(mock: jest.Mock): { data: { expiresAt: Date } } {
+  const calls = mock.mock.calls as Array<[{ data: { expiresAt: Date } }]>;
+  return calls[0][0];
+}
+
 // Devuelve un usuario de BD de ejemplo (incluye passwordHash, como vendría de Prisma).
 function buildDbUser(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -105,6 +110,25 @@ describe("AuthService", () => {
       const createArg = firstCreateArg(prisma.user.create);
       expect(createArg.data.passwordHash).not.toBe(dto.password);
       expect(createArg.data.passwordHash.length).toBeGreaterThan(20);
+    });
+
+    it("guarda la sesión con la duración configurada en JWT_REFRESH_EXPIRES_IN", async () => {
+      prisma.user.findFirst.mockResolvedValue(null);
+      prisma.user.create.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve(buildDbUser(data))
+      );
+      prisma.session.create.mockResolvedValue({});
+
+      const before = Date.now();
+      await service.register(dto);
+      const after = Date.now();
+
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      const sessionCreateArg = firstSessionCreateArg(prisma.session.create);
+      const expiresAtMs = sessionCreateArg.data.expiresAt.getTime();
+
+      expect(expiresAtMs).toBeGreaterThanOrEqual(before + sevenDaysMs);
+      expect(expiresAtMs).toBeLessThanOrEqual(after + sevenDaysMs);
     });
 
     it("NO filtra el passwordHash en la respuesta", async () => {
