@@ -45,9 +45,4 @@ export class AuthController {
   verify(@Payload() dto: VerifyDto) {
     return this.authService.verify(dto.token);
   }
-
-  @MessagePattern(AuthSubjects.profile)
-  profile(@Payload() dto: VerifyDto) {
-    return this.authService.profile(dto.token);
-  }
 }

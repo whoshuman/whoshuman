@@ -297,24 +297,4 @@ export class AuthService {
       return { valid: false };
     }
   }
-
-  /**
-   * PROFILE: a partir de un access token válido, devuelve el usuario público.
-   * Reutiliza verify() para validar el token y luego busca el usuario en BD.
-   */
-  async profile(token: string) {
-    const result = this.verify(token);
-
-    if (!result.valid || !result.payload) {
-      throw new RpcException({ statusCode: 401, message: "invalidToken" });
-    }
-
-    const user = await this.prisma.user.findUnique({ where: { id: result.payload.sub } });
-
-    if (!user) {
-      throw new RpcException({ statusCode: 404, message: "userNotFound" });
-    }
-
-    return { user: this.toPublicUser(user) };
-  }
 }

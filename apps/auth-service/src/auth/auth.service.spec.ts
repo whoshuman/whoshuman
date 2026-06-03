@@ -296,26 +296,4 @@ describe("AuthService", () => {
       await expect(service.logout("no-existe")).rejects.toBeInstanceOf(RpcException);
     });
   });
-
-  // ─── PROFILE ─────────────────────────────────────────────────────────────────
-
-  describe("profile", () => {
-    it("devuelve el usuario público desde un token válido", async () => {
-      const jwt = new JwtService();
-      const token = jwt.sign(
-        { sub: "user-123", email: "alice@test.com", username: "alice" },
-        { secret: "test_access_secret", expiresIn: "15m" }
-      );
-      prisma.user.findUnique.mockResolvedValue(buildDbUser());
-
-      const result = await service.profile(token);
-
-      expect(result.user.username).toBe("alice");
-      expect("passwordHash" in result.user).toBe(false);
-    });
-
-    it("rechaza un token inválido (401)", async () => {
-      await expect(service.profile("token.malo")).rejects.toThrow("invalidToken");
-    });
-  });
 });
