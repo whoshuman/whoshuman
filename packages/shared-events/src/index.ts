@@ -1,9 +1,9 @@
 export const AuthSubjects = {
   register: "auth.register",
   login: "auth.login",
+  logout: "auth.logout",
   refresh: "auth.refresh",
   verify: "auth.verify",
-  profile: "auth.profile",
   health: "auth.health"
 } as const;
 

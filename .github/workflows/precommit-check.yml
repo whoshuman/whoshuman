@@ -32,5 +32,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # El lint es type-aware: necesita los tipos generados de Prisma para no marcar
+      # PrismaClient como `any`. Sin este paso, el lint falla con errores no-unsafe-*.
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      # Los paquetes compartidos compilan a dist/ (gitignored). El lint de los apps
+      # necesita esos tipos (@whoshuman/shared-events, etc.) o no resuelve los imports.
+      - name: Build shared packages
+        run: pnpm --filter "./packages/*" --if-present build
+
       - name: Run precommit checks
         run: pnpm run check

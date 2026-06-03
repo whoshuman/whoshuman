@@ -2,10 +2,172 @@
   "info": {
     "_postman_id": "f8a53de3-20c9-4c30-944d-6c48b03b36df",
     "name": "whoshuman",
-    "description": "Endpoints HTTP actuales expuestos por Nginx hacia el api-gateway. En desarrollo local usa HTTPS con certificado self-signed, por lo que Postman debe tener desactivada la verificación SSL o aceptar el certificado local.",
+    "description": "Endpoints HTTP expuestos por Nginx hacia el api-gateway. En desarrollo local usa HTTPS con certificado self-signed, por lo que Postman debe tener desactivada la verificación SSL (Settings -> General -> SSL certificate verification: OFF) o aceptar el certificado local.\n\nLa carpeta Auth guarda automáticamente los tokens: al hacer Register o Login, el accessToken y el refreshToken se guardan en variables de la colección y los usan Profile, Refresh y Logout sin que tengas que copiarlos a mano.\n\nUsa la variable `lang` (es/en/fr) para ver los mensajes traducidos.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
+    {
+      "name": "Auth",
+      "description": "Registro, login y gestión de sesión. El flujo recomendado es: Register (o Login) -> Profile -> Refresh -> Logout.",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guarda los tokens de la respuesta en variables de la colección.",
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', json.tokens.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.tokens.refreshToken);",
+                  "  console.log('Tokens guardados tras el registro');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Crea una cuenta nueva. Devuelve el usuario (sin password) y el par de tokens. Si el email o el username ya existen devuelve 409."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guarda los tokens de la respuesta en variables de la colección.",
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', json.tokens.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.tokens.refreshToken);",
+                  "  console.log('Tokens guardados tras el login');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Inicia sesión con email + password. Devuelve el usuario y el par de tokens. Credenciales incorrectas devuelven 401 con un mensaje genérico."
+          },
+          "response": []
+        },
+        {
+          "name": "Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "profile"]
+            },
+            "description": "Ruta PROTEGIDA. El token va en la cabecera Authorization: Bearer <accessToken> (no en el body). Sin token o con token inválido devuelve 401."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Actualiza los tokens (rotación): el refresh anterior queda invalidado.",
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', json.tokens.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.tokens.refreshToken);",
+                  "  console.log('Tokens renovados');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Renueva el access token usando el refresh token. Por seguridad rota el token: el refresh usado se invalida y se emite uno nuevo. Si lo vuelves a llamar con el mismo refresh anterior, devuelve 401."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Cierra la sesión borrando el refresh token de la BD. Tras esto, ese refresh token ya no sirve para renovar."
+          },
+          "response": []
+        }
+      ]
+    },
     {
       "name": "Hello",
       "item": [
@@ -125,10 +287,12 @@
     }
   ],
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "https://localhost",
-      "type": "string"
-    }
+    { "key": "baseUrl", "value": "https://localhost", "type": "string" },
+    { "key": "lang", "value": "es", "type": "string" },
+    { "key": "email", "value": "ana@whoshuman.com", "type": "string" },
+    { "key": "username", "value": "ana", "type": "string" },
+    { "key": "password", "value": "password123", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" }
   ]
 }

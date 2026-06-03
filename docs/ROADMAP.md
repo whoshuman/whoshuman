@@ -60,7 +60,7 @@ Esta fase no tiene gameplay pero es la más crítica. Una mala estructura aquí 
 
 #### Monorepo y estructura
 
-- [ ] Inicializar repo con estructura de carpetas
+- [x] Inicializar repo con estructura de carpetas
   ```
   apps/frontend · apps/api-gateway · apps/realtime-gateway
   apps/auth-service · apps/user-service · apps/game-service
@@ -68,37 +68,37 @@ Esta fase no tiene gameplay pero es la más crítica. Una mala estructura aquí 
   packages/shared-types · packages/shared-events
   infrastructure/docker · infrastructure/nginx
   ```
-- [ ] Configurar `pnpm-workspace.yaml`
-- [ ] Configurar `tsconfig.json` base compartido
-- [ ] Configurar ESLint + Prettier en todo el monorepo
+- [x] Configurar `pnpm-workspace.yaml`
+- [x] Configurar `tsconfig.json` base compartido
+- [x] Configurar ESLint + Prettier en todo el monorepo
 
 #### Docker
 
-- [ ] `Dockerfile` para cada servicio
-- [ ] `docker-compose.yml` con todos los servicios levantando con `docker compose up --build`
-- [ ] Variables de entorno en `.env` + `.env.example` (nunca subir `.env` al repo)
-- [ ] Servicio PostgreSQL en Docker
-- [ ] Servicio NATS en Docker
-- [ ] Nginx como reverse proxy con HTTPS
+- [x] `Dockerfile` para cada servicio
+- [x] `docker-compose.yml` con todos los servicios levantando con `docker compose up --build`
+- [x] Variables de entorno en `.env` + `.env.example` (nunca subir `.env` al repo)
+- [x] Servicio PostgreSQL en Docker
+- [x] Servicio NATS en Docker
+- [x] Nginx como reverse proxy con HTTPS
 
 #### Base de datos
 
-- [ ] Configurar Prisma con PostgreSQL
-- [ ] Schema inicial: `User`, `Session`, `Game`, `Round`, `Score`
-- [ ] Primera migración: `prisma migrate dev`
-- [ ] Prisma Studio funcionando para desarrollo
+- [x] Configurar Prisma con PostgreSQL
+- [x] Schema inicial: `User`, `Session`, `Game`, `Round`, `Score`
+- [x] Primera migración: `prisma migrate dev`
+- [x] Prisma Studio funcionando para desarrollo
 
 #### Auth service
 
-- [ ] Registro con email + password (bcrypt, salted)
-- [ ] Login con JWT (access token + refresh token)
-- [ ] Guards de NestJS para rutas protegidas
-- [ ] Validación de inputs con `class-validator`
-- [ ] HTTPS funcionando en todas las conexiones externas
+- [x] Registro con email + password (bcrypt, salted)
+- [x] Login con JWT (access token + refresh token)
+- [x] Guards de NestJS para rutas protegidas
+- [x] Validación de inputs con `class-validator`
+- [x] HTTPS funcionando en todas las conexiones externas
 
 #### Frontend base
 
-- [ ] Proyecto React + Vite + TypeScript
+- [x] Proyecto React + Vite + TypeScript
 - [ ] Tailwind CSS configurado
 - [ ] Zustand para estado global
 - [ ] React Query para llamadas HTTP

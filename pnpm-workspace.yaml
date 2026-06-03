@@ -5,9 +5,12 @@ allowBuilds:
   "@nestjs/core": true
   "@prisma/client": true
   "@prisma/engines": true
+  bcrypt: true
   prisma: true
+  unrs-resolver: false
 onlyBuiltDependencies:
   - "@nestjs/core"
   - "@prisma/client"
   - "@prisma/engines"
+  - bcrypt
   - prisma
