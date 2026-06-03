@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+/* Global styles */
+
+/* Define fuentes, colores y estilos base para toda la aplicación. */
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #eff6ff;
+  background: #030712;
+}
+
+/* Establece el marco mínimo de la aplicación de escritorio. */
+body {
+  margin: 0;
+  min-width: 1024px;
+  min-height: 100vh;
+}
+
+/* Centra el contenido principal y limita su ancho para mejorar la legibilidad. */
+.app-shell {
+  min-height: 100vh;
+  width: min(1180px, calc(100% - 4rem));
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}

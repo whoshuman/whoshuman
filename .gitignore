@@ -50,3 +50,6 @@ docker-compose.override.yml
 *.claude_memory
 CLAUDE.md.original
 CLAUDE.md
+
+# local agent context
+AGENTS.md
