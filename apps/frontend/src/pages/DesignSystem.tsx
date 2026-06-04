@@ -129,6 +129,59 @@ function DesignSystem() {
           </article>
         </div>
       </section>
+
+      <section className="content-section">
+        <h2>Formularios</h2>
+
+        <div className="design-form-list">
+          <article className="design-form-item">
+            <h3>Campo de texto</h3>
+
+            <label htmlFor="design-text-input">Nombre del campo</label>
+            <input
+              className="design-input"
+              id="design-text-input"
+              type="text"
+              placeholder="Texto de ejemplo"
+            />
+          </article>
+
+          <article className="design-form-item">
+            <h3>Campo con ayuda</h3>
+
+            <label htmlFor="design-help-input">Nombre del campo</label>
+            <input
+              className="design-input"
+              id="design-help-input"
+              type="text"
+              placeholder="Texto de ejemplo"
+            />
+            <p className="design-form-help">Texto de ayuda para explicar el campo.</p>
+          </article>
+
+          <article className="design-form-item">
+            <h3>Campo con error</h3>
+
+            <label htmlFor="design-error-input">Nombre del campo</label>
+            <input
+              className="design-input design-input-error"
+              id="design-error-input"
+              type="text"
+              placeholder="Texto de ejemplo"
+            />
+            <p className="design-form-error">Mensaje de error del campo.</p>
+          </article>
+
+          <article className="design-form-item">
+            <h3>Checkbox</h3>
+
+            <label className="design-checkbox" htmlFor="design-checkbox-input">
+              <input id="design-checkbox-input" type="checkbox" />
+              Opcion seleccionable
+            </label>
+          </article>
+        </div>
+      </section>
     </main>
   );
 }

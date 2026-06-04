@@ -221,3 +221,76 @@ body {
 .design-button:not(:disabled):active {
   transform: translateY(1px);
 }
+
+/* Organiza los ejemplos de formularios de la guia visual. */
+.design-form-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+/* Define cada ejemplo de formulario dentro de la guia visual. */
+.design-form-item {
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid rgb(var(--color-neon-cyan-rgb) / 0.28);
+}
+
+.design-form-item h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.design-form-item label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.design-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85rem 1rem;
+  color: var(--color-text);
+  font: inherit;
+  background: rgb(255 247 255 / 0.06);
+  border: 1px solid rgb(var(--color-neon-cyan-rgb) / 0.35);
+}
+
+.design-input:focus {
+  outline: none;
+  border-color: var(--color-neon-cyan);
+  box-shadow: 0 0 0 3px rgb(var(--color-neon-cyan-rgb) / 0.18);
+}
+
+.design-input-error {
+  border-color: var(--color-sun-orange);
+}
+
+.design-input-error:focus {
+  border-color: var(--color-sun-orange);
+  box-shadow: 0 0 0 3px rgb(255 159 28 / 0.2);
+}
+
+.design-form-help {
+  margin: 0.5rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.design-form-error {
+  margin: 0.5rem 0 0;
+  color: var(--color-sun-orange);
+  font-size: 0.85rem;
+}
+
+.design-checkbox {
+  display: flex;
+  align-items: center;
+}
+
+.design-checkbox input {
+  margin-right: 0.75rem;
+  accent-color: var(--color-neon-magenta);
+}
