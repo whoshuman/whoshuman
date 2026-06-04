@@ -1,12 +1,10 @@
+import type { AuthTokenPayload } from "@whoshuman/shared-types";
+
 /**
  * Datos del usuario autenticado que el JwtAuthGuard extrae del access token
  * y adjunta a la petición. Coincide con el payload que firma el auth-service.
  */
-export interface AuthUser {
-  sub: string; // id del usuario
-  email: string;
-  username: string;
-}
+export type AuthUser = AuthTokenPayload;
 
 /**
  * Forma mínima de la petición HTTP que necesitan el guard y el decorador.

@@ -1,10 +1,11 @@
+import type { RegisterPayload } from "@whoshuman/shared-types";
 import { IsEmail, IsString, MinLength, MaxLength } from "class-validator";
 
 /**
  * Datos necesarios para registrar un usuario nuevo.
  * class-validator comprueba cada regla antes de que el handler reciba el objeto.
  */
-export class RegisterDto {
+export class RegisterDto implements RegisterPayload {
   @IsEmail()
   email!: string;
 

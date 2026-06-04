@@ -12,7 +12,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.nest.json ./
 COPY packages ./packages
 COPY apps/frontend ./apps/frontend
 ARG VITE_API_URL
@@ -20,7 +20,7 @@ ARG VITE_WS_URL
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_WS_URL=$VITE_WS_URL
 WORKDIR /app/apps/frontend
-RUN pnpm build
+RUN pnpm --filter @whoshuman/shared-types build && pnpm build
 
 # ---- serve ----
 FROM nginx:alpine AS runner
