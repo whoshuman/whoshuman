@@ -30,13 +30,37 @@
 
 /* Establece el marco mínimo de la aplicación de escritorio. */
 body {
+  position: relative;
   margin: 0;
   min-width: 1024px;
   min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--color-bg);
+  isolation: isolate;
+}
+
+/* Crea una rejilla con perspectiva para reforzar el estilo retrowave. */
+body::before {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  top: 34vh;
+  left: 50%;
+  width: 180vw;
+  height: 90vh;
+  pointer-events: none;
   background:
-    linear-gradient(90deg, rgb(var(--color-neon-cyan-rgb) / 0.18) 1px, transparent 1px),
-    linear-gradient(rgb(var(--color-neon-cyan-rgb) / 0.14) 1px, transparent 1px), var(--color-bg);
+    linear-gradient(90deg, rgb(var(--color-neon-cyan-rgb) / 0.3) 1px, transparent 1px),
+    linear-gradient(rgb(var(--color-neon-cyan-rgb) / 0.24) 1px, transparent 1px);
   background-size: 4rem 4rem;
+  transform: translateX(-50%) perspective(56rem) rotateX(64deg);
+  transform-origin: top center;
+}
+
+/* Mantiene la aplicacion por encima de la rejilla decorativa del fondo. */
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 /* Define el contenedor principal de cada pagina. */
