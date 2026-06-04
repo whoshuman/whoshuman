@@ -1,6 +1,6 @@
 function Game() {
   return (
-    <section className="page page-game">
+    <section>
       <h1>Game</h1>
       <p>Página base de la partida.</p>
     </section>

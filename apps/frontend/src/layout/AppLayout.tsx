@@ -2,9 +2,9 @@ import { Link, Outlet } from "@tanstack/react-router";
 
 function AppLayout() {
   return (
-    <div className="app-layout">
-      <header className="app-header">
-        <nav className="app-nav">
+    <div>
+      <header>
+        <nav>
           <Link to="/">Inicio</Link>
           <Link to="/login">Login</Link>
           <Link to="/register">Registro</Link>
@@ -14,11 +14,11 @@ function AppLayout() {
         </nav>
       </header>
 
-      <main className="app-main">
+      <main>
         <Outlet />
       </main>
 
-      <footer className="app-footer">
+      <footer>
         <p>Footer placeholder</p>
       </footer>
     </div>

@@ -27,42 +27,4 @@ body {
   background-size: 4rem 4rem;
 }
 
-/* Centra el contenido principal y limita su ancho para mejorar la legibilidad. */
-.app-shell {
-  min-height: 100vh;
-  width: min(1180px, calc(100% - 4rem));
-  margin: 0 auto;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  position: relative;
-}
 
-/* Hero principal de la home. */
-.home-hero {
-  display: grid;
-  gap: 1rem;
-}
-
-/* Texto pequeño superior del hero. */
-.home-kicker {
-  margin: 0;
-  color: var(--color-neon-cyan);
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-/* Título principal de la aplicación. */
-.home-hero h1 {
-  margin: 0;
-  font-size: 5rem;
-  line-height: 0.95;
-}
-
-/* Frase principal bajo el título. */
-.home-lead {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 1.35rem;
-}
