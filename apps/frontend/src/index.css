@@ -6,11 +6,16 @@
 :root {
   font-family: Inter, system-ui, sans-serif;
 
-  --color-bg: #030712;
-  --color-text: #eff6ff;
-  --color-text-muted: #c7d8ea;
-  --color-neon-cyan: #22d3ee;
-  --color-neon-cyan-rgb: 34 211 238;
+  --color-bg: #050014;
+  --color-surface: #120a2a;
+  --color-text: #fff7ff;
+  --color-text-muted: #c9b8ff;
+  --color-neon-magenta: #ff2bd6;
+  --color-neon-cyan: #24f5ff;
+  --color-neon-violet: #8b5cf6;
+  --color-sun-orange: #ff9f1c;
+
+  --color-neon-cyan-rgb: 36 245 255;
 
   color: var(--color-text);
   background: var(--color-bg);
@@ -22,13 +27,88 @@ body {
   min-width: 1024px;
   min-height: 100vh;
   background:
-    linear-gradient(90deg, rgb(var(--color-neon-cyan-rgb) / 0.16) 1px, transparent 1px),
-    linear-gradient(rgb(var(--color-neon-cyan-rgb) / 0.12) 1px, transparent 1px), var(--color-bg);
+    linear-gradient(90deg, rgb(var(--color-neon-cyan-rgb) / 0.18) 1px, transparent 1px),
+    linear-gradient(rgb(var(--color-neon-cyan-rgb) / 0.14) 1px, transparent 1px), var(--color-bg);
   background-size: 4rem 4rem;
 }
 
+/* Define el contenedor principal de cada pagina. */
 .main-container {
   min-height: 100vh;
   width: min(1180px, calc(100% - 4rem));
   margin: 0 auto;
+}
+
+/* Define un bloque de contenido dentro de una pagina. */
+.content-section {
+  padding: 4rem 0;
+}
+
+/*
+* Clases temporales de la pagina Design System.
+* Todo selector que empiece por `.design-` pertenece solo a esta guia visual.
+* Si la pagina se elimina, estas clases pueden eliminarse tambien.
+*/
+/* Organiza las muestras de color de la guia visual. */
+.design-color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+/* Define la tarjeta de cada color dentro de la guia visual. */
+.design-color-card {
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid rgb(var(--color-neon-cyan-rgb) / 0.28);
+}
+
+/* Define el bloque visual que muestra cada color. */
+.design-color-sample {
+  display: block;
+  height: 5rem;
+  margin-bottom: 1rem;
+}
+
+.design-color-sample-bg {
+  background: var(--color-bg);
+}
+
+.design-color-sample-surface {
+  background: var(--color-surface);
+}
+
+.design-color-sample-text {
+  background: var(--color-text);
+}
+
+.design-color-sample-muted {
+  background: var(--color-text-muted);
+}
+
+.design-color-sample-magenta {
+  background: var(--color-neon-magenta);
+}
+
+.design-color-sample-cyan {
+  background: var(--color-neon-cyan);
+}
+
+.design-color-sample-violet {
+  background: var(--color-neon-violet);
+}
+
+.design-color-sample-orange {
+  background: var(--color-sun-orange);
+}
+
+.design-color-card h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.design-color-card p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
 }
