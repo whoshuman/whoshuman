@@ -83,6 +83,19 @@ describe("MatchmakingService", () => {
     expect(service.getQueueSize("main")).toBe(0);
   });
 
+  it("ignores invalid joinQueue payloads", async () => {
+    await service.joinQueue({ lobbyId: "main" });
+
+    expect(service.getQueueSize("main")).toBe(0);
+    expect(publish).not.toHaveBeenCalled();
+  });
+
+  it("ignores invalid leaveQueue payloads", () => {
+    service.leaveQueue({ lobbyId: "main" });
+
+    expect(service.getQueueSize("main")).toBe(0);
+  });
+
   it("restores players to the queue when matchFound publishing fails", async () => {
     publish.mockRejectedValueOnce(new Error("nats unavailable"));
 

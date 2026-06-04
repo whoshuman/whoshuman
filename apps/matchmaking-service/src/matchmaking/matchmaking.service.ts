@@ -22,7 +22,12 @@ export class MatchmakingService {
 
   constructor(private readonly messaging: MessagingService) {}
 
-  async joinQueue(payload: MatchmakingJoinQueuePayload) {
+  async joinQueue(payload: unknown) {
+    if (!this.isJoinQueuePayload(payload)) {
+      this.logger.warn("Ignoring joinQueue with invalid payload");
+      return;
+    }
+
     const lobbyId = this.normalizeId(payload.lobbyId);
     const player: QueuedPlayer = {
       userId: payload.userId,
@@ -39,7 +44,12 @@ export class MatchmakingService {
     await this.createMatches(lobbyId);
   }
 
-  leaveQueue(payload: MatchmakingLeaveQueuePayload) {
+  leaveQueue(payload: unknown) {
+    if (!this.isLeaveQueuePayload(payload)) {
+      this.logger.warn("Ignoring leaveQueue with invalid payload");
+      return;
+    }
+
     const lobbyId = this.normalizeId(payload.lobbyId);
     const removed = this.removePlayerFromQueue(lobbyId, payload.userId, payload.socketId);
 
@@ -119,6 +129,33 @@ export class MatchmakingService {
     if (this.queues.get(lobbyId)?.length === 0) {
       this.queues.delete(lobbyId);
     }
+  }
+
+  private isJoinQueuePayload(payload: unknown): payload is MatchmakingJoinQueuePayload {
+    return (
+      this.isRecord(payload) &&
+      this.isNonEmptyString(payload.lobbyId) &&
+      this.isNonEmptyString(payload.userId) &&
+      this.isNonEmptyString(payload.username) &&
+      this.isNonEmptyString(payload.socketId)
+    );
+  }
+
+  private isLeaveQueuePayload(payload: unknown): payload is MatchmakingLeaveQueuePayload {
+    return (
+      this.isRecord(payload) &&
+      this.isNonEmptyString(payload.lobbyId) &&
+      this.isNonEmptyString(payload.userId) &&
+      this.isNonEmptyString(payload.socketId)
+    );
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null;
+  }
+
+  private isNonEmptyString(value: unknown): value is string {
+    return typeof value === "string" && value.trim().length > 0;
   }
 
   private normalizeId(value: string) {
