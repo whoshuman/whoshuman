@@ -136,40 +136,6 @@ body::before {
   text-shadow: 0 0 18px rgb(var(--color-neon-cyan-rgb) / 0.35);
 }
 
-/* Organiza los ejemplos de paneles de la guia visual. */
-.design-panel-list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-/* Define el panel base dentro de la guia visual. */
-.design-panel {
-  padding: 1.25rem;
-  background: var(--color-surface);
-  border: 1px solid rgb(var(--color-neon-cyan-rgb) / 0.28);
-}
-
-.design-panel h3 {
-  margin: 0 0 0.75rem;
-  font-size: 1.1rem;
-}
-
-.design-panel p {
-  margin: 0;
-  color: var(--color-text-muted);
-}
-
-.design-panel-featured {
-  border-color: var(--color-neon-magenta);
-  box-shadow: 0 0 24px rgb(255 43 214 / 0.18);
-}
-
-.design-panel-status {
-  border-color: var(--color-neon-cyan);
-  box-shadow: 0 0 24px rgb(255 159 28 / 0.16);
-}
-
 /* Organiza los ejemplos de badges de la guia visual. */
 .design-badge-list {
   display: grid;

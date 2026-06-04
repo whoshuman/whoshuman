@@ -239,20 +239,26 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className="design-section-title">Paneles</h2>
 
-        <div className="design-panel-list">
-          <article className="design-panel">
-            <h3>Panel base</h3>
-            <p>Contenedor para agrupar informacion general de una pantalla.</p>
+        <div className="grid grid-cols-3 gap-4">
+          <article className="bg-surface border border-neon-cyan/30 p-5">
+            <h3 className="m-0 mb-3 text-lg">Panel base</h3>
+            <p className="text-text-muted m-0">
+              Contenedor para agrupar informacion general de una pantalla.
+            </p>
           </article>
 
-          <article className="design-panel design-panel-featured">
-            <h3>Panel destacado</h3>
-            <p>Contenedor para informacion importante o acciones principales.</p>
+          <article className="bg-surface border-neon-magenta shadow-[0_0_24px_rgb(255_43_214_/_0.18)] border p-5">
+            <h3 className="m-0 mb-3 text-lg">Panel destacado</h3>
+            <p className="text-text-muted m-0">
+              Contenedor para informacion importante o acciones principales.
+            </p>
           </article>
 
-          <article className="design-panel design-panel-status">
-            <h3>Panel de estado</h3>
-            <p>Contenedor para mostrar estado de usuario, partida o conexion.</p>
+          <article className="bg-surface border-neon-cyan shadow-[0_0_24px_rgb(36_245_255_/_0.16)] border p-5">
+            <h3 className="m-0 mb-3 text-lg">Panel de estado</h3>
+            <p className="text-text-muted m-0">
+              Contenedor para mostrar estado de usuario, partida o conexion.
+            </p>
           </article>
         </div>
       </section>
