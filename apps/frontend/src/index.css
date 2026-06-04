@@ -1,5 +1,17 @@
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Rajdhani:wght@400;600;700&display=swap");
 @import "tailwindcss";
+@theme {
+  --color-bg: #050014;
+  --color-surface: #120a2a;
+  --color-text-main: #fff7ff;
+  --color-text-muted: #c9b8ff;
+  --color-neon-magenta: #ff2bd6;
+  --color-neon-cyan: #24f5ff;
+  --color-neon-violet: #8b5cf6;
+  --color-sun-orange: #ff9f1c;
+  --color-success: #39ff88;
+  --color-error: #ff3b6b;
+}
 
 /* Global styles */
 
@@ -122,70 +134,6 @@ body::before {
   font-size: 2rem;
   line-height: 1;
   text-shadow: 0 0 18px rgb(var(--color-neon-cyan-rgb) / 0.35);
-}
-
-/* Organiza las muestras de color de la guia visual. */
-.design-color-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-}
-
-/* Define la tarjeta de cada color dentro de la guia visual. */
-.design-color-card {
-  padding: 1rem;
-  background: var(--color-surface);
-  border: 1px solid rgb(var(--color-neon-cyan-rgb) / 0.28);
-}
-
-/* Define el bloque visual que muestra cada color. */
-.design-color-sample {
-  display: block;
-  height: 5rem;
-  margin-bottom: 1rem;
-}
-
-.design-color-sample-bg {
-  background: var(--color-bg);
-}
-
-.design-color-sample-surface {
-  background: var(--color-surface);
-}
-
-.design-color-sample-text {
-  background: var(--color-text);
-}
-
-.design-color-sample-muted {
-  background: var(--color-text-muted);
-}
-
-.design-color-sample-magenta {
-  background: var(--color-neon-magenta);
-}
-
-.design-color-sample-cyan {
-  background: var(--color-neon-cyan);
-}
-
-.design-color-sample-violet {
-  background: var(--color-neon-violet);
-}
-
-.design-color-sample-orange {
-  background: var(--color-sun-orange);
-}
-
-.design-color-card h3 {
-  margin: 0 0 0.25rem;
-  font-size: 1rem;
-}
-
-.design-color-card p {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
 }
 
 /* Organiza los ejemplos de tipografia de la guia visual. */

@@ -16,53 +16,53 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className="design-section-title">Colores</h2>
 
-        <div className="design-color-grid">
-          <article className="design-color-card">
-            <span className="design-color-sample design-color-sample-bg"></span>
-            <h3>Fondo noche</h3>
-            <p>#050014</p>
+        <div className="grid grid-cols-4 gap-4">
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <span className="mb-4 block h-20 bg-bg"></span>
+            <h3 className="m-0 mb-1 text-base">Fondo noche</h3>
+            <p className="m-0 text-sm text-text-muted">#050014</p>
           </article>
 
-          <article className="design-color-card">
-            <span className="design-color-sample design-color-sample-surface"></span>
-            <h3>Superficie</h3>
-            <p>#120a2a</p>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <span className="mb-4 block h-20 bg-surface"></span>
+            <h3 className="m-0 mb-1 text-base">Superficie</h3>
+            <p className="m-0 text-sm text-text-muted">#120a2a</p>
           </article>
 
-          <article className="design-color-card">
-            <span className="design-color-sample design-color-sample-text"></span>
-            <h3>Texto principal</h3>
-            <p>#fff7ff</p>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <span className="mb-4 block h-20 bg-text-main"></span>
+            <h3 className="m-0 mb-1 text-base">Texto principal</h3>
+            <p className="m-0 text-sm text-text-muted">#fff7ff</p>
           </article>
 
-          <article className="design-color-card">
-            <span className="design-color-sample design-color-sample-muted"></span>
-            <h3>Texto secundario</h3>
-            <p>#c9b8ff</p>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <span className="mb-4 block h-20 bg-text-muted"></span>
+            <h3 className="m-0 mb-1 text-base">Texto secundario</h3>
+            <p className="m-0 text-sm text-text-muted">#c9b8ff</p>
           </article>
 
-          <article className="design-color-card">
-            <span className="design-color-sample design-color-sample-magenta"></span>
-            <h3>Neon magenta</h3>
-            <p>#ff2bd6</p>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <span className="mb-4 block h-20 bg-neon-magenta"></span>
+            <h3 className="m-0 mb-1 text-base">Neon magenta</h3>
+            <p className="m-0 text-sm text-text-muted">#ff2bd6</p>
           </article>
 
-          <article className="design-color-card">
-            <span className="design-color-sample design-color-sample-cyan"></span>
-            <h3>Neon cyan</h3>
-            <p>#24f5ff</p>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <span className="mb-4 block h-20 bg-neon-cyan"></span>
+            <h3 className="m-0 mb-1 text-base">Neon cyan</h3>
+            <p className="m-0 text-sm text-text-muted">#24f5ff</p>
           </article>
 
-          <article className="design-color-card">
-            <span className="design-color-sample design-color-sample-violet"></span>
-            <h3>Neon violeta</h3>
-            <p>#8b5cf6</p>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <span className="mb-4 block h-20 bg-neon-violet"></span>
+            <h3 className="m-0 mb-1 text-base">Neon violeta</h3>
+            <p className="m-0 text-sm text-text-muted">#8b5cf6</p>
           </article>
 
-          <article className="design-color-card">
-            <span className="design-color-sample design-color-sample-orange"></span>
-            <h3>Sol naranja</h3>
-            <p>#ff9f1c</p>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <span className="mb-4 block h-20 bg-sun-orange"></span>
+            <h3 className="m-0 mb-1 text-base">Sol naranja</h3>
+            <p className="m-0 text-sm text-text-muted">#ff9f1c</p>
           </article>
         </div>
       </section>
