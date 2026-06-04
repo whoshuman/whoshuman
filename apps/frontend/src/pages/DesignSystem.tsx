@@ -173,50 +173,62 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className="design-section-title">Formularios</h2>
 
-        <div className="design-form-list">
-          <article className="design-form-item">
-            <h3>Campo de texto</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Campo de texto</h3>
 
-            <label htmlFor="design-text-input">Nombre del campo</label>
+            <label className="text-text-muted mb-2 block text-sm" htmlFor="design-text-input">
+              Nombre del campo
+            </label>
             <input
-              className="design-input"
+              className="text-text-main border-neon-cyan/35 focus:border-neon-cyan focus:ring-neon-cyan/20 box-border w-full border bg-white/5 px-4 py-3 focus:ring-3 focus:outline-none"
               id="design-text-input"
               type="text"
               placeholder="Texto de ejemplo"
             />
           </article>
 
-          <article className="design-form-item">
-            <h3>Campo con ayuda</h3>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Campo con ayuda</h3>
 
-            <label htmlFor="design-help-input">Nombre del campo</label>
+            <label className="text-text-muted mb-2 block text-sm" htmlFor="design-help-input">
+              Nombre del campo
+            </label>
             <input
-              className="design-input"
+              className="text-text-main border-neon-cyan/35 focus:border-neon-cyan focus:ring-neon-cyan/20 box-border w-full border bg-white/5 px-4 py-3 focus:ring-3 focus:outline-none"
               id="design-help-input"
               type="text"
               placeholder="Texto de ejemplo"
             />
-            <p className="design-form-help">Texto de ayuda para explicar el campo.</p>
+            <p className="text-text-muted m-0 mt-2 text-sm">
+              Texto de ayuda para explicar el campo.
+            </p>
           </article>
 
-          <article className="design-form-item">
-            <h3>Campo con error</h3>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Campo con error</h3>
 
-            <label htmlFor="design-error-input">Nombre del campo</label>
+            <label className="text-text-muted mb-2 block text-sm" htmlFor="design-error-input">
+              Nombre del campo
+            </label>
             <input
-              className="design-input design-input-error"
+              className="text-text-main border-sun-orange focus:border-sun-orange focus:ring-sun-orange/20 box-border w-full border bg-white/5 px-4 py-3 focus:ring-3 focus:outline-none"
               id="design-error-input"
               type="text"
               placeholder="Texto de ejemplo"
             />
-            <p className="design-form-error">Mensaje de error del campo.</p>
+            <p className="text-sun-orange m-0 mt-2 text-sm">Mensaje de error del campo.</p>
           </article>
 
-          <article className="design-form-item">
-            <h3>Checkbox</h3>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Checkbox</h3>
 
-            <label className="design-checkbox" htmlFor="design-checkbox-input">
-              <input id="design-checkbox-input" type="checkbox" />
+            <label className="flex items-center" htmlFor="design-checkbox-input">
+              <input
+                className="accent-neon-magenta mr-3"
+                id="design-checkbox-input"
+                type="checkbox"
+              />
               Opcion seleccionable
             </label>
           </article>
