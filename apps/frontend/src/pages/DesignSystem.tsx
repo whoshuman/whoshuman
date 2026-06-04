@@ -64,6 +64,37 @@ function DesignSystem() {
           </article>
         </div>
       </section>
+
+      <section className="content-section">
+        <h2>Tipografia</h2>
+
+        <div className="design-typography-list">
+          <article className="design-typography-item">
+            <p className="design-typography-label">Titulo principal - h1</p>
+            <h1>Who's Human</h1>
+          </article>
+
+          <article className="design-typography-item">
+            <p className="design-typography-label">Titulo de seccion - h2</p>
+            <h2>Colores</h2>
+          </article>
+
+          <article className="design-typography-item">
+            <p className="design-typography-label">Titulo de bloque - h3</p>
+            <h3>Neon magenta</h3>
+          </article>
+
+          <article className="design-typography-item">
+            <p className="design-typography-label">Texto base - p</p>
+            <p>Texto principal para descripciones y contenido general de la interfaz.</p>
+          </article>
+
+          <article className="design-typography-item">
+            <p className="design-typography-label">Texto secundario - p</p>
+            <p>Texto de apoyo para detalles, estados o informacion menos importante.</p>
+          </article>
+        </div>
+      </section>
     </main>
   );
 }

@@ -112,3 +112,48 @@ body {
   color: var(--color-text-muted);
   font-size: 0.9rem;
 }
+
+/* Organiza los ejemplos de tipografia de la guia visual. */
+.design-typography-list {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Define cada ejemplo de tipografia dentro de la guia visual. */
+.design-typography-item {
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid rgb(var(--color-neon-cyan-rgb) / 0.28);
+}
+
+.design-typography-item p {
+  margin: 0 0 0.5rem;
+}
+
+.design-typography-item h1,
+.design-typography-item h2,
+.design-typography-item h3 {
+  margin: 0;
+}
+
+.design-typography-label {
+  color: var(--color-neon-magenta);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.design-typography-item h1 {
+  font-size: 4rem;
+  line-height: 0.95;
+}
+
+.design-typography-item h2 {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.design-typography-item h3 {
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
