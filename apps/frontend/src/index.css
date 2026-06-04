@@ -7,8 +7,10 @@
 :root {
   font-family: Rajdhani, Inter, system-ui, sans-serif;
 
+  /* Fuente display retrowave para titulos y elementos de alto impacto visual. */
   --font-display: Orbitron, Rajdhani, Inter, system-ui, sans-serif;
 
+  /* Paleta inicial retrowave usada por la guia visual. */
   --color-bg: #050014;
   --color-surface: #120a2a;
   --color-text: #fff7ff;
@@ -53,6 +55,7 @@ body {
 * Clases temporales de la pagina Design System.
 * Todo selector que empiece por `.design-` pertenece solo a esta guia visual.
 * Si la pagina se elimina, estas clases pueden eliminarse tambien.
+* Las clases definitivas de producto se extraeran despues desde estos ejemplos.
 */
 /* Define la cabecera principal de la guia visual. */
 .design-hero {

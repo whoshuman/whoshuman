@@ -1,6 +1,7 @@
 function DesignSystem() {
   return (
     <main className="main-container">
+      {/* Cabecera de la guia visual: resume la direccion estetica acordada. */}
       <section className="content-section design-hero">
         <p className="design-kicker">Guia visual</p>
 
@@ -11,6 +12,7 @@ function DesignSystem() {
         </p>
       </section>
 
+      {/* Paleta base retrowave que usaremos como referencia para futuras pantallas. */}
       <section className="content-section">
         <h2 className="design-section-title">Colores</h2>
 
@@ -65,6 +67,7 @@ function DesignSystem() {
         </div>
       </section>
 
+      {/* Fuentes y escala tipografica inicial para titulos y textos. */}
       <section className="content-section">
         <h2 className="design-section-title">Tipografia</h2>
 
@@ -106,6 +109,7 @@ function DesignSystem() {
         </div>
       </section>
 
+      {/* Variantes visuales de botones; aun son ejemplos de guia, no componentes finales. */}
       <section className="content-section">
         <h2 className="design-section-title">Botones</h2>
 
@@ -140,6 +144,7 @@ function DesignSystem() {
         </div>
       </section>
 
+      {/* Estados basicos de formulario para login, registro y futuras pantallas. */}
       <section className="content-section">
         <h2 className="design-section-title">Formularios</h2>
 
@@ -193,6 +198,7 @@ function DesignSystem() {
         </div>
       </section>
 
+      {/* Contenedores base para agrupar informacion en interfaces futuras. */}
       <section className="content-section">
         <h2 className="design-section-title">Paneles</h2>
 
@@ -214,6 +220,7 @@ function DesignSystem() {
         </div>
       </section>
 
+      {/* Etiquetas compactas para estados o metadatos sin definir aun pantallas concretas. */}
       <section className="content-section">
         <h2 className="design-section-title">Badges / etiquetas</h2>
 
