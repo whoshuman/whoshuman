@@ -125,31 +125,44 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className="design-section-title">Botones</h2>
 
-        <div className="design-button-list">
-          <article className="design-button-item">
-            <h3>Primario</h3>
-            <button className="design-button design-button-primary" type="button">
+        <div className="grid grid-cols-4 gap-4">
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Primario</h3>
+            <button
+              className="bg-neon-magenta border-neon-magenta text-bg hover:brightness-110 active:translate-y-px w-full cursor-pointer border px-4 py-3 font-bold"
+              type="button"
+            >
               Acción principal
             </button>
           </article>
 
-          <article className="design-button-item">
-            <h3>Secundario</h3>
-            <button className="design-button design-button-secondary" type="button">
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Secundario</h3>
+            <button
+              className="text-neon-cyan border-neon-cyan hover:brightness-110 active:translate-y-px w-full cursor-pointer border bg-transparent px-4 py-3 font-bold"
+              type="button"
+            >
               Acción secundaria
             </button>
           </article>
 
-          <article className="design-button-item">
-            <h3>Peligro</h3>
-            <button className="design-button design-button-danger" type="button">
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Peligro</h3>
+            <button
+              className="bg-sun-orange border-sun-orange text-bg hover:brightness-110 active:translate-y-px w-full cursor-pointer border px-4 py-3 font-bold"
+              type="button"
+            >
               Acción destructiva
             </button>
           </article>
 
-          <article className="design-button-item">
-            <h3>Desactivado</h3>
-            <button className="design-button design-button-disabled" type="button" disabled>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Desactivado</h3>
+            <button
+              className="w-full cursor-not-allowed border border-white/15 bg-white/10 px-4 py-3 font-bold text-white/45"
+              type="button"
+              disabled
+            >
               Acción desactivada
             </button>
           </article>
