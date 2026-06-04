@@ -189,6 +189,17 @@ body {
   text-transform: uppercase;
 }
 
+.design-font-display {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.design-font-base {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
 .design-typography-item h1 {
   font-size: 4rem;
   line-height: 0.95;

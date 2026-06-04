@@ -70,6 +70,16 @@ function DesignSystem() {
 
         <div className="design-typography-list">
           <article className="design-typography-item">
+            <p className="design-typography-label">Fuente display</p>
+            <p className="design-font-display">Orbitron</p>
+          </article>
+
+          <article className="design-typography-item">
+            <p className="design-typography-label">Fuente base</p>
+            <p className="design-font-base">Rajdhani</p>
+          </article>
+
+          <article className="design-typography-item">
             <p className="design-typography-label">Titulo principal - h1</p>
             <h1>Who's Human</h1>
           </article>
