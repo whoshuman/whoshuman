@@ -26,3 +26,9 @@ body {
     linear-gradient(rgb(var(--color-neon-cyan-rgb) / 0.12) 1px, transparent 1px), var(--color-bg);
   background-size: 4rem 4rem;
 }
+
+.main-container {
+  min-height: 100vh;
+  width: min(1180px, calc(100% - 4rem));
+  margin: 0 auto;
+}

@@ -1,6 +1,6 @@
 function DesignSystem() {
   return (
-    <main>
+    <main className="main-container">
       <section>
         <p>Guia visual</p>
 

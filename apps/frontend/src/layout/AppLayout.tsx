@@ -14,9 +14,9 @@ function AppLayout() {
         </nav>
       </header>
 
-      <main>
+      <div>
         <Outlet />
-      </main>
+      </div>
 
       <footer>
         <p>Footer placeholder</p>

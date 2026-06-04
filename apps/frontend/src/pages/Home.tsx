@@ -1,6 +1,6 @@
 function Home() {
   return (
-    <main>
+    <main className="main-container">
       <section>
         <p>
           Proyecto final 42 | Transcendence | Developed by: Jdelorme, smarin-a, zlu, descamil,
