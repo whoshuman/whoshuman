@@ -10,6 +10,7 @@ function AppLayout() {
           <Link to="/register">Registro</Link>
           <Link to="/lobby">Lobby</Link>
           <Link to="/game">Game</Link>
+          <Link to="/design-system">Design System</Link>
         </nav>
       </header>
 
