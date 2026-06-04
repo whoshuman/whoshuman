@@ -182,6 +182,27 @@ function DesignSystem() {
           </article>
         </div>
       </section>
+
+      <section className="content-section">
+        <h2>Paneles</h2>
+
+        <div className="design-panel-list">
+          <article className="design-panel design-panel-featured">
+            <h3>Panel base</h3>
+            <p>Contenedor para agrupar informacion general de una pantalla.</p>
+          </article>
+
+          <article className="design-panel design-panel-featured">
+            <h3>Panel destacado</h3>
+            <p>Contenedor para informacion importante o acciones principales.</p>
+          </article>
+
+          <article className="design-panel design-panel-status">
+            <h3>Panel de estado</h3>
+            <p>Contenedor para mostrar estado de usuario, partida o conexion.</p>
+          </article>
+        </div>
+      </section>
     </main>
   );
 }
