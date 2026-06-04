@@ -213,6 +213,37 @@ function DesignSystem() {
           </article>
         </div>
       </section>
+
+      <section className="content-section">
+        <h2 className="design-section-title">Badges / etiquetas</h2>
+
+        <div className="design-badge-list">
+          <article className="design-badge-item">
+            <h3>Informacion</h3>
+            <span className="design-badge design-badge-info">Info</span>
+          </article>
+
+          <article className="design-badge-item">
+            <h3>Exito</h3>
+            <span className="design-badge design-badge-success">Exito</span>
+          </article>
+
+          <article className="design-badge-item">
+            <h3>Aviso</h3>
+            <span className="design-badge design-badge-warning">Aviso</span>
+          </article>
+
+          <article className="design-badge-item">
+            <h3>Error</h3>
+            <span className="design-badge design-badge-error">Error</span>
+          </article>
+
+          <article className="design-badge-item">
+            <h3>Neutral</h3>
+            <span className="design-badge design-badge-neutral">Neutral</span>
+          </article>
+        </div>
+      </section>
     </main>
   );
 }

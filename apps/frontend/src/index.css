@@ -17,6 +17,8 @@
   --color-neon-cyan: #24f5ff;
   --color-neon-violet: #8b5cf6;
   --color-sun-orange: #ff9f1c;
+  --color-success: #39ff88;
+  --color-error: #ff3b6b;
 
   --color-neon-cyan-rgb: 36 245 255;
 
@@ -384,4 +386,58 @@ body {
 .design-panel-status {
   border-color: var(--color-neon-cyan);
   box-shadow: 0 0 24px rgb(255 159 28 / 0.16);
+}
+
+/* Organiza los ejemplos de badges de la guia visual. */
+.design-badge-list {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+
+/* Define cada ejemplo de badge dentro de la guia visual. */
+.design-badge-item {
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid rgb(var(--color-neon-cyan-rgb) / 0.28);
+}
+
+.design-badge-item h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+/* Define la base visual comun de los badges en la guia visual. */
+.design-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid currentColor;
+}
+
+.design-badge-info {
+  color: var(--color-neon-cyan);
+  background: rgb(var(--color-neon-cyan-rgb) / 0.1);
+}
+
+.design-badge-success {
+  color: var(--color-success);
+  background: rgb(57 255 136 / 0.1);
+}
+
+.design-badge-warning {
+  color: var(--color-sun-orange);
+  background: rgb(255 159 28 / 0.12);
+}
+
+.design-badge-error {
+  color: var(--color-error);
+  background: rgb(255 59 107 / 0.12);
+}
+
+.design-badge-neutral {
+  color: var(--color-text-muted);
+  background: rgb(255 247 255 / 0.08);
 }
