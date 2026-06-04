@@ -102,14 +102,17 @@ export class MatchmakingService {
     if (!queue) return false;
 
     const initialSize = queue.length;
-    const filteredQueue = queue.filter(
-      (player) => player.userId !== userId && player.socketId !== socketId
-    );
 
-    this.queues.set(lobbyId, filteredQueue);
+    for (let index = queue.length - 1; index >= 0; index -= 1) {
+      const player = queue[index];
+      if (player.userId === userId || player.socketId === socketId) {
+        queue.splice(index, 1);
+      }
+    }
+
     this.deleteEmptyQueue(lobbyId);
 
-    return filteredQueue.length !== initialSize;
+    return queue.length !== initialSize;
   }
 
   private deleteEmptyQueue(lobbyId: string) {
