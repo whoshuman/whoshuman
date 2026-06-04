@@ -267,30 +267,40 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className="design-section-title">Badges / etiquetas</h2>
 
-        <div className="design-badge-list">
-          <article className="design-badge-item">
-            <h3>Informacion</h3>
-            <span className="design-badge design-badge-info">Info</span>
+        <div className="grid grid-cols-5 gap-4">
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Informacion</h3>
+            <span className="text-neon-cyan inline-flex items-center border border-current bg-neon-cyan/10 px-3 py-1 text-sm font-bold">
+              Info
+            </span>
           </article>
 
-          <article className="design-badge-item">
-            <h3>Exito</h3>
-            <span className="design-badge design-badge-success">Exito</span>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Exito</h3>
+            <span className="text-success inline-flex items-center border border-current bg-success/10 px-3 py-1 text-sm font-bold">
+              Exito
+            </span>
           </article>
 
-          <article className="design-badge-item">
-            <h3>Aviso</h3>
-            <span className="design-badge design-badge-warning">Aviso</span>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Aviso</h3>
+            <span className="text-sun-orange inline-flex items-center border border-current bg-sun-orange/15 px-3 py-1 text-sm font-bold">
+              Aviso
+            </span>
           </article>
 
-          <article className="design-badge-item">
-            <h3>Error</h3>
-            <span className="design-badge design-badge-error">Error</span>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Error</h3>
+            <span className="text-error inline-flex items-center border border-current bg-error/15 px-3 py-1 text-sm font-bold">
+              Error
+            </span>
           </article>
 
-          <article className="design-badge-item">
-            <h3>Neutral</h3>
-            <span className="design-badge design-badge-neutral">Neutral</span>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Neutral</h3>
+            <span className="text-text-muted inline-flex items-center border border-current bg-white/10 px-3 py-1 text-sm font-bold">
+              Neutral
+            </span>
           </article>
         </div>
       </section>
