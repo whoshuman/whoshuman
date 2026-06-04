@@ -1,5 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Rajdhani:wght@400;600;700&display=swap");
 @import "tailwindcss";
+
+/* Tokens expuestos a Tailwind para usar utilities como bg-surface o text-neon-cyan. */
 @theme {
   --font-display: Orbitron, Rajdhani, Inter, system-ui, sans-serif;
 
@@ -15,9 +17,7 @@
   --color-error: #ff3b6b;
 }
 
-/* Global styles */
-
-/* Define fuentes, colores y estilos base para toda la aplicación. */
+/* Define fuentes, colores y estilos base para toda la aplicacion. */
 :root {
   font-family: Rajdhani, Inter, system-ui, sans-serif;
 
@@ -27,7 +27,7 @@
   background: var(--color-bg);
 }
 
-/* Establece el marco mínimo de la aplicación de escritorio. */
+/* Establece el marco minimo de la aplicacion de escritorio. */
 body {
   position: relative;
   margin: 0;

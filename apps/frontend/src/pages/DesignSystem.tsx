@@ -1,4 +1,5 @@
 function DesignSystem() {
+  // Se mantiene como constante para evitar repetir una utility larga en cada seccion.
   const sectionTitleClass =
     "font-display text-neon-cyan m-0 mb-6 text-3xl leading-none [text-shadow:0_0_18px_rgb(36_245_255_/_0.35)]";
 
