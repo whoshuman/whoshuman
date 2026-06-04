@@ -71,40 +71,52 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className="design-section-title">Tipografia</h2>
 
-        <div className="design-typography-list">
-          <article className="design-typography-item">
-            <p className="design-typography-label">Fuente display</p>
-            <p className="design-font-display">Orbitron</p>
+        <div className="grid gap-4">
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <p className="m-0 mb-2 text-sm font-bold text-neon-magenta uppercase">Fuente display</p>
+            <p className="font-[var(--font-display)] m-0 mb-2 text-3xl font-bold">Orbitron</p>
           </article>
 
-          <article className="design-typography-item">
-            <p className="design-typography-label">Fuente base</p>
-            <p className="design-font-base">Rajdhani</p>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <p className="m-0 mb-2 text-sm font-bold text-neon-magenta uppercase">Fuente base</p>
+            <p className="m-0 mb-2 text-3xl font-semibold">Rajdhani</p>
           </article>
 
-          <article className="design-typography-item">
-            <p className="design-typography-label">Titulo principal - h1</p>
-            <h1>Who's Human</h1>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <p className="m-0 mb-2 text-sm font-bold text-neon-magenta uppercase">
+              Titulo principal - h1
+            </p>
+            <h1 className="m-0 text-6xl leading-none">Who's Human</h1>
           </article>
 
-          <article className="design-typography-item">
-            <p className="design-typography-label">Titulo de seccion - h2</p>
-            <h2>Colores</h2>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <p className="m-0 mb-2 text-sm font-bold text-neon-magenta uppercase">
+              Titulo de seccion - h2
+            </p>
+            <h2 className="m-0 text-3xl leading-none">Colores</h2>
           </article>
 
-          <article className="design-typography-item">
-            <p className="design-typography-label">Titulo de bloque - h3</p>
-            <h3>Neon magenta</h3>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <p className="m-0 mb-2 text-sm font-bold text-neon-magenta uppercase">
+              Titulo de bloque - h3
+            </p>
+            <h3 className="m-0 text-xl leading-tight">Neon magenta</h3>
           </article>
 
-          <article className="design-typography-item">
-            <p className="design-typography-label">Texto base - p</p>
-            <p>Texto principal para descripciones y contenido general de la interfaz.</p>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <p className="m-0 mb-2 text-sm font-bold text-neon-magenta uppercase">Texto base - p</p>
+            <p className="m-0 mb-2">
+              Texto principal para descripciones y contenido general de la interfaz.
+            </p>
           </article>
 
-          <article className="design-typography-item">
-            <p className="design-typography-label">Texto secundario - p</p>
-            <p>Texto de apoyo para detalles, estados o informacion menos importante.</p>
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <p className="m-0 mb-2 text-sm font-bold text-neon-magenta uppercase">
+              Texto secundario - p
+            </p>
+            <p className="m-0 mb-2">
+              Texto de apoyo para detalles, estados o informacion menos importante.
+            </p>
           </article>
         </div>
       </section>
