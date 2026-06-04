@@ -1,18 +1,18 @@
 function DesignSystem() {
   return (
     <main className="main-container">
-      <section className="content-section">
-        <p>Guia visual</p>
+      <section className="content-section design-hero">
+        <p className="design-kicker">Guia visual</p>
 
-        <h1>Design System</h1>
+        <h1 className="design-title">Design System</h1>
 
-        <p>
+        <p className="design-intro">
           Referencia visual de colores, tipografia, componentes y estilo retrowave de Who's Human.
         </p>
       </section>
 
       <section className="content-section">
-        <h2>Colores</h2>
+        <h2 className="design-section-title">Colores</h2>
 
         <div className="design-color-grid">
           <article className="design-color-card">
@@ -66,7 +66,7 @@ function DesignSystem() {
       </section>
 
       <section className="content-section">
-        <h2>Tipografia</h2>
+        <h2 className="design-section-title">Tipografia</h2>
 
         <div className="design-typography-list">
           <article className="design-typography-item">
@@ -97,7 +97,7 @@ function DesignSystem() {
       </section>
 
       <section className="content-section">
-        <h2>Botones</h2>
+        <h2 className="design-section-title">Botones</h2>
 
         <div className="design-button-list">
           <article className="design-button-item">
@@ -131,7 +131,7 @@ function DesignSystem() {
       </section>
 
       <section className="content-section">
-        <h2>Formularios</h2>
+        <h2 className="design-section-title">Formularios</h2>
 
         <div className="design-form-list">
           <article className="design-form-item">
@@ -184,10 +184,10 @@ function DesignSystem() {
       </section>
 
       <section className="content-section">
-        <h2>Paneles</h2>
+        <h2 className="design-section-title">Paneles</h2>
 
         <div className="design-panel-list">
-          <article className="design-panel design-panel-featured">
+          <article className="design-panel">
             <h3>Panel base</h3>
             <p>Contenedor para agrupar informacion general de una pantalla.</p>
           </article>
