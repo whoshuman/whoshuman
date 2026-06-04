@@ -117,3 +117,16 @@ export interface MatchFoundPayload {
   gameId: string;
   playerIds: string[];
 }
+
+export interface MatchmakingJoinQueuePayload {
+  userId: string;
+  username: string;
+  lobbyId: string;
+  socketId: string;
+}
+
+export interface MatchmakingLeaveQueuePayload {
+  userId: string;
+  lobbyId: string;
+  socketId: string;
+}

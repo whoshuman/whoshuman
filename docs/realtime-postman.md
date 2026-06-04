@@ -98,6 +98,34 @@ Payload:
 }
 ```
 
+## Crear un match
+
+Con `MATCHMAKING_MIN_PLAYERS=2`, abre dos conexiones Socket.IO autenticadas con usuarios distintos y envia `lobby:join` en ambas usando el mismo `lobbyId`.
+
+Payload JSON en ambas conexiones:
+
+```json
+{
+  "lobbyId": "main"
+}
+```
+
+Respuesta esperada cuando entra el segundo jugador:
+
+```txt
+matchmaking:match-found
+```
+
+Payload:
+
+```json
+{
+  "lobbyId": "main",
+  "gameId": "generated-game-id",
+  "playerIds": ["user-1", "user-2"]
+}
+```
+
 ## Salir del lobby
 
 Event name:
