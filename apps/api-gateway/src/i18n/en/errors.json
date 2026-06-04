@@ -9,5 +9,9 @@
   "tokenMissing": "Missing Authorization: Bearer <token> header",
   "tokenInvalidOrExpired": "Invalid or expired token",
   "serviceUnavailable": "The service did not respond in time",
-  "unexpected": "Unexpected error"
+  "unexpected": "Unexpected error",
+  "cannotFriendYourself": "You cannot send a friend request to yourself",
+  "alreadyFriends": "A friend relationship already exists with this user",
+  "friendshipNotFound": "Friend request not found",
+  "notAllowed": "You are not allowed to perform this action"
 }

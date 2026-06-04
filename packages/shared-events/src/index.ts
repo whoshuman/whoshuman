@@ -11,6 +11,14 @@ export const UserSubjects = {
   findProfile: "users.findProfile",
   updateProfile: "users.updateProfile",
   findFriends: "users.findFriends",
+  findPendingRequests: "users.findPendingRequests",
+  sendFriendRequest: "users.sendFriendRequest",
+  respondFriendRequest: "users.respondFriendRequest",
+  removeFriend: "users.removeFriend",
+  blockUser: "users.blockUser",
+  unblockUser: "users.unblockUser",
+  friendRequestReceived: "users.friendRequestReceived",
+  friendRequestAccepted: "users.friendRequestAccepted",
   health: "users.health"
 } as const;
 
@@ -64,6 +72,8 @@ export const ServerSocketEvents = {
   matchFound: "matchmaking:match-found",
   gameJoined: "game:joined",
   gameLeft: "game:left",
+  friendRequestReceived: "friend:request-received",
+  friendRequestAccepted: "friend:request-accepted",
   gameState: "game:state"
 } as const;
 

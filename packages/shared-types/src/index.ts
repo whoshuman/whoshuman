@@ -130,3 +130,52 @@ export interface MatchmakingLeaveQueuePayload {
   lobbyId: string;
   socketId: string;
 }
+
+export type FriendshipStatus = "PENDING" | "ACCEPTED" | "BLOCKED";
+
+export interface Friendship {
+  id: string;
+  status: FriendshipStatus;
+  user: PublicUser; // the "other" user, relative to whoever asked
+  createdAt: string;
+}
+
+export interface FriendActionResponse {
+  success: boolean;
+}
+
+// NATS request payloads (requester/userId is injected by the gateway from the JWT)
+export interface SendFriendRequestPayload {
+  requesterId: string;
+  addresseeId: string;
+}
+export interface RespondFriendRequestPayload {
+  userId: string; // the addressee responding
+  friendshipId: string;
+  accept: boolean;
+}
+export interface RemoveFriendPayload {
+  userId: string;
+  friendshipId: string;
+}
+export interface BlockUserPayload {
+  blockerId: string;
+  targetId: string;
+}
+export interface UnblockUserPayload {
+  blockerId: string;
+  targetId: string;
+}
+export interface FindFriendsPayload {
+  userId: string;
+}
+export interface FindPendingRequestsPayload {
+  userId: string;
+}
+
+// NATS event payload pushed to the realtime-gateway
+export interface FriendNotificationPayload {
+  recipientId: string; // who should receive the socket message
+  friendshipId: string;
+  from: PublicUser; // who triggered it
+}

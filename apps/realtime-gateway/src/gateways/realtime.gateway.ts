@@ -55,6 +55,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     try {
       const user = await this.auth.verifySocket(socket);
       socket.data.user = user;
+      await socket.join(this.rooms.userRoom(user.sub));
       socket.emit(ServerSocketEvents.gatewayReady, { user });
       this.logger.log(`Socket connected: ${socket.id} user=${user.sub}`);
     } catch (error) {

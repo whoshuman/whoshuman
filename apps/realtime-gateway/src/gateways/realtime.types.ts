@@ -2,6 +2,7 @@ import type { Server, Socket } from "socket.io";
 import { ClientSocketEvents, ServerSocketEvents } from "@whoshuman/shared-events";
 import type {
   AuthTokenPayload,
+  FriendNotificationPayload,
   GameJoinPayload,
   GameLeavePayload,
   GameStateSnapshotPayload,
@@ -23,6 +24,8 @@ export interface ServerToClientEvents {
   [ServerSocketEvents.lobbyJoined]: (payload: { lobbyId: string }) => void;
   [ServerSocketEvents.lobbyLeft]: (payload: { lobbyId: string }) => void;
   [ServerSocketEvents.matchFound]: (payload: MatchFoundPayload) => void;
+  [ServerSocketEvents.friendRequestReceived]: (payload: FriendNotificationPayload) => void;
+  [ServerSocketEvents.friendRequestAccepted]: (payload: FriendNotificationPayload) => void;
   [ServerSocketEvents.gameJoined]: (payload: { gameId: string }) => void;
   [ServerSocketEvents.gameLeft]: (payload: { gameId: string }) => void;
   [ServerSocketEvents.gameState]: (payload: GameStateSnapshotPayload) => void;

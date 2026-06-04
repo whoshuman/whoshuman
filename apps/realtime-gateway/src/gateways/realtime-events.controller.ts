@@ -1,7 +1,11 @@
 import { Controller, Logger } from "@nestjs/common";
 import { EventPattern, Payload } from "@nestjs/microservices";
-import { GameSubjects, MatchmakingSubjects } from "@whoshuman/shared-events";
-import type { GameStateSnapshotPayload, MatchFoundPayload } from "@whoshuman/shared-types";
+import { GameSubjects, MatchmakingSubjects, UserSubjects } from "@whoshuman/shared-events";
+import type {
+  FriendNotificationPayload,
+  GameStateSnapshotPayload,
+  MatchFoundPayload
+} from "@whoshuman/shared-types";
 import { RealtimeRoomsService } from "./realtime-rooms.service";
 
 @Controller()
@@ -28,5 +32,23 @@ export class RealtimeEventsController {
     }
 
     this.rooms.broadcastMatchFound(payload);
+  }
+
+  @EventPattern(UserSubjects.friendRequestReceived)
+  handleFriendRequestReceived(@Payload() payload: FriendNotificationPayload) {
+    if (!payload.recipientId) {
+      this.logger.warn("Ignoring friend request event without recipientId");
+      return;
+    }
+    this.rooms.notifyFriendRequestReceived(payload);
+  }
+
+  @EventPattern(UserSubjects.friendRequestAccepted)
+  handleFriendRequestAccepted(@Payload() payload: FriendNotificationPayload) {
+    if (!payload.recipientId) {
+      this.logger.warn("Ignoring friend accept event without recipientId");
+      return;
+    }
+    this.rooms.notifyFriendRequestAccepted(payload);
   }
 }
