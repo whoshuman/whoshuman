@@ -95,6 +95,40 @@ function DesignSystem() {
           </article>
         </div>
       </section>
+
+      <section className="content-section">
+        <h2>Botones</h2>
+
+        <div className="design-button-list">
+          <article className="design-button-item">
+            <h3>Primario</h3>
+            <button className="design-button design-button-primary" type="button">
+              Acción principal
+            </button>
+          </article>
+
+          <article className="design-button-item">
+            <h3>Secundario</h3>
+            <button className="design-button design-button-secondary" type="button">
+              Acción secundaria
+            </button>
+          </article>
+
+          <article className="design-button-item">
+            <h3>Peligro</h3>
+            <button className="design-button design-button-danger" type="button">
+              Acción destructiva
+            </button>
+          </article>
+
+          <article className="design-button-item">
+            <h3>Desactivado</h3>
+            <button className="design-button design-button-disabled" type="button" disabled>
+              Acción desactivada
+            </button>
+          </article>
+        </div>
+      </section>
     </main>
   );
 }

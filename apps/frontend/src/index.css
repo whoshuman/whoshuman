@@ -157,3 +157,67 @@ body {
   font-size: 1.25rem;
   line-height: 1.1;
 }
+
+/* Organiza los ejemplos de botones de la guia visual. */
+.design-button-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+/* Define cada ejemplo de boton dentro de la guia visual. */
+.design-button-item {
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid rgb(var(--color-neon-cyan-rgb) / 0.28);
+}
+
+.design-button-item h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+/* Define la base visual comun de los botones en la guia visual. */
+.design-button {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  background: transparent;
+  border: 1px solid currentColor;
+  cursor: pointer;
+}
+
+.design-button-primary {
+  color: var(--color-bg);
+  background: var(--color-neon-magenta);
+  border-color: var(--color-neon-magenta);
+}
+
+.design-button-secondary {
+  color: var(--color-neon-cyan);
+  background: transparent;
+  border-color: var(--color-neon-cyan);
+}
+
+.design-button-danger {
+  color: var(--color-bg);
+  background: var(--color-sun-orange);
+  border-color: var(--color-sun-orange);
+}
+
+.design-button-disabled {
+  color: rgb(255 247 255 / 0.45);
+  background: rgb(255 247 255 / 0.08);
+  border-color: rgb(255 247 255 / 0.16);
+  cursor: not-allowed;
+}
+
+.design-button:not(:disabled):hover {
+  filter: brightness(1.12);
+}
+
+.design-button:not(:disabled):active {
+  transform: translateY(1px);
+}
