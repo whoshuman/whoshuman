@@ -1,6 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Rajdhani:wght@400;600;700&display=swap");
 @import "tailwindcss";
 @theme {
+  --font-display: Orbitron, Rajdhani, Inter, system-ui, sans-serif;
+
   --color-bg: #050014;
   --color-surface: #120a2a;
   --color-text-main: #fff7ff;
@@ -19,24 +21,9 @@
 :root {
   font-family: Rajdhani, Inter, system-ui, sans-serif;
 
-  /* Fuente display retrowave para titulos y elementos de alto impacto visual. */
-  --font-display: Orbitron, Rajdhani, Inter, system-ui, sans-serif;
-
-  /* Paleta inicial retrowave usada por la guia visual. */
-  --color-bg: #050014;
-  --color-surface: #120a2a;
-  --color-text: #fff7ff;
-  --color-text-muted: #c9b8ff;
-  --color-neon-magenta: #ff2bd6;
-  --color-neon-cyan: #24f5ff;
-  --color-neon-violet: #8b5cf6;
-  --color-sun-orange: #ff9f1c;
-  --color-success: #39ff88;
-  --color-error: #ff3b6b;
-
   --color-neon-cyan-rgb: 36 245 255;
 
-  color: var(--color-text);
+  color: var(--color-text-main);
   background: var(--color-bg);
 }
 
@@ -85,53 +72,4 @@ body::before {
 /* Define un bloque de contenido dentro de una pagina. */
 .content-section {
   padding: 4rem 0;
-}
-
-/*
-* Clases temporales de la pagina Design System.
-* Todo selector que empiece por `.design-` pertenece solo a esta guia visual.
-* Si la pagina se elimina, estas clases pueden eliminarse tambien.
-* Las clases definitivas de producto se extraeran despues desde estos ejemplos.
-*/
-/* Define la cabecera principal de la guia visual. */
-.design-hero {
-  max-width: 48rem;
-}
-
-.design-kicker {
-  margin: 0 0 0.75rem;
-  color: var(--color-neon-magenta);
-  font-family: var(--font-display);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.design-title {
-  margin: 0;
-  color: var(--color-text);
-  font-family: var(--font-display);
-  font-size: 4.5rem;
-  line-height: 0.95;
-  text-shadow:
-    0 0 18px rgb(255 43 214 / 0.45),
-    0 0 36px rgb(var(--color-neon-cyan-rgb) / 0.24);
-}
-
-.design-intro {
-  margin: 1rem 0 0;
-  color: var(--color-text-muted);
-  font-size: 1.35rem;
-  line-height: 1.5;
-}
-
-/* Define los titulos de seccion de la guia visual. */
-.design-section-title {
-  margin: 0 0 1.5rem;
-  color: var(--color-neon-cyan);
-  font-family: var(--font-display);
-  font-size: 2rem;
-  line-height: 1;
-  text-shadow: 0 0 18px rgb(var(--color-neon-cyan-rgb) / 0.35);
 }

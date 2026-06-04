@@ -1,20 +1,27 @@
 function DesignSystem() {
+  const sectionTitleClass =
+    "font-display text-neon-cyan m-0 mb-6 text-3xl leading-none [text-shadow:0_0_18px_rgb(36_245_255_/_0.35)]";
+
   return (
     <main className="main-container">
       {/* Cabecera de la guia visual: resume la direccion estetica acordada. */}
-      <section className="content-section design-hero">
-        <p className="design-kicker">Guia visual</p>
+      <section className="content-section max-w-3xl">
+        <p className="font-display text-neon-magenta m-0 mb-3 text-sm font-bold tracking-wider uppercase">
+          Guia visual
+        </p>
 
-        <h1 className="design-title">Design System</h1>
+        <h1 className="text-text-main font-display m-0 text-7xl leading-none [text-shadow:0_0_18px_rgba(255,43,214,0.45),0_0_36px_rgba(36,245,255,0.24)]">
+          Design System
+        </h1>
 
-        <p className="design-intro">
+        <p className="text-text-muted m-0 mt-4 text-2xl leading-normal">
           Referencia visual de colores, tipografia, componentes y estilo retrowave de Who's Human.
         </p>
       </section>
 
       {/* Paleta base retrowave que usaremos como referencia para futuras pantallas. */}
       <section className="content-section">
-        <h2 className="design-section-title">Colores</h2>
+        <h2 className={sectionTitleClass}>Colores</h2>
 
         <div className="grid grid-cols-4 gap-4">
           <article className="bg-surface border border-neon-cyan/30 p-4">
@@ -69,12 +76,12 @@ function DesignSystem() {
 
       {/* Fuentes y escala tipografica inicial para titulos y textos. */}
       <section className="content-section">
-        <h2 className="design-section-title">Tipografia</h2>
+        <h2 className={sectionTitleClass}>Tipografia</h2>
 
         <div className="grid gap-4">
           <article className="bg-surface border border-neon-cyan/30 p-4">
             <p className="m-0 mb-2 text-sm font-bold text-neon-magenta uppercase">Fuente display</p>
-            <p className="font-[var(--font-display)] m-0 mb-2 text-3xl font-bold">Orbitron</p>
+            <p className="font-display m-0 mb-2 text-3xl font-bold">Orbitron</p>
           </article>
 
           <article className="bg-surface border border-neon-cyan/30 p-4">
@@ -123,7 +130,7 @@ function DesignSystem() {
 
       {/* Variantes visuales de botones; aun son ejemplos de guia, no componentes finales. */}
       <section className="content-section">
-        <h2 className="design-section-title">Botones</h2>
+        <h2 className={sectionTitleClass}>Botones</h2>
 
         <div className="grid grid-cols-4 gap-4">
           <article className="bg-surface border border-neon-cyan/30 p-4">
@@ -171,7 +178,7 @@ function DesignSystem() {
 
       {/* Estados basicos de formulario para login, registro y futuras pantallas. */}
       <section className="content-section">
-        <h2 className="design-section-title">Formularios</h2>
+        <h2 className={sectionTitleClass}>Formularios</h2>
 
         <div className="grid grid-cols-2 gap-4">
           <article className="bg-surface border border-neon-cyan/30 p-4">
@@ -237,7 +244,7 @@ function DesignSystem() {
 
       {/* Contenedores base para agrupar informacion en interfaces futuras. */}
       <section className="content-section">
-        <h2 className="design-section-title">Paneles</h2>
+        <h2 className={sectionTitleClass}>Paneles</h2>
 
         <div className="grid grid-cols-3 gap-4">
           <article className="bg-surface border border-neon-cyan/30 p-5">
@@ -247,14 +254,14 @@ function DesignSystem() {
             </p>
           </article>
 
-          <article className="bg-surface border-neon-magenta shadow-[0_0_24px_rgb(255_43_214_/_0.18)] border p-5">
+          <article className="bg-surface border-neon-magenta shadow-[0_0_24px_rgba(255,43,214,0.18)] border p-5">
             <h3 className="m-0 mb-3 text-lg">Panel destacado</h3>
             <p className="text-text-muted m-0">
               Contenedor para informacion importante o acciones principales.
             </p>
           </article>
 
-          <article className="bg-surface border-neon-cyan shadow-[0_0_24px_rgb(36_245_255_/_0.16)] border p-5">
+          <article className="bg-surface border-neon-cyan shadow-[0_0_24px_rgba(36,245,255,0.16)] border p-5">
             <h3 className="m-0 mb-3 text-lg">Panel de estado</h3>
             <p className="text-text-muted m-0">
               Contenedor para mostrar estado de usuario, partida o conexion.
@@ -265,7 +272,7 @@ function DesignSystem() {
 
       {/* Etiquetas compactas para estados o metadatos sin definir aun pantallas concretas. */}
       <section className="content-section">
-        <h2 className="design-section-title">Badges / etiquetas</h2>
+        <h2 className={sectionTitleClass}>Badges / etiquetas</h2>
 
         <div className="grid grid-cols-5 gap-4">
           <article className="bg-surface border border-neon-cyan/30 p-4">
