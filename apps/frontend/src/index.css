@@ -1,1 +1,75 @@
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Rajdhani:wght@400;600;700&display=swap");
 @import "tailwindcss";
+
+/* Tokens expuestos a Tailwind para usar utilities como bg-surface o text-neon-cyan. */
+@theme {
+  --font-display: Orbitron, Rajdhani, Inter, system-ui, sans-serif;
+
+  --color-bg: #050014;
+  --color-surface: #120a2a;
+  --color-text-main: #fff7ff;
+  --color-text-muted: #c9b8ff;
+  --color-neon-magenta: #ff2bd6;
+  --color-neon-cyan: #24f5ff;
+  --color-neon-violet: #8b5cf6;
+  --color-sun-orange: #ff9f1c;
+  --color-success: #39ff88;
+  --color-error: #ff3b6b;
+}
+
+/* Define fuentes, colores y estilos base para toda la aplicacion. */
+:root {
+  font-family: Rajdhani, Inter, system-ui, sans-serif;
+
+  --color-neon-cyan-rgb: 36 245 255;
+
+  color: var(--color-text-main);
+  background: var(--color-bg);
+}
+
+/* Establece el marco minimo de la aplicacion de escritorio. */
+body {
+  position: relative;
+  margin: 0;
+  min-width: 1024px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--color-bg);
+  isolation: isolate;
+}
+
+/* Crea una rejilla con perspectiva para reforzar el estilo retrowave. */
+body::before {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  top: 34vh;
+  left: 50%;
+  width: 180vw;
+  height: 90vh;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(var(--color-neon-cyan-rgb) / 0.3) 1px, transparent 1px),
+    linear-gradient(rgb(var(--color-neon-cyan-rgb) / 0.24) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+  transform: translateX(-50%) perspective(56rem) rotateX(64deg);
+  transform-origin: top center;
+}
+
+/* Mantiene la aplicacion por encima de la rejilla decorativa del fondo. */
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Define el contenedor principal de cada pagina. */
+.main-container {
+  min-height: 100vh;
+  width: min(1180px, calc(100% - 4rem));
+  margin: 0 auto;
+}
+
+/* Define un bloque de contenido dentro de una pagina. */
+.content-section {
+  padding: 4rem 0;
+}

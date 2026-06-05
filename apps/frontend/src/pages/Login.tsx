@@ -1,6 +1,6 @@
 function Login() {
   return (
-    <section className="page page-login">
+    <section>
       <h1>Login</h1>
       <p>Página de acceso.</p>
     </section>
