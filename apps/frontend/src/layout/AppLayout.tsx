@@ -2,22 +2,23 @@ import { Link, Outlet } from "@tanstack/react-router";
 
 function AppLayout() {
   return (
-    <div className="app-layout">
-      <header className="app-header">
-        <nav className="app-nav">
+    <div>
+      <header>
+        <nav>
           <Link to="/">Inicio</Link>
           <Link to="/login">Login</Link>
           <Link to="/register">Registro</Link>
           <Link to="/lobby">Lobby</Link>
           <Link to="/game">Game</Link>
+          <Link to="/design-system">Design System</Link>
         </nav>
       </header>
 
-      <main className="app-main">
+      <div>
         <Outlet />
-      </main>
+      </div>
 
-      <footer className="app-footer">
+      <footer>
         <p>Footer placeholder</p>
       </footer>
     </div>

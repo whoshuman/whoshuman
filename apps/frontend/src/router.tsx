@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Lobby from "./pages/Lobby";
 import Game from "./pages/Game";
+import DesignSystem from "./pages/DesignSystem";
 import NotFound from "./pages/NotFound";
 
 const rootRoute = createRootRoute({
@@ -43,12 +44,19 @@ const gameRoute = createRoute({
   component: Game
 });
 
+const designSystemRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/design-system",
+  component: DesignSystem
+});
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   loginRoute,
   registerRoute,
   lobbyRoute,
-  gameRoute
+  gameRoute,
+  designSystemRoute
 ]);
 
 export const router = createRouter({
