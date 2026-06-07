@@ -144,34 +144,41 @@ export interface FriendActionResponse {
   success: boolean;
 }
 
-// NATS request payloads (requester/userId is injected by the gateway from the JWT)
+// NATS request payloads (userId/requester is injected by the gateway from the JWT)
+
+/** Carries the user performing the action (injected from the JWT by the gateway). */
+export interface UserScopedPayload {
+  userId: string;
+}
+
+/** A user acting on a specific friendship. */
+export interface FriendshipScopedPayload extends UserScopedPayload {
+  friendshipId: string;
+}
+
 export interface SendFriendRequestPayload {
   requesterId: string;
   addresseeId: string;
 }
-export interface RespondFriendRequestPayload {
-  userId: string; // the addressee responding
-  friendshipId: string;
+
+export interface RespondFriendRequestPayload extends FriendshipScopedPayload {
   accept: boolean;
 }
-export interface RemoveFriendPayload {
-  userId: string;
-  friendshipId: string;
-}
-export interface BlockUserPayload {
+
+export type RemoveFriendPayload = FriendshipScopedPayload;
+
+/** A user (blocker) acting on another user (target). */
+export interface BlockScopedPayload {
   blockerId: string;
   targetId: string;
 }
-export interface UnblockUserPayload {
-  blockerId: string;
-  targetId: string;
-}
-export interface FindFriendsPayload {
-  userId: string;
-}
-export interface FindPendingRequestsPayload {
-  userId: string;
-}
+
+export type BlockUserPayload = BlockScopedPayload;
+export type UnblockUserPayload = BlockScopedPayload;
+
+export type FindFriendsPayload = UserScopedPayload;
+
+export type FindPendingRequestsPayload = UserScopedPayload;
 
 // NATS event payload pushed to the realtime-gateway
 export interface FriendNotificationPayload {

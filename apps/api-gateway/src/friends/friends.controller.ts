@@ -37,7 +37,7 @@ export class FriendsController {
   }
 
   @Post("requests")
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   send(@CurrentUser() user: AuthUser, @Body() dto: SendFriendRequestDto) {
     return this.messaging.request<FriendActionResponse>(UserSubjects.sendFriendRequest, {
       requesterId: user.sub,

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ClientProxy, RpcException } from "@nestjs/microservices";
+import type { User } from "@prisma/client";
 import { UserSubjects } from "@whoshuman/shared-events";
 import type {
   BlockUserPayload,
@@ -16,16 +17,6 @@ import type {
 import { NATS_SERVICE } from "../config";
 import { PrismaService } from "../prisma/prisma.service";
 
-type UserRow = {
-  id: string;
-  email: string;
-  username: string;
-  avatar: string | null;
-  bio: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
 @Injectable()
 export class FriendsService {
   constructor(
@@ -37,7 +28,7 @@ export class FriendsService {
     throw new RpcException({ statusCode, message });
   }
 
-  private toPublicUser(u: UserRow): PublicUser {
+  private toPublicUser(u: User): PublicUser {
     return {
       id: u.id,
       email: u.email,
@@ -77,9 +68,9 @@ export class FriendsService {
       data: { requesterId, addresseeId, status: "PENDING" }
     });
 
-    const requester = (await this.prisma.user.findUnique({
+    const requester = await this.prisma.user.findUnique({
       where: { id: requesterId }
-    })) as UserRow | null;
+    });
     if (requester) {
       this.client.emit(UserSubjects.friendRequestReceived, {
         recipientId: addresseeId,
@@ -110,9 +101,9 @@ export class FriendsService {
       data: { status: "ACCEPTED" }
     });
 
-    const accepter = (await this.prisma.user.findUnique({
+    const accepter = await this.prisma.user.findUnique({
       where: { id: userId }
-    })) as UserRow | null;
+    });
     if (accepter) {
       this.client.emit(UserSubjects.friendRequestAccepted, {
         recipientId: friendship.requesterId,
@@ -185,8 +176,8 @@ export class FriendsService {
       status: "PENDING" | "ACCEPTED" | "BLOCKED";
       createdAt: Date;
       requesterId: string;
-      requester: UserRow;
-      addressee: UserRow;
+      requester: User;
+      addressee: User;
     },
     userId: string
   ): Friendship {
