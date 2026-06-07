@@ -1,13 +1,15 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ClientProxy, RpcException } from "@nestjs/microservices";
 import type { User } from "@prisma/client";
-import { UserSubjects } from "@whoshuman/shared-events";
+import { NotificationSubjects } from "@whoshuman/shared-events";
 import type {
   BlockUserPayload,
   FindFriendsPayload,
   FindPendingRequestsPayload,
   FriendActionResponse,
   Friendship,
+  NotificationActor,
+  NotificationEnvelope,
   PublicUser,
   RemoveFriendPayload,
   RespondFriendRequestPayload,
@@ -38,6 +40,10 @@ export class FriendsService {
       createdAt: u.createdAt.toISOString(),
       updatedAt: u.updatedAt.toISOString()
     };
+  }
+
+  private toActor(u: User): NotificationActor {
+    return { id: u.id, username: u.username, avatar: u.avatar };
   }
 
   /** Find any relationship between two users, in EITHER direction. */
@@ -72,11 +78,12 @@ export class FriendsService {
       where: { id: requesterId }
     });
     if (requester) {
-      this.client.emit(UserSubjects.friendRequestReceived, {
+      this.client.emit(NotificationSubjects.send, {
         recipientId: addresseeId,
-        friendshipId: friendship.id,
-        from: this.toPublicUser(requester)
-      });
+        type: "friend.request.received",
+        from: this.toActor(requester),
+        data: { friendshipId: friendship.id }
+      } satisfies NotificationEnvelope);
     }
 
     return { success: true };
@@ -105,11 +112,12 @@ export class FriendsService {
       where: { id: userId }
     });
     if (accepter) {
-      this.client.emit(UserSubjects.friendRequestAccepted, {
+      this.client.emit(NotificationSubjects.send, {
         recipientId: friendship.requesterId,
-        friendshipId,
-        from: this.toPublicUser(accepter)
-      });
+        type: "friend.request.accepted",
+        from: this.toActor(accepter),
+        data: { friendshipId }
+      } satisfies NotificationEnvelope);
     }
 
     return { success: true };

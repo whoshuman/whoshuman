@@ -180,9 +180,18 @@ export type FindFriendsPayload = UserScopedPayload;
 
 export type FindPendingRequestsPayload = UserScopedPayload;
 
-// NATS event payload pushed to the realtime-gateway
-export interface FriendNotificationPayload {
-  recipientId: string; // who should receive the socket message
-  friendshipId: string;
-  from: PublicUser; // who triggered it
+// Notification envelope — generic notification contract
+export interface NotificationActor {
+  id: string;
+  username: string;
+  avatar: string | null;
+}
+
+export type NotificationType = "friend.request.received" | "friend.request.accepted";
+
+export interface NotificationEnvelope {
+  recipientId: string; // who should receive it
+  type: NotificationType;
+  from: NotificationActor; // who triggered it (minimal — no email)
+  data?: Record<string, unknown>; // type-specific extra, e.g. { friendshipId }
 }

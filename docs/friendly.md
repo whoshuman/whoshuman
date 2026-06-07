@@ -179,47 +179,69 @@ Los errores se devuelven como `RpcException({ statusCode, message })`, donde
 ## 5. Notificaciones en vivo (eventos + WebSocket)
 
 Además de la respuesta inmediata, ciertos cambios **avisan en vivo** al otro
-usuario por WebSocket, sin que tenga que recargar. Esto usa el patrón de
-**eventos** (fire-and-forget) + el `realtime-gateway`.
+usuario por WebSocket. Las notificaciones se enrutan por el
+**`notification-service`** (el hub), que las reenvía al `realtime-gateway` para
+la entrega.
 
 ```
-user-service
-   │  client.emit(evento, payload)     (tras crear/aceptar solicitud)
-   ▼  NATS (evento)
+user-service (FriendsService)
+   │  client.emit("notifications.send", envelope)   (tras crear/aceptar solicitud)
+   ▼  NATS
+notification-service (hub)
+   │  reenvía  →  client.emit("notifications.deliver", envelope)
+   ▼  NATS
 realtime-gateway (RealtimeEventsController @EventPattern)
-   │  busca la "room" del usuario destino:  user:${userId}
-   │  server.to(room).emit(socketEvent, payload)
+   │  server.to("user:<recipientId>").emit("notification", envelope)
    ▼  WebSocket
-Frontend del usuario destinatario
+Frontend del destinatario
 ```
 
-Cada socket se une a su propia room `user:${userId}` al conectarse
-(`handleConnection`), así el gateway puede dirigir un mensaje a **un usuario
-concreto**.
+Cada socket se une a su room `user:${userId}` al conectarse (`handleConnection`),
+así el gateway dirige el mensaje a **un usuario concreto** (todas sus pestañas).
 
-| Evento NATS                   | Cuándo                   | Avisa a                 | Evento de socket          |
-| ----------------------------- | ------------------------ | ----------------------- | ------------------------- |
-| `users.friendRequestReceived` | al crear una solicitud   | el destinatario         | `friend:request-received` |
-| `users.friendRequestAccepted` | al aceptar una solicitud | el solicitante original | `friend:request-accepted` |
+El payload es un **envelope genérico**, reutilizable por cualquier servicio:
 
-> **Recordatorio del bloqueo silencioso:** el evento
-> `users.friendRequestReceived` solo se emite cuando la solicitud se crea de
-> verdad. Si el solicitante está bloqueado, no se crea fila ni se emite evento,
-> así que el destinatario **no recibe ninguna notificación** (ver
+```ts
+NotificationEnvelope {
+  recipientId: string;   // a quién va
+  type: "friend.request.received" | "friend.request.accepted";
+  from: { id, username, avatar };   // actor mínimo — SIN email
+  data?: { friendshipId };
+}
+```
+
+El frontend escucha **un único** evento de socket `notification` y decide según
+`envelope.type`.
+
+| `type` del envelope       | Cuándo                   | Avisa a                 |
+| ------------------------- | ------------------------ | ----------------------- |
+| `friend.request.received` | al crear una solicitud   | el destinatario         |
+| `friend.request.accepted` | al aceptar una solicitud | el solicitante original |
+
+> **Bloqueo silencioso:** el envelope `friend.request.received` solo se emite si
+> la solicitud se crea de verdad. Si el solicitante está bloqueado, no se crea
+> fila ni se emite nada → el destinatario **no recibe notificación** (ver
 > [Bloqueo silencioso](#bloqueo-silencioso-información-sensible)).
+
+> **Persistencia:** las notificaciones son **efímeras** (solo en vivo). Lo que
+> persiste es el _estado_ (la solicitud en `friendships`); por eso "lo que te
+> perdiste" se ve consultando `GET /friends/requests` al cargar la app, no por un
+> replay de notificaciones. El `notification-service` es hoy un _pass-through_;
+> es la costura donde, el día que haga falta, se añadiría la persistencia.
 
 ---
 
 ## 6. Servicios implicados
 
-| Servicio           | Responsabilidad                                              |
-| ------------------ | ------------------------------------------------------------ |
-| `prisma`           | Modelo `Friendship` + migración.                             |
-| `shared-types`     | Tipos `Friendship`, `FriendshipStatus`, DTOs y payloads.     |
-| `shared-events`    | Subjects, eventos y eventos de socket.                       |
-| `user-service`     | Lógica de amistades (service + controller) + emitir eventos. |
-| `api-gateway`      | Rutas HTTP, validación de DTOs, guard de JWT.                |
-| `realtime-gateway` | Recibir eventos y empujarlos por WebSocket al usuario.       |
+| Servicio               | Responsabilidad                                                                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `prisma`               | Modelo `Friendship` + migración.                                                                                                                       |
+| `shared-types`         | Tipos `Friendship`, payloads y `NotificationEnvelope`.                                                                                                 |
+| `shared-events`        | Subjects (incl. `notifications.*`) y eventos de socket.                                                                                                |
+| `user-service`         | Lógica de amistades + emite `notifications.send`.                                                                                                      |
+| `notification-service` | **Hub** de notificaciones: recibe `notifications.send` y reenvía `notifications.deliver` (hoy pass-through; aquí va la persistencia el día de mañana). |
+| `api-gateway`          | Rutas HTTP, validación de DTOs, guard de JWT.                                                                                                          |
+| `realtime-gateway`     | Recibe `notifications.deliver` y lo empuja por WebSocket (evento `notification`).                                                                      |
 
 > `PublicUser` **no cambia**: los amigos se piden por endpoints dedicados, no
 > viajan dentro del usuario básico que devuelve auth.
@@ -255,10 +277,12 @@ carpeta **Friends**) y el entorno `whoshuman local`.
 
 1. Con el usuario B, abre la conexión Socket.IO en Postman (ver
    [`realtime-postman.md`](realtime-postman.md)) usando el token de B.
-2. Añade los listeners `friend:request-received` y `friend:request-accepted`.
+2. Añade el listener `notification` (un único evento para todas las notis).
 3. Desde A, ejecuta `Friends > Send Request`. → B debe recibir al instante un
-   evento `friend:request-received` con los datos de A.
-4. Cuando B acepta, A (si está conectado) recibe `friend:request-accepted`.
+   evento `notification` con `type: "friend.request.received"` y los datos de A
+   (`from`, sin email).
+4. Cuando B acepta, A (si está conectado) recibe un `notification` con
+   `type: "friend.request.accepted"`.
 
 ### Comprobar el bloqueo silencioso
 

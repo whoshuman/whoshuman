@@ -399,6 +399,9 @@ importers:
       "@whoshuman/shared-events":
         specifier: workspace:*
         version: link:../../packages/shared-events
+      "@whoshuman/shared-types":
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1

@@ -1,9 +1,9 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ServerSocketEvents } from "@whoshuman/shared-events";
 import type {
-  FriendNotificationPayload,
   GameStateSnapshotPayload,
-  MatchFoundPayload
+  MatchFoundPayload,
+  NotificationEnvelope
 } from "@whoshuman/shared-types";
 import type { RealtimeServer } from "./realtime.types";
 
@@ -43,24 +43,14 @@ export class RealtimeRoomsService {
     return `user:${userId}`;
   }
 
-  notifyFriendRequestReceived(payload: FriendNotificationPayload) {
+  deliverNotification(payload: NotificationEnvelope) {
     if (!this.server) {
-      this.logger.warn("Cannot notify friend request: Socket.IO server is not ready");
+      this.logger.warn("Cannot deliver notification: Socket.IO server is not ready");
       return;
     }
     this.server
       .to(this.userRoom(payload.recipientId))
-      .emit(ServerSocketEvents.friendRequestReceived, payload);
-  }
-
-  notifyFriendRequestAccepted(payload: FriendNotificationPayload) {
-    if (!this.server) {
-      this.logger.warn("Cannot notify friend accept: Socket.IO server is not ready");
-      return;
-    }
-    this.server
-      .to(this.userRoom(payload.recipientId))
-      .emit(ServerSocketEvents.friendRequestAccepted, payload);
+      .emit(ServerSocketEvents.notification, payload);
   }
 
   broadcastGameState(payload: GameStateSnapshotPayload) {

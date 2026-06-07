@@ -1,5 +1,5 @@
 import { Test } from "@nestjs/testing";
-import { UserSubjects } from "@whoshuman/shared-events";
+import { NotificationSubjects } from "@whoshuman/shared-events";
 import { FriendsService } from "./friends.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { NATS_SERVICE } from "../config";
@@ -83,8 +83,8 @@ describe("FriendsService", () => {
         data: { requesterId: "alice", addresseeId: "bob", status: "PENDING" }
       });
       expect(client.emit).toHaveBeenCalledWith(
-        UserSubjects.friendRequestReceived,
-        expect.objectContaining({ recipientId: "bob", friendshipId: "f1" })
+        NotificationSubjects.send,
+        expect.objectContaining({ recipientId: "bob", type: "friend.request.received" })
       );
     });
 
@@ -131,8 +131,8 @@ describe("FriendsService", () => {
         data: { status: "ACCEPTED" }
       });
       expect(client.emit).toHaveBeenCalledWith(
-        UserSubjects.friendRequestAccepted,
-        expect.objectContaining({ recipientId: "alice", friendshipId: "f1" })
+        NotificationSubjects.send,
+        expect.objectContaining({ recipientId: "alice", type: "friend.request.accepted" })
       );
     });
 

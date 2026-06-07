@@ -17,8 +17,6 @@ export const UserSubjects = {
   removeFriend: "users.removeFriend",
   blockUser: "users.blockUser",
   unblockUser: "users.unblockUser",
-  friendRequestReceived: "users.friendRequestReceived",
-  friendRequestAccepted: "users.friendRequestAccepted",
   health: "users.health"
 } as const;
 
@@ -49,6 +47,8 @@ export const ChatSubjects = {
 } as const;
 
 export const NotificationSubjects = {
+  send: "notifications.send",
+  deliver: "notifications.deliver",
   health: "notification.health"
 } as const;
 
@@ -72,8 +72,7 @@ export const ServerSocketEvents = {
   matchFound: "matchmaking:match-found",
   gameJoined: "game:joined",
   gameLeft: "game:left",
-  friendRequestReceived: "friend:request-received",
-  friendRequestAccepted: "friend:request-accepted",
+  notification: "notification",
   gameState: "game:state"
 } as const;
 
