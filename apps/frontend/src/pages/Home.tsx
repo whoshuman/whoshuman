@@ -29,10 +29,6 @@ const loginButtonStyle: CSSProperties = {
   boxShadow: "0 0 22px rgb(255 43 214 / 0.42)"
 };
 
-const registerButtonStyle: CSSProperties = {
-  boxShadow: "0 0 22px rgb(36 245 255 / 0.38)"
-};
-
 const optionButtonShadow = {
   cyan: "0 0 24px rgb(36 245 255 / 0.42)",
   magenta: "0 0 24px rgb(255 43 214 / 0.42)"
@@ -56,7 +52,7 @@ function Home() {
 
       <HomeScene isZoomed={isZoomed} />
 
-      {/* Landing inicial con titulo, claim y accesos de auth. */}
+      {/* Landing inicial con titulo, claim y acceso al juego. */}
       <section
         className={`relative z-10 flex min-h-screen flex-col items-center justify-center px-8 pb-20 pt-16 text-center transition duration-700 ${
           isZoomed ? "pointer-events-none translate-y-16 opacity-0" : "translate-y-10 opacity-100"
@@ -78,25 +74,14 @@ function Home() {
           - Engaña · Observa · Sobrevive -
         </p>
 
-        <div className="mt-12 flex items-center gap-8">
-          <button
-            type="button"
-            onClick={() => setIsZoomed(true)}
-            className="min-w-64 border-2 border-neon-magenta bg-bg/65 px-10 py-4 font-display text-2xl font-bold uppercase text-text-main transition hover:bg-neon-magenta/20"
-            style={loginButtonStyle}
-          >
-            Login
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsZoomed(true)}
-            className="min-w-64 border-2 border-neon-cyan bg-bg/65 px-10 py-4 font-display text-2xl font-bold uppercase text-text-main transition hover:bg-neon-cyan/20"
-            style={registerButtonStyle}
-          >
-            Registro
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsZoomed(true)}
+          className="mt-10 border-2 border-neon-magenta bg-bg/65 px-16 py-4 font-display text-2xl font-bold uppercase text-text-main transition hover:bg-neon-magenta/20"
+          style={loginButtonStyle}
+        >
+          Jugar
+        </button>
       </section>
 
       {/* Menu provisional tras el zoom. Se cambiara cuando definamos rutas/acciones finales. */}
