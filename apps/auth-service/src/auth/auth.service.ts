@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Injectable } from "@nestjs/common";
 import { JwtService, type JwtSignOptions } from "@nestjs/jwt";
 import { RpcException } from "@nestjs/microservices";
+import type { User } from "@prisma/client";
 import type {
   AuthLogoutResponse,
   AuthRefreshResponse,
@@ -25,11 +26,6 @@ import { RegisterDto } from "./dto/register.dto";
  * de fuerza bruta, pero rápido para el usuario al hacer login.
  */
 const SALT_ROUNDS = 10;
-
-type UserRecord = Omit<PublicUser, "createdAt" | "updatedAt"> & {
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 /**
  * AuthService concentra TODA la lógica de autenticación.
@@ -57,7 +53,7 @@ export class AuthService {
    * mismos campos MENOS el passwordHash. Es la única forma en que un usuario
    * sale de este servicio, así garantizamos que el hash nunca se filtra.
    */
-  private toPublicUser(user: UserRecord): PublicUser {
+  private toPublicUser(user: User): PublicUser {
     return {
       id: user.id,
       email: user.email,

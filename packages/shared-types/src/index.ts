@@ -130,3 +130,68 @@ export interface MatchmakingLeaveQueuePayload {
   lobbyId: string;
   socketId: string;
 }
+
+export type FriendshipStatus = "PENDING" | "ACCEPTED" | "BLOCKED";
+
+export interface Friendship {
+  id: string;
+  status: FriendshipStatus;
+  user: PublicUser; // the "other" user, relative to whoever asked
+  createdAt: string;
+}
+
+export interface FriendActionResponse {
+  success: boolean;
+}
+
+// NATS request payloads (userId/requester is injected by the gateway from the JWT)
+
+/** Carries the user performing the action (injected from the JWT by the gateway). */
+export interface UserScopedPayload {
+  userId: string;
+}
+
+/** A user acting on a specific friendship. */
+export interface FriendshipScopedPayload extends UserScopedPayload {
+  friendshipId: string;
+}
+
+export interface SendFriendRequestPayload {
+  requesterId: string;
+  addresseeId: string;
+}
+
+export interface RespondFriendRequestPayload extends FriendshipScopedPayload {
+  accept: boolean;
+}
+
+export type RemoveFriendPayload = FriendshipScopedPayload;
+
+/** A user (blocker) acting on another user (target). */
+export interface BlockScopedPayload {
+  blockerId: string;
+  targetId: string;
+}
+
+export type BlockUserPayload = BlockScopedPayload;
+export type UnblockUserPayload = BlockScopedPayload;
+
+export type FindFriendsPayload = UserScopedPayload;
+
+export type FindPendingRequestsPayload = UserScopedPayload;
+
+// Notification envelope — generic notification contract
+export interface NotificationActor {
+  id: string;
+  username: string;
+  avatar: string | null;
+}
+
+export type NotificationType = "friend.request.received" | "friend.request.accepted";
+
+export interface NotificationEnvelope {
+  recipientId: string; // who should receive it
+  type: NotificationType;
+  from: NotificationActor; // who triggered it (minimal — no email)
+  data?: Record<string, unknown>; // type-specific extra, e.g. { friendshipId }
+}

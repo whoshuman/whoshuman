@@ -9,5 +9,9 @@
   "tokenMissing": "Falta la cabecera Authorization: Bearer <token>",
   "tokenInvalidOrExpired": "Token inválido o caducado",
   "serviceUnavailable": "El servicio no respondió a tiempo",
-  "unexpected": "Error inesperado"
+  "unexpected": "Error inesperado",
+  "cannotFriendYourself": "No puedes enviarte una solicitud de amistad a ti mismo",
+  "alreadyFriends": "Ya existe una relación de amistad con este usuario",
+  "friendshipNotFound": "Solicitud de amistad no encontrada",
+  "notAllowed": "No tienes permiso para realizar esta acción"
 }

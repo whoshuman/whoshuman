@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AcceptLanguageResolver, I18nModule, QueryResolver } from "nestjs-i18n";
 import { AuthModule } from "./auth/auth.module";
 import { envs } from "./config";
+import { FriendsModule } from "./friends/friends.module";
 import { HelloController } from "./hello.controller";
 import { NatsModule } from "./transports/nats.module";
 
@@ -28,7 +29,8 @@ import { NatsModule } from "./transports/nats.module";
       }
     ]),
     NatsModule,
-    AuthModule
+    AuthModule,
+    FriendsModule
   ],
   controllers: [HelloController],
   providers: [

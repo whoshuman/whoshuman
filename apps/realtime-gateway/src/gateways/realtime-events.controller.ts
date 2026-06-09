@@ -1,7 +1,11 @@
 import { Controller, Logger } from "@nestjs/common";
 import { EventPattern, Payload } from "@nestjs/microservices";
-import { GameSubjects, MatchmakingSubjects } from "@whoshuman/shared-events";
-import type { GameStateSnapshotPayload, MatchFoundPayload } from "@whoshuman/shared-types";
+import { GameSubjects, MatchmakingSubjects, NotificationSubjects } from "@whoshuman/shared-events";
+import type {
+  GameStateSnapshotPayload,
+  MatchFoundPayload,
+  NotificationEnvelope
+} from "@whoshuman/shared-types";
 import { RealtimeRoomsService } from "./realtime-rooms.service";
 
 @Controller()
@@ -28,5 +32,14 @@ export class RealtimeEventsController {
     }
 
     this.rooms.broadcastMatchFound(payload);
+  }
+
+  @EventPattern(NotificationSubjects.deliver)
+  handleNotificationDeliver(@Payload() payload: NotificationEnvelope) {
+    if (!payload?.recipientId) {
+      this.logger.warn("Ignoring notification deliver without recipientId");
+      return;
+    }
+    this.rooms.deliverNotification(payload);
   }
 }
