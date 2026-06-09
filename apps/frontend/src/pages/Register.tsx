@@ -1,8 +1,11 @@
+import { useTranslation } from "react-i18next";
+
 function Register() {
+  const { t } = useTranslation();
   return (
     <section>
-      <h1>Registro</h1>
-      <p>Página de creación de cuenta.</p>
+      <h1>{t("register.title")}</h1>
+      <p>{t("register.subtitle")}</p>
     </section>
   );
 }

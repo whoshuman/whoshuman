@@ -1,15 +1,13 @@
+import { useTranslation } from "react-i18next";
+
 function Home() {
+  const { t } = useTranslation();
   return (
     <main>
       <section>
-        <p>
-          Proyecto final 42 | Transcendence | Developed by: Jdelorme, smarin-a, zlu, descamil,
-          ldiaz-ra
-        </p>
-
-        <h1>Who's Human</h1>
-
-        <p>Engaña. Observa. Sobrevive.</p>
+        <p>{t("home.credits")}</p>
+        <h1>{t("home.title")}</h1>
+        <p>{t("home.tagline")}</p>
       </section>
     </main>
   );
