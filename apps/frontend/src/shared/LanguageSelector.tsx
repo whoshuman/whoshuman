@@ -14,7 +14,10 @@ function LanguageSelector() {
       {LANGUAGES.map(({ code, label }) => (
         <button
           key={code}
-          onClick={() => void i18n.changeLanguage(code)}
+          onClick={() => {
+            localStorage.setItem("lang", code);
+            void i18n.changeLanguage(code);
+          }}
           className={
             i18n.language === code
               ? "border border-neon-cyan bg-neon-cyan/10 px-3 py-1 text-sm font-bold text-neon-cyan font-display tracking-wider"
