@@ -12,7 +12,7 @@ COPY packages ./packages
 COPY apps/matchmaking-service/package.json ./apps/matchmaking-service/package.json
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @whoshuman/shared-events build
+RUN pnpm --filter @whoshuman/shared-events build && pnpm --filter @whoshuman/shared-types build
 
 COPY apps/matchmaking-service ./apps/matchmaking-service
 
