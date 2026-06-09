@@ -1,5 +1,6 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import LanguageSelector from "../shared/LanguageSelector";
 
 function AppLayout() {
   const { t } = useTranslation();
@@ -14,6 +15,7 @@ function AppLayout() {
           <Link to="/game">{t("nav.game")}</Link>
           <Link to="/design-system">{t("nav.designSystem")}</Link>
         </nav>
+        <LanguageSelector />
       </header>
 
       <div>
