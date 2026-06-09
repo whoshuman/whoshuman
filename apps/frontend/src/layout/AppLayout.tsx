@@ -17,10 +17,6 @@ function AppLayout() {
       <div>
         <Outlet />
       </div>
-
-      <footer>
-        <p>Footer placeholder</p>
-      </footer>
     </div>
   );
 }
