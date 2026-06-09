@@ -1,5 +1,5 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { ClientProxy, RpcException } from "@nestjs/microservices";
+import { Injectable, Logger } from "@nestjs/common";
+import { RpcException } from "@nestjs/microservices";
 import type { User } from "@prisma/client";
 import { NotificationSubjects } from "@whoshuman/shared-events";
 import type {
@@ -16,15 +16,27 @@ import type {
   SendFriendRequestPayload,
   UnblockUserPayload
 } from "@whoshuman/shared-types";
-import { NATS_SERVICE } from "../config";
+import { MessagingService } from "../common";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class FriendsService {
+  private readonly logger = new Logger(FriendsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(NATS_SERVICE) private readonly client: ClientProxy
+    private readonly messaging: MessagingService
   ) {}
+
+  /** Emite una notificación sin que un fallo de entrega rompa la operación principal. */
+  private async notify(envelope: NotificationEnvelope): Promise<void> {
+    try {
+      await this.messaging.publish(NotificationSubjects.send, envelope);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`No se pudo publicar la notificación: ${message}`);
+    }
+  }
 
   private fail(statusCode: number, message: string): never {
     throw new RpcException({ statusCode, message });
@@ -78,12 +90,12 @@ export class FriendsService {
       where: { id: requesterId }
     });
     if (requester) {
-      this.client.emit(NotificationSubjects.send, {
+      await this.notify({
         recipientId: addresseeId,
         type: "friend.request.received",
         from: this.toActor(requester),
         data: { friendshipId: friendship.id }
-      } satisfies NotificationEnvelope);
+      });
     }
 
     return { success: true };
@@ -112,12 +124,12 @@ export class FriendsService {
       where: { id: userId }
     });
     if (accepter) {
-      this.client.emit(NotificationSubjects.send, {
+      await this.notify({
         recipientId: friendship.requesterId,
         type: "friend.request.accepted",
         from: this.toActor(accepter),
         data: { friendshipId }
-      } satisfies NotificationEnvelope);
+      });
     }
 
     return { success: true };

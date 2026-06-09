@@ -2,7 +2,7 @@ import { Test } from "@nestjs/testing";
 import { NotificationSubjects } from "@whoshuman/shared-events";
 import { FriendsService } from "./friends.service";
 import { PrismaService } from "../prisma/prisma.service";
-import { NATS_SERVICE } from "../config";
+import { MessagingService } from "../common";
 
 interface PrismaMock {
   user: { findUnique: jest.Mock };
@@ -34,7 +34,7 @@ function dbUser(overrides: Record<string, unknown> = {}) {
 describe("FriendsService", () => {
   let service: FriendsService;
   let prisma: PrismaMock;
-  let client: { emit: jest.Mock };
+  let messaging: { publish: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -50,13 +50,13 @@ describe("FriendsService", () => {
         upsert: jest.fn()
       }
     };
-    client = { emit: jest.fn().mockReturnValue({ subscribe: jest.fn() }) };
+    messaging = { publish: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         FriendsService,
         { provide: PrismaService, useValue: prisma },
-        { provide: NATS_SERVICE, useValue: client }
+        { provide: MessagingService, useValue: messaging }
       ]
     }).compile();
 
@@ -82,7 +82,7 @@ describe("FriendsService", () => {
       expect(prisma.friendship.create).toHaveBeenCalledWith({
         data: { requesterId: "alice", addresseeId: "bob", status: "PENDING" }
       });
-      expect(client.emit).toHaveBeenCalledWith(
+      expect(messaging.publish).toHaveBeenCalledWith(
         NotificationSubjects.send,
         expect.objectContaining({ recipientId: "bob", type: "friend.request.received" })
       );
@@ -95,7 +95,7 @@ describe("FriendsService", () => {
 
       expect(result).toEqual({ success: true });
       expect(prisma.friendship.create).not.toHaveBeenCalled();
-      expect(client.emit).not.toHaveBeenCalled();
+      expect(messaging.publish).not.toHaveBeenCalled();
     });
 
     it("rejects with alreadyFriends when a non-blocked relationship exists", async () => {
@@ -105,6 +105,18 @@ describe("FriendsService", () => {
         service.sendRequest({ requesterId: "alice", addresseeId: "bob" })
       ).rejects.toThrow("alreadyFriends");
       expect(prisma.friendship.create).not.toHaveBeenCalled();
+    });
+
+    it("succeeds even if the notification publish fails (side-effect must not break the request)", async () => {
+      prisma.friendship.findFirst.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue(dbUser({ id: "alice" }));
+      prisma.friendship.create.mockResolvedValue({ id: "f1", addresseeId: "bob" });
+      messaging.publish.mockRejectedValue(new Error("nats down"));
+
+      const result = await service.sendRequest({ requesterId: "alice", addresseeId: "bob" });
+
+      expect(result).toEqual({ success: true });
+      expect(prisma.friendship.create).toHaveBeenCalled();
     });
   });
 
@@ -130,7 +142,7 @@ describe("FriendsService", () => {
         where: { id: "f1" },
         data: { status: "ACCEPTED" }
       });
-      expect(client.emit).toHaveBeenCalledWith(
+      expect(messaging.publish).toHaveBeenCalledWith(
         NotificationSubjects.send,
         expect.objectContaining({ recipientId: "alice", type: "friend.request.accepted" })
       );
@@ -153,7 +165,7 @@ describe("FriendsService", () => {
 
       expect(result).toEqual({ success: true });
       expect(prisma.friendship.delete).toHaveBeenCalledWith({ where: { id: "f1" } });
-      expect(client.emit).not.toHaveBeenCalled();
+      expect(messaging.publish).not.toHaveBeenCalled();
     });
 
     it("throws notAllowed when responder is not the addressee", async () => {

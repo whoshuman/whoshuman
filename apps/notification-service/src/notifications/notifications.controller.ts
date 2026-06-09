@@ -1,22 +1,27 @@
-import { Controller, Inject, Logger } from "@nestjs/common";
-import { ClientProxy, EventPattern, Payload } from "@nestjs/microservices";
+import { Controller, Logger } from "@nestjs/common";
+import { EventPattern, Payload } from "@nestjs/microservices";
 import { NotificationSubjects } from "@whoshuman/shared-events";
 import type { NotificationEnvelope } from "@whoshuman/shared-types";
-import { NATS_SERVICE } from "../config";
+import { MessagingService } from "../common";
 
 @Controller()
 export class NotificationsController {
   private readonly logger = new Logger(NotificationsController.name);
 
-  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
+  constructor(private readonly messaging: MessagingService) {}
 
   @EventPattern(NotificationSubjects.send)
-  handleSend(@Payload() envelope: NotificationEnvelope) {
+  async handleSend(@Payload() envelope: NotificationEnvelope): Promise<void> {
     if (!envelope?.recipientId) {
       this.logger.warn("Ignoring notification without recipientId");
       return;
     }
     // Pass-through: today it just forwards. Persistence / multi-channel fan-out goes here later.
-    this.client.emit(NotificationSubjects.deliver, envelope);
+    try {
+      await this.messaging.publish(NotificationSubjects.deliver, envelope);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`No se pudo entregar la notificación: ${message}`);
+    }
   }
 }
