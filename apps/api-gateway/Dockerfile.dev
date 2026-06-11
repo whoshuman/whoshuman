@@ -12,7 +12,7 @@ COPY packages ./packages
 COPY apps/api-gateway/package.json ./apps/api-gateway/package.json
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @whoshuman/shared-events build && pnpm --filter @whoshuman/shared-types build && pnpm --filter @whoshuman/shared-validation build
+RUN pnpm --filter '@whoshuman/api-gateway^...' --if-present build
 
 COPY apps/api-gateway ./apps/api-gateway
 

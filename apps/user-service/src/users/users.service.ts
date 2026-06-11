@@ -75,6 +75,14 @@ export class UsersService {
     });
     if (!me) this.fail(404, "userNotFound");
 
+    // No-op: si el body trae exactamente los valores actuales, no ejecutamos el
+    // UPDATE. Así `updatedAt` solo cambia con ediciones REALES (Prisma lo bumpea
+    // en cada update aunque los datos sean idénticos). Aprovechamos el `me` que
+    // ya leímos para el check del tombstone — cero queries extra.
+    if (me.username === username && me.avatar === avatar && me.bio === bio) {
+      return toPublicUser(me);
+    }
+
     // Unicidad de username contra OTROS usuarios. No hace falta excluir borrados:
     // sus usernames están anonimizados (deleted_<id>), nunca chocan con uno real.
     const clash = await this.prisma.user.findFirst({

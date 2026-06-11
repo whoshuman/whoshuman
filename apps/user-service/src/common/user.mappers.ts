@@ -3,15 +3,10 @@ import type { NotificationActor, PublicUser, UserProfile } from "@whoshuman/shar
 
 /**
  * Proyección pública de la tabla User (lo que devuelve un `select` sin email).
- * La usan las queries de perfil público y búsqueda.
+ * Se deriva de UserProfile (misma forma, pero con la fecha cruda de la BD) para
+ * no repetir los campos: si UserProfile cambia, este tipo se actualiza solo.
  */
-export type PublicUserRow = {
-  id: string;
-  username: string;
-  avatar: string | null;
-  bio: string | null;
-  createdAt: Date;
-};
+export type PublicUserRow = Omit<UserProfile, "createdAt"> & { createdAt: Date };
 
 /**
  * Mappers de User → tipos compartidos. Viven aquí (y no en cada service) porque

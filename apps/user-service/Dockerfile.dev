@@ -12,7 +12,7 @@ COPY packages ./packages
 COPY apps/user-service/package.json ./apps/user-service/package.json
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @whoshuman/shared-events build && pnpm --filter @whoshuman/shared-types build && pnpm --filter @whoshuman/shared-utils build
+RUN pnpm --filter '@whoshuman/user-service^...' --if-present build
 
 COPY apps/user-service ./apps/user-service
 

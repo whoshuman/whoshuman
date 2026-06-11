@@ -105,6 +105,18 @@ describe("UsersService", () => {
         data: { username: "alice", avatar: null, bio: "hola" }
       });
     });
+    it("no-op: si los valores son idénticos, no ejecuta UPDATE (updatedAt intacto)", async () => {
+      prisma.user.findFirst.mockResolvedValueOnce(dbUser()); // username alice, avatar/bio null
+      const result = await service.updateProfile({
+        userId: "alice",
+        username: "alice",
+        avatar: null,
+        bio: null
+      });
+      expect(result.username).toBe("alice");
+      expect(prisma.user.update).not.toHaveBeenCalled();
+      expect(prisma.user.findFirst).toHaveBeenCalledTimes(1); // tampoco chequea colisión
+    });
     it("404 si la cuenta está borrada (no se puede editar el tombstone)", async () => {
       prisma.user.findFirst.mockResolvedValueOnce(null); // borrado o inexistente
       await expect(
