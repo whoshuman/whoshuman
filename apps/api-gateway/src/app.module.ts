@@ -8,6 +8,7 @@ import { envs } from "./config";
 import { FriendsModule } from "./friends/friends.module";
 import { HelloController } from "./hello.controller";
 import { NatsModule } from "./transports/nats.module";
+import { UsersModule } from "./users/users.module";
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { NatsModule } from "./transports/nats.module";
     ]),
     NatsModule,
     AuthModule,
-    FriendsModule
+    FriendsModule,
+    UsersModule
   ],
   controllers: [HelloController],
   providers: [

@@ -17,7 +17,10 @@ export const UserSubjects = {
   removeFriend: "users.removeFriend",
   blockUser: "users.blockUser",
   unblockUser: "users.unblockUser",
-  health: "users.health"
+  health: "users.health",
+  findMe: "users.findMe",
+  deleteAccount: "users.deleteAccount",
+  searchUsers: "users.searchUsers"
 } as const;
 
 export const GameSubjects = {

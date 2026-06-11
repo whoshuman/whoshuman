@@ -8,15 +8,13 @@ import type {
   FindPendingRequestsPayload,
   FriendActionResponse,
   Friendship,
-  NotificationActor,
   NotificationEnvelope,
-  PublicUser,
   RemoveFriendPayload,
   RespondFriendRequestPayload,
   SendFriendRequestPayload,
   UnblockUserPayload
 } from "@whoshuman/shared-types";
-import { MessagingService } from "../common";
+import { MessagingService, toActor, toPublicUser } from "../common";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
@@ -40,22 +38,6 @@ export class FriendsService {
 
   private fail(statusCode: number, message: string): never {
     throw new RpcException({ statusCode, message });
-  }
-
-  private toPublicUser(u: User): PublicUser {
-    return {
-      id: u.id,
-      email: u.email,
-      username: u.username,
-      avatar: u.avatar,
-      bio: u.bio,
-      createdAt: u.createdAt.toISOString(),
-      updatedAt: u.updatedAt.toISOString()
-    };
-  }
-
-  private toActor(u: User): NotificationActor {
-    return { id: u.id, username: u.username, avatar: u.avatar };
   }
 
   /** Find any relationship between two users, in EITHER direction. */
@@ -93,7 +75,7 @@ export class FriendsService {
       await this.notify({
         recipientId: addresseeId,
         type: "friend.request.received",
-        from: this.toActor(requester),
+        from: toActor(requester),
         data: { friendshipId: friendship.id }
       });
     }
@@ -127,7 +109,7 @@ export class FriendsService {
       await this.notify({
         recipientId: friendship.requesterId,
         type: "friend.request.accepted",
-        from: this.toActor(accepter),
+        from: toActor(accepter),
         data: { friendshipId }
       });
     }
@@ -205,7 +187,7 @@ export class FriendsService {
     return {
       id: row.id,
       status: row.status,
-      user: this.toPublicUser(other),
+      user: toPublicUser(other),
       createdAt: row.createdAt.toISOString()
     };
   }
