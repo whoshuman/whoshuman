@@ -140,9 +140,12 @@ export interface Friendship {
   createdAt: string;
 }
 
-export interface FriendActionResponse {
+/** Generic success envelope for action endpoints (delete, block, respond…). */
+export interface ActionResponse {
   success: boolean;
 }
+
+export type FriendActionResponse = ActionResponse;
 
 // NATS request payloads (userId/requester is injected by the gateway from the JWT)
 
@@ -194,4 +197,37 @@ export interface NotificationEnvelope {
   type: NotificationType;
   from: NotificationActor; // who triggered it (minimal — no email)
   data?: Record<string, unknown>; // type-specific extra, e.g. { friendshipId }
+}
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  avatar: string | null;
+  bio: string | null;
+  createdAt: string;
+}
+
+export interface PageQuery {
+  page?: number;
+  limit?: number;
+}
+export interface PageMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+export interface Paginated<T> {
+  data: T[];
+  meta: PageMeta;
+}
+
+export interface UpdateProfilePayload extends UserScopedPayload {
+  username: string;
+  avatar: string | null;
+  bio: string | null;
+}
+/** El userId es quien busca (del JWT): se usa para excluirle de sus propios resultados. */
+export interface SearchUsersPayload extends UserScopedPayload, PageQuery {
+  query?: string;
 }
