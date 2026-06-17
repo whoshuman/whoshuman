@@ -13,7 +13,7 @@ export class MatchmakingController {
   }
 
   @EventPattern(MatchmakingSubjects.leaveQueue)
-  handleLeaveQueue(@Payload() payload: unknown) {
-    this.matchmaking.leaveQueue(payload);
+  async handleLeaveQueue(@Payload() payload: unknown) {
+    await this.matchmaking.leaveQueue(payload);
   }
 }

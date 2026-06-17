@@ -7,6 +7,7 @@ import type {
   GameStateSnapshotPayload,
   LobbyJoinPayload,
   LobbyLeavePayload,
+  LobbyStatePayload,
   MatchFoundPayload,
   NotificationEnvelope,
   PlayerInputPayload
@@ -24,6 +25,7 @@ export interface ServerToClientEvents {
   [ServerSocketEvents.lobbyJoined]: (payload: { lobbyId: string }) => void;
   [ServerSocketEvents.lobbyLeft]: (payload: { lobbyId: string }) => void;
   [ServerSocketEvents.matchFound]: (payload: MatchFoundPayload) => void;
+  [ServerSocketEvents.lobbyState]: (payload: LobbyStatePayload) => void;
   [ServerSocketEvents.notification]: (payload: NotificationEnvelope) => void;
   [ServerSocketEvents.gameJoined]: (payload: { gameId: string }) => void;
   [ServerSocketEvents.gameLeft]: (payload: { gameId: string }) => void;

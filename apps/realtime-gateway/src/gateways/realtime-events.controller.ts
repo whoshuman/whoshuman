@@ -3,6 +3,7 @@ import { EventPattern, Payload } from "@nestjs/microservices";
 import { GameSubjects, MatchmakingSubjects, NotificationSubjects } from "@whoshuman/shared-events";
 import type {
   GameStateSnapshotPayload,
+  LobbyStatePayload,
   MatchFoundPayload,
   NotificationEnvelope
 } from "@whoshuman/shared-types";
@@ -32,6 +33,16 @@ export class RealtimeEventsController {
     }
 
     this.rooms.broadcastMatchFound(payload);
+  }
+
+  @EventPattern(MatchmakingSubjects.lobbyUpdated)
+  handleLobbyUpdated(@Payload() payload: LobbyStatePayload) {
+    if (!payload?.lobbyId) {
+      this.logger.warn("Ignoring lobby update without lobbyId");
+      return;
+    }
+
+    this.rooms.broadcastLobbyState(payload);
   }
 
   @EventPattern(NotificationSubjects.deliver)

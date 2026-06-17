@@ -39,6 +39,7 @@ export const MatchmakingSubjects = {
   joinQueue: "matchmaking.joinQueue",
   leaveQueue: "matchmaking.leaveQueue",
   matchFound: "matchmaking.match.found",
+  lobbyUpdated: "matchmaking.lobby.updated",
   health: "matchmaking.health"
 } as const;
 
@@ -76,7 +77,8 @@ export const ServerSocketEvents = {
   gameJoined: "game:joined",
   gameLeft: "game:left",
   notification: "notification",
-  gameState: "game:state"
+  gameState: "game:state",
+  lobbyState: "lobby:state"
 } as const;
 
 export type AuthSubject = (typeof AuthSubjects)[keyof typeof AuthSubjects];

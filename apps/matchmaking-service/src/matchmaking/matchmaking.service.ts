@@ -2,9 +2,12 @@ import { randomUUID } from "node:crypto";
 import { Injectable, Logger } from "@nestjs/common";
 import { MatchmakingSubjects } from "@whoshuman/shared-events";
 import type {
+  LobbyStatePayload,
+  LobbyStatus,
   MatchFoundPayload,
   MatchmakingJoinQueuePayload,
-  MatchmakingLeaveQueuePayload
+  MatchmakingLeaveQueuePayload,
+  PlayerRole
 } from "@whoshuman/shared-types";
 import { MessagingService } from "../common/messaging.service";
 import { envs } from "../config";
@@ -15,10 +18,18 @@ interface QueuedPlayer {
   socketId: string;
 }
 
+interface Lobby {
+  lobbyId: string;
+  players: QueuedPlayer[];
+  status: LobbyStatus;
+  startsAt: number | null;
+  countdownTimer: NodeJS.Timeout | null;
+}
+
 @Injectable()
 export class MatchmakingService {
   private readonly logger = new Logger(MatchmakingService.name);
-  private readonly queues = new Map<string, QueuedPlayer[]>();
+  private readonly lobbies = new Map<string, Lobby>();
 
   constructor(private readonly messaging: MessagingService) {}
 
@@ -35,100 +46,185 @@ export class MatchmakingService {
       socketId: payload.socketId
     };
 
-    this.removePlayerFromAllQueues(player.userId, player.socketId);
+    this.removePlayerFromAllLobbies(player.userId, player.socketId);
 
-    const queue = this.getQueue(lobbyId);
-    queue.push(player);
-    this.logger.log(`Player queued: user=${player.userId} lobby=${lobbyId} size=${queue.length}`);
+    const lobby = this.getLobby(lobbyId);
+    lobby.players.push(player);
+    this.logger.log(
+      `Player queued: user=${player.userId} lobby=${lobbyId} size=${lobby.players.length}`
+    );
 
-    await this.createMatches(lobbyId);
+    await this.evaluate(lobby);
   }
 
-  leaveQueue(payload: unknown) {
+  async leaveQueue(payload: unknown) {
     if (!this.isLeaveQueuePayload(payload)) {
       this.logger.warn("Ignoring leaveQueue with invalid payload");
       return;
     }
 
     const lobbyId = this.normalizeId(payload.lobbyId);
-    const removed = this.removePlayerFromQueue(lobbyId, payload.userId, payload.socketId);
+    const removed = this.removePlayerFromLobby(lobbyId, payload.userId, payload.socketId);
 
-    if (removed) {
-      this.logger.log(`Player left queue: user=${payload.userId} lobby=${lobbyId}`);
+    if (!removed) {
+      this.logger.debug(
+        `Ignoring leave for non-queued player: user=${payload.userId} lobby=${lobbyId}`
+      );
       return;
     }
 
-    this.logger.debug(
-      `Ignoring leave for non-queued player: user=${payload.userId} lobby=${lobbyId}`
-    );
+    this.logger.log(`Player left queue: user=${payload.userId} lobby=${lobbyId}`);
+    const lobby = this.lobbies.get(lobbyId);
+    if (lobby) await this.evaluate(lobby);
   }
 
   getQueueSize(lobbyId: string) {
-    return this.queues.get(this.normalizeId(lobbyId))?.length ?? 0;
+    return this.lobbies.get(this.normalizeId(lobbyId))?.players.length ?? 0;
   }
 
-  private async createMatches(lobbyId: string) {
-    const queue = this.getQueue(lobbyId);
-
-    while (queue.length >= envs.matchmakingMinPlayers) {
-      const players = queue.splice(0, envs.matchmakingMinPlayers);
-      const event: MatchFoundPayload = {
-        lobbyId,
-        gameId: randomUUID(),
-        playerIds: players.map((player) => player.userId)
-      };
-
-      try {
-        await this.messaging.publish(MatchmakingSubjects.matchFound, event);
-        this.logger.log(`Match found: game=${event.gameId} lobby=${lobbyId}`);
-      } catch (error) {
-        queue.unshift(...players);
-        const message = error instanceof Error ? error.message : String(error);
-        this.logger.warn(`Failed to publish match found: ${message}`);
-        return;
-      }
+  /**
+   * Decide qué hacer tras un cambio de jugadores y avisa a la sala.
+   *   - lleno (>= max) → arranca ya.
+   *   - alcanza el mínimo en "waiting" → empieza el countdown.
+   *   - baja del mínimo en "starting" → cancela el countdown.
+   * Siempre emite `lobby.updated` para que el frontend vea la sala en vivo.
+   */
+  private async evaluate(lobby: Lobby) {
+    if (lobby.players.length >= envs.matchmakingMaxPlayers) {
+      this.cancelCountdown(lobby);
+      await this.startMatch(lobby);
+      return;
     }
 
-    this.deleteEmptyQueue(lobbyId);
+    if (lobby.players.length >= envs.matchmakingMinPlayers && lobby.status === "waiting") {
+      this.beginCountdown(lobby);
+    } else if (lobby.players.length < envs.matchmakingMinPlayers && lobby.status === "starting") {
+      this.cancelCountdown(lobby);
+    }
+
+    await this.emitLobbyState(lobby);
   }
 
-  private getQueue(lobbyId: string) {
-    const currentQueue = this.queues.get(lobbyId);
-    if (currentQueue) return currentQueue;
-
-    const queue: QueuedPlayer[] = [];
-    this.queues.set(lobbyId, queue);
-    return queue;
+  private beginCountdown(lobby: Lobby) {
+    lobby.status = "starting";
+    lobby.startsAt = Date.now() + envs.matchmakingCountdownMs;
+    lobby.countdownTimer = setTimeout(() => {
+      void this.onCountdownExpire(lobby.lobbyId);
+    }, envs.matchmakingCountdownMs);
+    this.logger.log(`Countdown started: lobby=${lobby.lobbyId} startsAt=${lobby.startsAt}`);
   }
 
-  private removePlayerFromAllQueues(userId: string, socketId: string) {
-    for (const [lobbyId] of this.queues) {
-      this.removePlayerFromQueue(lobbyId, userId, socketId);
+  private cancelCountdown(lobby: Lobby) {
+    if (lobby.countdownTimer) clearTimeout(lobby.countdownTimer);
+    lobby.countdownTimer = null;
+    lobby.startsAt = null;
+    lobby.status = "waiting";
+  }
+
+  private async onCountdownExpire(lobbyId: string) {
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby || lobby.players.length < envs.matchmakingMinPlayers) return;
+    await this.startMatch(lobby);
+  }
+
+  /** Saca min..max jugadores, les asigna roles y emite match.found. */
+  private async startMatch(lobby: Lobby) {
+    const take = Math.min(lobby.players.length, envs.matchmakingMaxPlayers);
+    const players = lobby.players.splice(0, take);
+
+    const event: MatchFoundPayload = {
+      lobbyId: lobby.lobbyId,
+      gameId: randomUUID(),
+      players: this.assignRoles(players)
+    };
+
+    try {
+      await this.messaging.publish(MatchmakingSubjects.matchFound, event);
+      this.logger.log(`Match found: game=${event.gameId} lobby=${lobby.lobbyId}`);
+    } catch (error) {
+      lobby.players.unshift(...players); // devolver a la sala si NATS falla
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Failed to publish match found: ${message}`);
+      await this.emitLobbyState(lobby);
+      return;
+    }
+
+    this.cancelCountdown(lobby);
+    if (lobby.players.length === 0) {
+      this.lobbies.delete(lobby.lobbyId);
+      return;
+    }
+    await this.evaluate(lobby); // por si quedan suficientes para otra partida
+  }
+
+  /** 1 seeker al azar, el resto hiders. */
+  private assignRoles(players: QueuedPlayer[]): { userId: string; role: PlayerRole }[] {
+    const seekerIndex = Math.floor(Math.random() * players.length);
+    return players.map((player, index) => ({
+      userId: player.userId,
+      role: index === seekerIndex ? "seeker" : "hider"
+    }));
+  }
+
+  private async emitLobbyState(lobby: Lobby) {
+    const payload: LobbyStatePayload = {
+      lobbyId: lobby.lobbyId,
+      players: lobby.players.map((p) => ({ userId: p.userId, username: p.username })),
+      count: lobby.players.length,
+      min: envs.matchmakingMinPlayers,
+      max: envs.matchmakingMaxPlayers,
+      status: lobby.status,
+      startsAt: lobby.startsAt
+    };
+
+    try {
+      await this.messaging.publish(MatchmakingSubjects.lobbyUpdated, payload);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Failed to publish lobby state: ${message}`);
     }
   }
 
-  private removePlayerFromQueue(lobbyId: string, userId: string, socketId: string) {
-    const queue = this.queues.get(lobbyId);
-    if (!queue) return false;
+  private getLobby(lobbyId: string) {
+    const current = this.lobbies.get(lobbyId);
+    if (current) return current;
 
-    const initialSize = queue.length;
+    const lobby: Lobby = {
+      lobbyId,
+      players: [],
+      status: "waiting",
+      startsAt: null,
+      countdownTimer: null
+    };
+    this.lobbies.set(lobbyId, lobby);
+    return lobby;
+  }
 
-    for (let index = queue.length - 1; index >= 0; index -= 1) {
-      const player = queue[index];
+  private removePlayerFromAllLobbies(userId: string, socketId: string) {
+    for (const [lobbyId] of this.lobbies) {
+      this.removePlayerFromLobby(lobbyId, userId, socketId);
+    }
+  }
+
+  private removePlayerFromLobby(lobbyId: string, userId: string, socketId: string) {
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby) return false;
+
+    const initialSize = lobby.players.length;
+
+    for (let index = lobby.players.length - 1; index >= 0; index -= 1) {
+      const player = lobby.players[index];
       if (player.userId === userId || player.socketId === socketId) {
-        queue.splice(index, 1);
+        lobby.players.splice(index, 1);
       }
     }
 
-    this.deleteEmptyQueue(lobbyId);
-
-    return queue.length !== initialSize;
-  }
-
-  private deleteEmptyQueue(lobbyId: string) {
-    if (this.queues.get(lobbyId)?.length === 0) {
-      this.queues.delete(lobbyId);
+    if (lobby.players.length === 0) {
+      this.cancelCountdown(lobby);
+      this.lobbies.delete(lobbyId);
     }
+
+    return lobby.players.length !== initialSize;
   }
 
   private isJoinQueuePayload(payload: unknown): payload is MatchmakingJoinQueuePayload {

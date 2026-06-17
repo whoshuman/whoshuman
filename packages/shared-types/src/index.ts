@@ -112,10 +112,24 @@ export interface GameStateSnapshotPayload {
   players: GamePlayerState[];
 }
 
+export type PlayerRole = "hider" | "seeker";
+
 export interface MatchFoundPayload {
   lobbyId?: string;
   gameId: string;
-  playerIds: string[];
+  players: { userId: string; role: PlayerRole }[];
+}
+
+export type LobbyStatus = "waiting" | "starting";
+
+export interface LobbyStatePayload {
+  lobbyId: string;
+  players: { userId: string; username: string }[]; // sin socketId (interno)
+  count: number;
+  min: number;
+  max: number;
+  status: LobbyStatus;
+  startsAt: number | null; // epoch ms en que arranca (durante "starting")
 }
 
 export interface MatchmakingJoinQueuePayload {
