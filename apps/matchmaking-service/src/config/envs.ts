@@ -21,14 +21,9 @@ const envSchema = joi
   })
   .unknown(true);
 
-const toNumber = (value: string | undefined) => (value ? Number(value) : undefined);
-
 const validationResult: joi.ValidationResult<EnvVars> = envSchema.validate({
   ...process.env,
-  NATS_SERVERS: process.env["NATS_SERVERS"]?.split(",").map((item) => item.trim()),
-  MATCHMAKING_MIN_PLAYERS: toNumber(process.env["MATCHMAKING_MIN_PLAYERS"]),
-  MATCHMAKING_MAX_PLAYERS: toNumber(process.env["MATCHMAKING_MAX_PLAYERS"]),
-  MATCHMAKING_COUNTDOWN_MS: toNumber(process.env["MATCHMAKING_COUNTDOWN_MS"])
+  NATS_SERVERS: process.env["NATS_SERVERS"]?.split(",").map((item) => item.trim())
 });
 
 const { error } = validationResult;
