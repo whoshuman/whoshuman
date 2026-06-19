@@ -11,7 +11,16 @@ export const UserSubjects = {
   findProfile: "users.findProfile",
   updateProfile: "users.updateProfile",
   findFriends: "users.findFriends",
-  health: "users.health"
+  findPendingRequests: "users.findPendingRequests",
+  sendFriendRequest: "users.sendFriendRequest",
+  respondFriendRequest: "users.respondFriendRequest",
+  removeFriend: "users.removeFriend",
+  blockUser: "users.blockUser",
+  unblockUser: "users.unblockUser",
+  health: "users.health",
+  findMe: "users.findMe",
+  deleteAccount: "users.deleteAccount",
+  searchUsers: "users.searchUsers"
 } as const;
 
 export const GameSubjects = {
@@ -30,6 +39,7 @@ export const MatchmakingSubjects = {
   joinQueue: "matchmaking.joinQueue",
   leaveQueue: "matchmaking.leaveQueue",
   matchFound: "matchmaking.match.found",
+  lobbyUpdated: "matchmaking.lobby.updated",
   health: "matchmaking.health"
 } as const;
 
@@ -41,6 +51,8 @@ export const ChatSubjects = {
 } as const;
 
 export const NotificationSubjects = {
+  send: "notifications.send",
+  deliver: "notifications.deliver",
   health: "notification.health"
 } as const;
 
@@ -64,7 +76,9 @@ export const ServerSocketEvents = {
   matchFound: "matchmaking:match-found",
   gameJoined: "game:joined",
   gameLeft: "game:left",
-  gameState: "game:state"
+  notification: "notification",
+  gameState: "game:state",
+  lobbyState: "lobby:state"
 } as const;
 
 export type AuthSubject = (typeof AuthSubjects)[keyof typeof AuthSubjects];

@@ -9,5 +9,9 @@
   "tokenMissing": "En-tête Authorization: Bearer <token> manquant",
   "tokenInvalidOrExpired": "Token invalide ou expiré",
   "serviceUnavailable": "Le service n'a pas répondu à temps",
-  "unexpected": "Erreur inattendue"
+  "unexpected": "Erreur inattendue",
+  "cannotFriendYourself": "Vous ne pouvez pas vous envoyer une demande d'ami",
+  "alreadyFriends": "Une relation d'amitié existe déjà avec cet utilisateur",
+  "friendshipNotFound": "Demande d'ami introuvable",
+  "notAllowed": "Vous n'êtes pas autorisé à effectuer cette action"
 }

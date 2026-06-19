@@ -233,6 +233,45 @@ Responsabilidades:
 
 ---
 
+## notification-service
+
+Responsabilidades:
+
+- hub de notificaciones: recibe peticiones de notificar de cualquier ms
+- enruta al `realtime-gateway` para la entrega en vivo
+- (futuro) persistencia / bandeja, fan-out a otros canales (email, push)
+
+### Flujo de notificaciones
+
+```txt
+1. Un ms (p.ej. user-service) quiere notificar
+        ↓
+2. emit "notifications.send"  { recipientId, type, from, data }
+        ↓
+3. notification-service recibe (hub)
+        ↓
+4. emit "notifications.deliver"  (hoy pass-through; aquí irá persistencia / fan-out)
+        ↓
+5. realtime-gateway → server.to("user:<recipientId>").emit("notification", …)
+        ↓
+6. Frontend del destinatario lo recibe en vivo
+```
+
+**Principio — qué pasa por el hub y qué no:**
+
+- **Notificación durable** (solicitud de amistad, mención de chat…) → por el
+  `notification-service`.
+- **Señal transitoria** (estado de partida, presencia…) → **directa** al
+  `realtime-gateway` (el salto por el hub no aporta nada).
+
+Mientras el hub sea _pass-through_, las notificaciones son **efímeras**: si el
+destinatario no está conectado se pierde el aviso en vivo, pero el **estado**
+persiste en su servicio de origen (p.ej. las solicitudes en `friendships`) y se
+consulta al cargar la app. La persistencia de notificaciones (bandeja,
+leídas/no leídas) se añadiría en este servicio cuando haga falta.
+
+---
+
 # 7. Authoritative Server Model
 
 El servidor controla el estado real del juego.

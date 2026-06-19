@@ -83,6 +83,9 @@ importers:
       "@whoshuman/shared-types":
         specifier: workspace:*
         version: link:../../packages/shared-types
+      "@whoshuman/shared-validation":
+        specifier: workspace:*
+        version: link:../../packages/shared-validation
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -417,6 +420,9 @@ importers:
       "@whoshuman/shared-events":
         specifier: workspace:*
         version: link:../../packages/shared-events
+      "@whoshuman/shared-types":
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -501,9 +507,18 @@ importers:
       "@nestjs/microservices":
         specifier: ^11.0.1
         version: 11.1.24(@nestjs/common@11.1.24(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.24)(@nestjs/websockets@11.1.24)(nats@2.29.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      "@prisma/client":
+        specifier: ^6.8.2
+        version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
       "@whoshuman/shared-events":
         specifier: workspace:*
         version: link:../../packages/shared-events
+      "@whoshuman/shared-types":
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      "@whoshuman/shared-utils":
+        specifier: workspace:*
+        version: link:../../packages/shared-utils
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -525,6 +540,22 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+    devDependencies:
+      "@nestjs/testing":
+        specifier: ^11.1.24
+        version: 11.1.24(@nestjs/common@11.1.24(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.24)(@nestjs/microservices@11.1.24)(@nestjs/platform-express@11.1.24)
+      "@types/jest":
+        specifier: ^30.0.0
+        version: 30.0.0
+      jest:
+        specifier: ^30.4.2
+        version: 30.4.2(@types/node@24.12.4)(ts-node@10.9.2(@types/node@24.12.4)(typescript@5.9.3))
+      ts-jest:
+        specifier: ^29.4.11
+        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(jest-util@30.4.1)(jest@30.4.2(@types/node@24.12.4)(ts-node@10.9.2(@types/node@24.12.4)(typescript@5.9.3)))(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   packages/prettier-config: {}
 
@@ -541,7 +572,20 @@ importers:
         version: 5.9.3
 
   packages/shared-utils:
+    dependencies:
+      "@whoshuman/shared-types":
+        specifier: workspace:*
+        version: link:../shared-types
     devDependencies:
+      "@types/jest":
+        specifier: ^30.0.0
+        version: 30.0.0
+      jest:
+        specifier: ^30.4.2
+        version: 30.4.2(@types/node@24.12.4)(ts-node@10.9.2(@types/node@24.12.4)(typescript@5.9.3))
+      ts-jest:
+        specifier: ^29.4.11
+        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(jest-util@30.4.1)(jest@30.4.2(@types/node@24.12.4)(ts-node@10.9.2(@types/node@24.12.4)(typescript@5.9.3)))(typescript@5.9.3)
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
@@ -8903,10 +8947,10 @@ snapshots:
     dependencies:
       "@types/yargs-parser": 21.0.3
 
-  "@typescript-eslint/eslint-plugin@8.60.0(@typescript-eslint/parser@8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3))(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)":
+  "@typescript-eslint/eslint-plugin@8.60.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)":
     dependencies:
       "@eslint-community/regexpp": 4.12.2
-      "@typescript-eslint/parser": 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
+      "@typescript-eslint/parser": 8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       "@typescript-eslint/scope-manager": 8.60.0
       "@typescript-eslint/type-utils": 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
       "@typescript-eslint/utils": 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
@@ -11973,7 +12017,7 @@ snapshots:
 
   typescript-eslint@8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3):
     dependencies:
-      "@typescript-eslint/eslint-plugin": 8.60.0(@typescript-eslint/parser@8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3))(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
+      "@typescript-eslint/eslint-plugin": 8.60.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
       "@typescript-eslint/parser": 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
       "@typescript-eslint/typescript-estree": 8.60.0(typescript@6.0.3)
       "@typescript-eslint/utils": 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)

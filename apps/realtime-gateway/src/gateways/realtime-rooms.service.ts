@@ -1,6 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ServerSocketEvents } from "@whoshuman/shared-events";
-import type { GameStateSnapshotPayload, MatchFoundPayload } from "@whoshuman/shared-types";
+import type {
+  GameStateSnapshotPayload,
+  LobbyStatePayload,
+  MatchFoundPayload,
+  NotificationEnvelope
+} from "@whoshuman/shared-types";
 import type { RealtimeServer } from "./realtime.types";
 
 const DEFAULT_LOBBY_ID = "main";
@@ -33,6 +38,29 @@ export class RealtimeRoomsService {
     }
 
     this.server.to(this.lobbyRoom(payload.lobbyId)).emit(ServerSocketEvents.matchFound, payload);
+  }
+
+  broadcastLobbyState(payload: LobbyStatePayload) {
+    if (!this.server) {
+      this.logger.warn("Cannot broadcast lobby state: Socket.IO server is not ready");
+      return;
+    }
+
+    this.server.to(this.lobbyRoom(payload.lobbyId)).emit(ServerSocketEvents.lobbyState, payload);
+  }
+
+  userRoom(userId: string) {
+    return `user:${userId}`;
+  }
+
+  deliverNotification(payload: NotificationEnvelope) {
+    if (!this.server) {
+      this.logger.warn("Cannot deliver notification: Socket.IO server is not ready");
+      return;
+    }
+    this.server
+      .to(this.userRoom(payload.recipientId))
+      .emit(ServerSocketEvents.notification, payload);
   }
 
   broadcastGameState(payload: GameStateSnapshotPayload) {

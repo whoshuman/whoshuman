@@ -112,10 +112,24 @@ export interface GameStateSnapshotPayload {
   players: GamePlayerState[];
 }
 
+export type PlayerRole = "hider" | "seeker";
+
 export interface MatchFoundPayload {
   lobbyId?: string;
   gameId: string;
-  playerIds: string[];
+  players: { userId: string; role: PlayerRole }[];
+}
+
+export type LobbyStatus = "waiting" | "starting";
+
+export interface LobbyStatePayload {
+  lobbyId: string;
+  players: { userId: string; username: string }[]; // sin socketId (interno)
+  count: number;
+  min: number;
+  max: number;
+  status: LobbyStatus;
+  startsAt: number | null; // epoch ms en que arranca (durante "starting")
 }
 
 export interface MatchmakingJoinQueuePayload {
@@ -129,4 +143,105 @@ export interface MatchmakingLeaveQueuePayload {
   userId: string;
   lobbyId: string;
   socketId: string;
+}
+
+export type FriendshipStatus = "PENDING" | "ACCEPTED" | "BLOCKED";
+
+export interface Friendship {
+  id: string;
+  status: FriendshipStatus;
+  user: PublicUser; // the "other" user, relative to whoever asked
+  createdAt: string;
+}
+
+/** Generic success envelope for action endpoints (delete, block, respond…). */
+export interface ActionResponse {
+  success: boolean;
+}
+
+export type FriendActionResponse = ActionResponse;
+
+// NATS request payloads (userId/requester is injected by the gateway from the JWT)
+
+/** Carries the user performing the action (injected from the JWT by the gateway). */
+export interface UserScopedPayload {
+  userId: string;
+}
+
+/** A user acting on a specific friendship. */
+export interface FriendshipScopedPayload extends UserScopedPayload {
+  friendshipId: string;
+}
+
+export interface SendFriendRequestPayload {
+  requesterId: string;
+  addresseeId: string;
+}
+
+export interface RespondFriendRequestPayload extends FriendshipScopedPayload {
+  accept: boolean;
+}
+
+export type RemoveFriendPayload = FriendshipScopedPayload;
+
+/** A user (blocker) acting on another user (target). */
+export interface BlockScopedPayload {
+  blockerId: string;
+  targetId: string;
+}
+
+export type BlockUserPayload = BlockScopedPayload;
+export type UnblockUserPayload = BlockScopedPayload;
+
+export type FindFriendsPayload = UserScopedPayload;
+
+export type FindPendingRequestsPayload = UserScopedPayload;
+
+// Notification envelope — generic notification contract
+export interface NotificationActor {
+  id: string;
+  username: string;
+  avatar: string | null;
+}
+
+export type NotificationType = "friend.request.received" | "friend.request.accepted";
+
+export interface NotificationEnvelope {
+  recipientId: string; // who should receive it
+  type: NotificationType;
+  from: NotificationActor; // who triggered it (minimal — no email)
+  data?: Record<string, unknown>; // type-specific extra, e.g. { friendshipId }
+}
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  avatar: string | null;
+  bio: string | null;
+  createdAt: string;
+}
+
+export interface PageQuery {
+  page?: number;
+  limit?: number;
+}
+export interface PageMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+export interface Paginated<T> {
+  data: T[];
+  meta: PageMeta;
+}
+
+export interface UpdateProfilePayload extends UserScopedPayload {
+  username: string;
+  avatar: string | null;
+  bio: string | null;
+}
+/** El userId es quien busca (del JWT): se usa para excluirle de sus propios resultados. */
+export interface SearchUsersPayload extends UserScopedPayload, PageQuery {
+  query?: string;
 }
