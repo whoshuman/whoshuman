@@ -14,8 +14,10 @@
     "@tanstack/react-router": "^1.170.10",
     "@whoshuman/shared-types": "workspace:*",
     "axios": "^1.16.1",
+    "i18next": "^26.3.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-i18next": "^17.0.8",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

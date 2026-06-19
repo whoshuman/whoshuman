@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "home": "Home",
+    "login": "Access",
+    "register": "Register",
+    "lobby": "Lobby",
+    "game": "Game",
+    "designSystem": "Design System"
+  },
+  "footer": {
+    "system": "WHO'S HUMAN SURVEILLANCE SYSTEM // 42"
+  },
+  "home": {
+    "title": "Who's Human",
+    "tagline": "Deceive. Observe. Survive.",
+    "credits": "42 Final Project | Transcendence | Developed by: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra"
+  },
+  "login": {
+    "title": "System Access",
+    "subtitle": "Identify your credentials."
+  },
+  "register": {
+    "title": "Unit Registration",
+    "subtitle": "Create your system profile."
+  },
+  "lobby": {
+    "title": "Staging Zone",
+    "subtitle": "Awaiting match assignment."
+  },
+  "game": {
+    "title": "Active Game",
+    "subtitle": "Operation in progress."
+  },
+  "notFound": {
+    "title": "404 — Route Not Found",
+    "subtitle": "The requested route does not exist in the system."
+  }
+}
