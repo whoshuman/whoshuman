@@ -252,9 +252,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     await this.publishToNats(GameSubjects.playerMoved, {
       userId: user.sub,
       gameId,
-      sequence: payload.sequence,
-      position: payload.position,
-      rotationY: payload.rotationY,
+      move: payload.move,
       socketId: socket.id
     });
   }
