@@ -23,7 +23,7 @@ function AppLayout() {
       </div>
 
       <footer>
-        <p>{t("footer.placeholder")}</p>
+        <p>{t("footer.system")}</p>
       </footer>
     </div>
   );
