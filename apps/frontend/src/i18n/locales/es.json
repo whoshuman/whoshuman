@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "login": "Acceso",
+    "register": "Registro",
+    "lobby": "Lobby",
+    "game": "Partida",
+    "designSystem": "Design System"
+  },
+  "footer": {
+    "system": "SISTEMA DE VIGILANCIA WHO'S HUMAN // 42"
+  },
+  "home": {
+    "title": "Who's Human",
+    "tagline": "Engaña. Observa. Sobrevive.",
+    "credits": "Proyecto final 42 | Transcendence | Desarrollado por: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra"
+  },
+  "login": {
+    "title": "Acceso al Sistema",
+    "subtitle": "Identifica tus credenciales."
+  },
+  "register": {
+    "title": "Registro de Unidad",
+    "subtitle": "Crea tu perfil en el sistema."
+  },
+  "lobby": {
+    "title": "Zona de Espera",
+    "subtitle": "Aguarda asignación de partida."
+  },
+  "game": {
+    "title": "Partida Activa",
+    "subtitle": "Operación en curso."
+  },
+  "notFound": {
+    "title": "404 — Ruta No Encontrada",
+    "subtitle": "La ruta solicitada no existe en el sistema."
+  }
+}

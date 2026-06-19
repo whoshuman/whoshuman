@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "login": "Accès",
+    "register": "S'inscrire",
+    "lobby": "Lobby",
+    "game": "Partie",
+    "designSystem": "Design System"
+  },
+  "footer": {
+    "system": "SYSTÈME DE SURVEILLANCE WHO'S HUMAN // 42"
+  },
+  "home": {
+    "title": "Who's Human",
+    "tagline": "Trompe. Observe. Survie.",
+    "credits": "Projet final 42 | Transcendence | Développé par : Jdelorme, smarin-a, zlu, descamil, ldiaz-ra"
+  },
+  "login": {
+    "title": "Accès Système",
+    "subtitle": "Identifiez vos identifiants."
+  },
+  "register": {
+    "title": "Enregistrement d'Unité",
+    "subtitle": "Créez votre profil système."
+  },
+  "lobby": {
+    "title": "Zone d'Attente",
+    "subtitle": "En attente d'attribution de partie."
+  },
+  "game": {
+    "title": "Partie Active",
+    "subtitle": "Opération en cours."
+  },
+  "notFound": {
+    "title": "404 — Route Introuvable",
+    "subtitle": "La route demandée n'existe pas dans le système."
+  }
+}
