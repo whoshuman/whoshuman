@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-function Lobby() {
+type LobbyProps = {
+  // En modo embebido se monta como overlay tras el zoom de la home (no como ruta).
+  embedded?: boolean;
+  onClose?: () => void;
+};
+
+function Lobby({ embedded = false, onClose }: LobbyProps) {
   const { t } = useTranslation();
   const [glitching, setGlitching] = useState(false);
 
@@ -10,11 +16,22 @@ function Lobby() {
     setTimeout(() => setGlitching(false), 400);
   }
   return (
-    <main className="main-container">
+    <main className={embedded ? "main-container h-full overflow-y-auto" : "main-container"}>
       <section className="content-section max-w-3xl">
-        <p className="font-display mb-3 text-xs font-bold uppercase tracking-[0.3em] text-neon-magenta">
-          // {t("lobby.eyebrow")}
-        </p>
+        <div className="mb-3 flex items-center justify-between">
+          <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-magenta">
+            // {t("lobby.eyebrow")}
+          </p>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="border border-neon-cyan/40 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
+            >
+              ← {t("common.back")}
+            </button>
+          )}
+        </div>
         <h1 className="font-display mb-4 text-6xl font-black leading-none text-text-main [text-shadow:0_0_28px_rgba(255,43,214,0.55),0_0_56px_rgba(36,245,255,0.24)]">
           {t("lobby.deployTitle")}
         </h1>

@@ -1,12 +1,18 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 import skyHome3d from "../assets/sky-home-3d.png";
 import HomeScene from "../features/home-3d/HomeScene";
+import Login from "./Login";
+import Register from "./Register";
+import Lobby from "./Lobby";
 
-// Duracion del zoom de camara antes de entrar a la zona de despliegue (lobby).
+// Vistas que se montan como overlay sobre la home sin cambiar de ruta.
+type HomeView = "home" | "login" | "register" | "lobby";
+
+// Duracion del zoom de camara antes de mostrar la zona de despliegue (lobby).
 const ZOOM_TO_LOBBY_MS = 1100;
 
 // El logo combina el encendido de neon (una vez) con una respiracion del glow en bucle.
@@ -34,18 +40,25 @@ const footerLinks = [
 
 function Home() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  // Al pulsar Jugar la camara hace zoom a la ciudad y luego navegamos al lobby.
+  // La home actua de shell: las vistas de acceso y despliegue se abren aqui mismo.
+  const [view, setView] = useState<HomeView>("home");
   const [isZoomed, setIsZoomed] = useState(false);
+
+  function closeView() {
+    setView("home");
+    setIsZoomed(false);
+  }
 
   function handlePlay() {
     if (isZoomed) return;
+    // Zoom de camara hacia la ciudad y, al terminar, abre la zona de despliegue.
     setIsZoomed(true);
-    setTimeout(() => void navigate({ to: "/lobby" }), ZOOM_TO_LOBBY_MS);
+    setTimeout(() => setView("lobby"), ZOOM_TO_LOBBY_MS);
   }
 
-  // Mientras hace zoom, la interfaz se desvanece para dejar ver el viaje de camara.
-  const overlayFade = isZoomed ? "pointer-events-none opacity-0" : "opacity-100";
+  // La interfaz de la landing se desvanece cuando hay zoom o una vista abierta.
+  const dimmed = isZoomed || view !== "home";
+  const overlayFade = dimmed ? "pointer-events-none opacity-0" : "opacity-100";
 
   return (
     <main className="relative h-screen overflow-hidden bg-bg">
@@ -68,24 +81,26 @@ function Home() {
         <span className="font-display text-[0.6rem] font-bold uppercase tracking-[0.4em] text-neon-cyan/70">
           // ACCESO
         </span>
-        <Link
-          to="/login"
-          className="border-2 border-neon-magenta bg-neon-magenta/15 px-6 py-2.5 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)]"
+        <button
+          type="button"
+          onClick={() => setView("login")}
+          className="border-2 border-neon-magenta bg-neon-magenta/15 px-6 py-2.5 text-left font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)]"
         >
           {t("home.login")}
-        </Link>
-        <Link
-          to="/register"
-          className="border border-neon-cyan/60 bg-bg/40 px-6 py-2.5 font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)]"
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("register")}
+          className="border border-neon-cyan/60 bg-bg/40 px-6 py-2.5 text-left font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)]"
         >
           {t("home.register")}
-        </Link>
+        </button>
       </div>
 
       {/* Centro: logo y claim. No captura clics para no tapar el fondo 3D. */}
       <div
         className={`pointer-events-none absolute inset-0 z-0 flex -translate-y-8 flex-col items-center justify-center px-8 text-center transition duration-700 ${
-          isZoomed ? "scale-110 opacity-0" : "opacity-100"
+          dimmed ? "scale-110 opacity-0" : "opacity-100"
         }`}
       >
         <p className="font-display mb-6 text-xs font-bold uppercase tracking-[0.45em] text-neon-cyan/70 [text-shadow:0_0_12px_rgb(36_245_255_/_0.5)]">
@@ -109,7 +124,7 @@ function Home() {
         </p>
       </div>
 
-      {/* Esquina inferior derecha: lanzar partida (zoom + viaje al lobby). */}
+      {/* Esquina inferior derecha: lanzar partida (zoom + zona de despliegue). */}
       <button
         type="button"
         onClick={handlePlay}
@@ -144,6 +159,23 @@ function Home() {
           </span>
         ))}
       </nav>
+
+      {/* Overlays integrados: se abren sobre la home con fundido + despliegue del panel. */}
+      {view === "login" && (
+        <div className="animate-fade-in fixed inset-0 z-30 bg-bg/70 backdrop-blur-sm">
+          <Login embedded onClose={closeView} onSwitch={() => setView("register")} />
+        </div>
+      )}
+      {view === "register" && (
+        <div className="animate-fade-in fixed inset-0 z-30 bg-bg/70 backdrop-blur-sm">
+          <Register embedded onClose={closeView} onSwitch={() => setView("login")} />
+        </div>
+      )}
+      {view === "lobby" && (
+        <div className="animate-fade-in fixed inset-0 z-30 bg-bg/90 backdrop-blur-sm">
+          <Lobby embedded onClose={closeView} />
+        </div>
+      )}
     </main>
   );
 }

@@ -1,10 +1,24 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
-function Register() {
+type RegisterProps = {
+  // En modo embebido se monta como overlay dentro de otra pantalla (la home),
+  // con boton de cierre y cambio a login por callback en vez de navegar por ruta.
+  embedded?: boolean;
+  onClose?: () => void;
+  onSwitch?: () => void;
+};
+
+function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
   const { t } = useTranslation();
   return (
-    <main className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden">
+    <main
+      className={
+        embedded
+          ? "relative flex h-full w-full items-center justify-center p-8"
+          : "relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden"
+      }
+    >
       {/* Halo detras del panel */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <div className="h-[32rem] w-[32rem] bg-neon-cyan/6 blur-3xl" />
@@ -12,10 +26,20 @@ function Register() {
 
       <div className="animate-unfold-down origin-top relative w-full max-w-md border border-neon-cyan/50 bg-surface shadow-[0_0_48px_rgba(36,245,255,0.18),inset_0_0_48px_rgba(36,245,255,0.03)]">
         {/* Cabecera del panel */}
-        <div className="border-b border-neon-cyan/30 bg-neon-cyan/8 px-8 py-4">
+        <div className="flex items-center justify-between border-b border-neon-cyan/30 bg-neon-cyan/8 px-8 py-4">
           <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-cyan">
             // {t("register.protocol")}
           </p>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="font-display text-lg leading-none text-neon-cyan/70 transition hover:text-neon-cyan"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         <div className="p-8">
@@ -102,9 +126,19 @@ function Register() {
           <div className="mt-8 border-t border-neon-cyan/15 pt-6">
             <p className="text-center text-sm text-text-muted">
               {t("register.haveAccount")}{" "}
-              <Link to="/login" className="font-bold text-neon-cyan hover:brightness-125">
-                {t("register.access")}
-              </Link>
+              {onSwitch ? (
+                <button
+                  type="button"
+                  onClick={onSwitch}
+                  className="font-bold text-neon-cyan hover:brightness-125"
+                >
+                  {t("register.access")}
+                </button>
+              ) : (
+                <Link to="/login" className="font-bold text-neon-cyan hover:brightness-125">
+                  {t("register.access")}
+                </Link>
+              )}
             </p>
           </div>
         </div>
