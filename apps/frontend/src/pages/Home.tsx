@@ -75,12 +75,17 @@ function Home() {
 
       <HomeScene isZoomed={isZoomed} />
 
-      {/* Esquina superior izquierda: ajustes (idioma + dev) y acceso de unidad. */}
+      {/* Esquina superior derecha: rueda de ajustes (idioma + herramientas dev). */}
       <div
-        className={`animate-hud-in absolute left-8 top-8 z-20 flex flex-col items-start gap-4 transition duration-700 ${overlayFade}`}
+        className={`animate-hud-in absolute right-8 top-8 z-20 transition duration-700 ${overlayFade}`}
       >
-        <SettingsMenu />
+        <SettingsMenu align="right" />
+      </div>
 
+      {/* Esquina superior izquierda: acceso de unidad. */}
+      <div
+        className={`animate-hud-in absolute left-8 top-8 z-10 transition duration-700 ${overlayFade}`}
+      >
         <div className="flex flex-col items-start gap-2">
           <span className="font-display text-[0.6rem] font-bold uppercase tracking-[0.4em] text-neon-cyan/70">
             // ACCESO

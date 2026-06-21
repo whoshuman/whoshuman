@@ -1,44 +1,64 @@
 import { useMemo } from "react";
-import { Shape } from "three";
+import { CanvasTexture } from "three";
 
 type HomeSunProps = {
   color: string;
 };
 
-// Three no tiene una geometria directa de semicirculo, asi que se construye como Shape.
-function createUpperHalfCircle(radius: number) {
-  const shape = new Shape();
+// Dibuja el disco solar en un canvas: degradado vertical amarillo -> magenta y
+// franjas horizontales (scanlines) que "deshacen" la mitad inferior, estilo synthwave.
+function createSunTexture() {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
 
-  shape.moveTo(-radius, 0);
-  shape.absarc(0, 0, radius, Math.PI, 0, true);
-  shape.lineTo(-radius, 0);
+  // Degradado vertical del sol.
+  const gradient = ctx.createLinearGradient(0, 0, 0, size);
+  gradient.addColorStop(0, "#fff6c2");
+  gradient.addColorStop(0.32, "#ffe14d");
+  gradient.addColorStop(0.55, "#ff9f1c");
+  gradient.addColorStop(0.78, "#ff5db1");
+  gradient.addColorStop(1, "#ff2bd6");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
 
-  return shape;
+  // Scanlines: huecos transparentes cada vez mas gruesos y separados hacia abajo.
+  ctx.globalCompositeOperation = "destination-out";
+  let y = size * 0.5;
+  let gap = 4;
+  while (y < size) {
+    const thickness = gap * 0.85;
+    ctx.fillRect(0, y, size, thickness);
+    y += gap + thickness;
+    gap += 1.6;
+  }
+
+  return new CanvasTexture(canvas);
 }
 
-// Crea un sol recortado en semicircunferencia para que no aparezca bajo la ciudad.
 function HomeSun({ color }: HomeSunProps) {
-  // Las tres capas comparten forma pero tienen radios/opacidades distintas para simular glow.
-  const glowOuter = useMemo(() => createUpperHalfCircle(74), []);
-  const glowInner = useMemo(() => createUpperHalfCircle(62), []);
-  const sunShape = useMemo(() => createUpperHalfCircle(50), []);
+  const sunTexture = useMemo(() => createSunTexture(), []);
 
   return (
-    // El sol queda por detras de la ciudad para construir el horizonte retrowave.
-    <group position={[0, -20, -360]}>
+    // El sol queda al fondo de todo (tras las montañas). Radios escalados para mantener su tamaño.
+    <group position={[0, -9, -560]}>
+      {/* Halo exterior difuso. */}
+      <mesh position={[0, 0, -1.2]}>
+        <circleGeometry args={[121, 64]} />
+        <meshBasicMaterial color={color} transparent opacity={0.1} depthWrite={false} />
+      </mesh>
       <mesh position={[0, 0, -0.8]}>
-        <shapeGeometry args={[glowOuter]} />
-        <meshBasicMaterial color={color} transparent opacity={0.08} depthWrite={false} />
+        <circleGeometry args={[93, 64]} />
+        <meshBasicMaterial color={"#ffb35c"} transparent opacity={0.18} depthWrite={false} />
       </mesh>
 
-      <mesh position={[0, 0, -0.5]}>
-        <shapeGeometry args={[glowInner]} />
-        <meshBasicMaterial color={color} transparent opacity={0.16} depthWrite={false} />
-      </mesh>
-
+      {/* Disco solar con degradado y scanlines. */}
       <mesh>
-        <shapeGeometry args={[sunShape]} />
-        <meshBasicMaterial color={color} transparent opacity={0.94} />
+        <circleGeometry args={[78, 64]} />
+        <meshBasicMaterial map={sunTexture} transparent depthWrite={false} />
       </mesh>
     </group>
   );

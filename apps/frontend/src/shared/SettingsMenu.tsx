@@ -4,9 +4,14 @@ import { useTranslation } from "react-i18next";
 
 import LanguageSelector from "./LanguageSelector";
 
+type SettingsMenuProps = {
+  // Lado por el que se ancla el panel desplegable respecto al boton.
+  align?: "left" | "right";
+};
+
 // Rueda de ajustes para la home: agrupa idioma y herramientas de desarrollo (design system).
 // Estilo consistente con el resto de paneles terminal (borde neon, esquinas, despliegue).
-function SettingsMenu() {
+function SettingsMenu({ align = "left" }: SettingsMenuProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
@@ -48,7 +53,11 @@ function SettingsMenu() {
             className="fixed inset-0 z-40 cursor-default"
           />
 
-          <div className="animate-unfold-down origin-top absolute left-0 top-full z-50 mt-3 w-64 border border-neon-cyan/40 bg-surface p-5 shadow-[0_0_32px_rgb(36_245_255_/_0.2)]">
+          <div
+            className={`animate-unfold-down origin-top absolute top-full z-50 mt-3 w-64 border border-neon-cyan/40 bg-surface p-5 shadow-[0_0_32px_rgb(36_245_255_/_0.2)] ${
+              align === "right" ? "right-0" : "left-0"
+            }`}
+          >
             {/* Esquinas decorativas. */}
             <span className="absolute left-0 top-0 h-3 w-3 border-l-2 border-t-2 border-neon-magenta" />
             <span className="absolute right-0 top-0 h-3 w-3 border-r-2 border-t-2 border-neon-magenta" />

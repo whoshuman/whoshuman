@@ -3,6 +3,7 @@ import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import HomeCity from "./HomeCity";
 import HomeCityTraffic from "./HomeCityTraffic";
 import HomeGrid from "./HomeGrid";
+import HomeMountains from "./HomeMountains";
 import HomeSun from "./HomeSun";
 import { getCssColor } from "./homeSceneUtils";
 
@@ -20,6 +21,7 @@ function RetrowaveLandscape() {
   return (
     <>
       <HomeSun color={colorNeonMagenta} />
+      <HomeMountains color={colorNeonCyan} fillColor={colorSurface} />
       <HomeCity
         colorBase={colorSurface}
         colorCyan={colorNeonCyan}
