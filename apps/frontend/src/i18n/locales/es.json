@@ -10,29 +10,86 @@
   "footer": {
     "system": "SISTEMA DE VIGILANCIA WHO'S HUMAN // 42"
   },
+  "common": {
+    "underConstruction": "MÓDULO EN CONSTRUCCIÓN",
+    "underConstructionDesc": "Esta sección aún no está disponible en el sistema. Vuelve más tarde.",
+    "back": "VOLVER A INICIO"
+  },
   "home": {
     "title": "Who's Human",
     "tagline": "Engaña. Observa. Sobrevive.",
-    "credits": "Proyecto final 42 | Transcendence | Desarrollado por: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra"
+    "claim": "Engaña · Observa · Sobrevive",
+    "credits": "Proyecto final 42 | Transcendence | Desarrollado por: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
+    "play": "Jugar",
+    "menu": {
+      "play": "Jugar",
+      "profile": "Perfil",
+      "manual": "Manual",
+      "logout": "Salir",
+      "about": "Sobre el proyecto"
+    }
   },
   "login": {
-    "title": "Acceso al Sistema",
-    "subtitle": "Identifica tus credenciales."
+    "protocol": "PROTOCOLO DE ACCESO — SISTEMA CAZADOR",
+    "title": "IDENTIFICAR",
+    "subtitle": "¿Eres un cyborg? El sistema lo sabrá.",
+    "emailLabel": "ID de unidad (email)",
+    "emailPlaceholder": "unidad@dominio.com",
+    "passwordLabel": "Clave de acceso",
+    "keepSession": "Mantener sesión activa",
+    "recover": "Recuperar acceso",
+    "submit": "ACCEDER AL SISTEMA",
+    "noAccount": "¿Unidad no registrada?",
+    "createProfile": "CREAR PERFIL"
   },
   "register": {
-    "title": "Registro de Unidad",
-    "subtitle": "Crea tu perfil en el sistema."
+    "protocol": "REGISTRO DE NUEVA UNIDAD — BASE DE DATOS",
+    "title": "REGISTRAR",
+    "subtitle": "Introduce tus datos. El sistema verificará tu identidad.",
+    "usernameLabel": "Designación de unidad",
+    "emailLabel": "ID de unidad (email)",
+    "emailPlaceholder": "unidad@dominio.com",
+    "passwordLabel": "Clave de acceso",
+    "confirmLabel": "Confirmar clave",
+    "submit": "CREAR UNIDAD",
+    "haveAccount": "¿Unidad ya registrada?",
+    "access": "ACCEDER"
   },
   "lobby": {
-    "title": "Zona de Espera",
-    "subtitle": "Aguarda asignación de partida."
+    "eyebrow": "TERMINAL DE OPERACIONES",
+    "deployTitle": "ZONA DE DESPLIEGUE",
+    "deploySubtitle": "Selecciona una operación activa o solicita despliegue automático.",
+    "unitData": "DATOS DE UNIDAD",
+    "statusActive": "SISTEMA ACTIVO",
+    "operations": "Operaciones",
+    "neutralized": "Neutraliz.",
+    "autoDeployTitle": "DESPLIEGUE AUTOMÁTICO",
+    "autoDeployText": "El sistema te asignará una operación y un rol de forma automática.",
+    "requestMission": "SOLICITAR MISIÓN",
+    "activeOps": "OPERACIONES ACTIVAS",
+    "units": "unidades",
+    "statusRecruiting": "RECLUTANDO",
+    "statusInProgress": "EN CURSO",
+    "join": "UNIRSE"
   },
   "game": {
-    "title": "Partida Activa",
-    "subtitle": "Operación en curso."
+    "scene": "Escena 3D — Three.js",
+    "time": "Tiempo",
+    "round": "Ronda",
+    "points": "Puntos",
+    "role": "Rol",
+    "roleHidden": "Escondido",
+    "item": "Ítem",
+    "itemSmoke": "Bomba de humo",
+    "use": "Usar [E]",
+    "suspicion": "Sospecha"
   },
   "notFound": {
-    "title": "404 — Ruta No Encontrada",
-    "subtitle": "La ruta solicitada no existe en el sistema."
+    "protocol": "ERROR DE SISTEMA — UNIDAD NO LOCALIZADA",
+    "errorCode": "CÓDIGO DE ERROR",
+    "notLocated": "LOCALIZACIÓN NO ENCONTRADA",
+    "descLine1": "La dirección solicitada no existe en este sistema.",
+    "descLine2": "¿Cyborg intentando escapar?",
+    "back": "VOLVER A BASE"
   }
 }

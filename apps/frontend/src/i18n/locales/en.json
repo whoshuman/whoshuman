@@ -10,29 +10,86 @@
   "footer": {
     "system": "WHO'S HUMAN SURVEILLANCE SYSTEM // 42"
   },
+  "common": {
+    "underConstruction": "MODULE UNDER CONSTRUCTION",
+    "underConstructionDesc": "This section is not available in the system yet. Come back later.",
+    "back": "BACK TO HOME"
+  },
   "home": {
     "title": "Who's Human",
     "tagline": "Deceive. Observe. Survive.",
-    "credits": "42 Final Project | Transcendence | Developed by: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra"
+    "claim": "Deceive · Observe · Survive",
+    "credits": "42 Final Project | Transcendence | Developed by: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
+    "play": "Play",
+    "menu": {
+      "play": "Play",
+      "profile": "Profile",
+      "manual": "Manual",
+      "logout": "Log out",
+      "about": "About the project"
+    }
   },
   "login": {
-    "title": "System Access",
-    "subtitle": "Identify your credentials."
+    "protocol": "ACCESS PROTOCOL — HUNTER SYSTEM",
+    "title": "IDENTIFY",
+    "subtitle": "Are you a cyborg? The system will know.",
+    "emailLabel": "Unit ID (email)",
+    "emailPlaceholder": "unit@domain.com",
+    "passwordLabel": "Access key",
+    "keepSession": "Keep session active",
+    "recover": "Recover access",
+    "submit": "ACCESS SYSTEM",
+    "noAccount": "Unit not registered?",
+    "createProfile": "CREATE PROFILE"
   },
   "register": {
-    "title": "Unit Registration",
-    "subtitle": "Create your system profile."
+    "protocol": "NEW UNIT REGISTRATION — DATABASE",
+    "title": "REGISTER",
+    "subtitle": "Enter your data. The system will verify your identity.",
+    "usernameLabel": "Unit designation",
+    "emailLabel": "Unit ID (email)",
+    "emailPlaceholder": "unit@domain.com",
+    "passwordLabel": "Access key",
+    "confirmLabel": "Confirm key",
+    "submit": "CREATE UNIT",
+    "haveAccount": "Unit already registered?",
+    "access": "ACCESS"
   },
   "lobby": {
-    "title": "Staging Zone",
-    "subtitle": "Awaiting match assignment."
+    "eyebrow": "OPERATIONS TERMINAL",
+    "deployTitle": "DEPLOYMENT ZONE",
+    "deploySubtitle": "Select an active operation or request automatic deployment.",
+    "unitData": "UNIT DATA",
+    "statusActive": "SYSTEM ACTIVE",
+    "operations": "Operations",
+    "neutralized": "Neutralized",
+    "autoDeployTitle": "AUTOMATIC DEPLOYMENT",
+    "autoDeployText": "The system will assign you an operation and a role automatically.",
+    "requestMission": "REQUEST MISSION",
+    "activeOps": "ACTIVE OPERATIONS",
+    "units": "units",
+    "statusRecruiting": "RECRUITING",
+    "statusInProgress": "IN PROGRESS",
+    "join": "JOIN"
   },
   "game": {
-    "title": "Active Game",
-    "subtitle": "Operation in progress."
+    "scene": "3D Scene — Three.js",
+    "time": "Time",
+    "round": "Round",
+    "points": "Points",
+    "role": "Role",
+    "roleHidden": "Hidden",
+    "item": "Item",
+    "itemSmoke": "Smoke bomb",
+    "use": "Use [E]",
+    "suspicion": "Suspicion"
   },
   "notFound": {
-    "title": "404 — Route Not Found",
-    "subtitle": "The requested route does not exist in the system."
+    "protocol": "SYSTEM ERROR — UNIT NOT LOCATED",
+    "errorCode": "ERROR CODE",
+    "notLocated": "LOCATION NOT FOUND",
+    "descLine1": "The requested address does not exist in this system.",
+    "descLine2": "Cyborg trying to escape?",
+    "back": "RETURN TO BASE"
   }
 }

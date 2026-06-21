@@ -15,6 +15,11 @@
   --color-sun-orange: #ff9f1c;
   --color-success: #39ff88;
   --color-error: #ff3b6b;
+
+  --animate-crt-on: crt-on 1.4s ease-out forwards;
+  --animate-glitch: glitch 0.4s steps(1) forwards;
+  --animate-flicker-in: flicker-in 1.8s ease-out forwards;
+  --animate-hud-in: hud-in 0.6s ease-out forwards;
 }
 
 /* Define fuentes, colores y estilos base para toda la aplicacion. */
@@ -48,4 +53,74 @@ body {
 /* Define un bloque de contenido dentro de una pagina. */
 .content-section {
   padding: 4rem 0;
+}
+
+/* Animacion de encendido de pantalla de tubo CRT al montar paneles. */
+@keyframes crt-on {
+  0%   { transform: scaleY(0.005) scaleX(0.08); opacity: 1;   filter: brightness(12) blur(2px); }
+  6%   { transform: scaleY(0.005) scaleX(1.02);               filter: brightness(8); }
+  10%  { transform: scaleY(0.005) scaleX(1) translateX(-4px); filter: brightness(6); }
+  14%  { transform: scaleY(0.005) scaleX(1) translateX(4px);  filter: brightness(6); }
+  18%  { transform: scaleY(1)     scaleX(1);                  filter: brightness(3) blur(1px); }
+  24%  { transform: scaleY(1)     scaleX(1) translateX(-3px); filter: brightness(1.8); opacity: 0.85; }
+  30%  { transform: scaleY(1)     scaleX(1) translateX(3px);  filter: brightness(1.4); opacity: 1; }
+  38%  { transform: scaleY(1)     scaleX(1);                  filter: brightness(1);   opacity: 0.6; }
+  46%  { opacity: 1;  filter: brightness(1.5); }
+  54%  { opacity: 0.75; }
+  62%  { opacity: 1;  filter: brightness(1.2); }
+  74%  { opacity: 0.9; filter: brightness(1); }
+  100% { transform: scaleY(1) scaleX(1); opacity: 1; filter: brightness(1) blur(0); }
+}
+
+/* Efecto glitch para botones de accion critica. */
+@keyframes glitch {
+  0%   { transform: translate(0);        text-shadow: 0 0 24px rgba(255,43,214,0.5); }
+  10%  { transform: translate(-4px, 2px); text-shadow: -3px 0 rgba(36,245,255,0.9), 3px 0 rgba(255,43,214,0.9); }
+  20%  { transform: translate(4px, -2px); text-shadow: 3px 0 rgba(36,245,255,0.9), -3px 0 rgba(255,43,214,0.9); clip-path: inset(10% 0 60% 0); }
+  30%  { transform: translate(-2px, 0);   clip-path: inset(50% 0 20% 0); }
+  40%  { transform: translate(2px, 2px);  text-shadow: -2px 0 rgba(36,245,255,0.7), 2px 0 rgba(255,43,214,0.7); clip-path: inset(0); }
+  50%  { transform: translate(-3px, -1px); text-shadow: 4px 0 rgba(36,245,255,0.9); }
+  60%  { transform: translate(3px, 1px);  clip-path: inset(30% 0 40% 0); }
+  70%  { transform: translate(0);         clip-path: inset(0); }
+  80%  { transform: translate(-1px, 2px); text-shadow: -4px 0 rgba(255,43,214,0.8); }
+  90%  { transform: translate(1px, -2px); text-shadow: 0 0 24px rgba(255,43,214,0.5); }
+  100% { transform: translate(0);         text-shadow: 0 0 24px rgba(255,43,214,0.5); clip-path: inset(0); }
+}
+
+/* Encendido de letrero de neon: el logo parpadea como un tubo al arrancar. */
+@keyframes flicker-in {
+  0%   { opacity: 0; }
+  8%   { opacity: 0.8; }
+  10%  { opacity: 0.1; }
+  14%  { opacity: 0.9; }
+  18%  { opacity: 0.2; }
+  22%  { opacity: 1; }
+  28%  { opacity: 0.4; }
+  34%  { opacity: 1; }
+  44%  { opacity: 0.7; }
+  56%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* Respiracion del glow del logo: el halo neon late suave en bucle. */
+@keyframes neon-breathe-magenta {
+  0%, 100% { text-shadow: 0 0 18px rgb(255 43 214 / 0.6), 0 0 44px rgb(36 245 255 / 0.32); }
+  50%      { text-shadow: 0 0 28px rgb(255 43 214 / 0.95), 0 0 64px rgb(36 245 255 / 0.5); }
+}
+
+@keyframes neon-breathe-cyan {
+  0%, 100% { text-shadow: 0 0 18px rgb(36 245 255 / 0.65), 0 0 46px rgb(36 245 255 / 0.4); }
+  50%      { text-shadow: 0 0 30px rgb(36 245 255 / 1), 0 0 66px rgb(36 245 255 / 0.6); }
+}
+
+/* Entrada de la barra HUD superior: baja y se enciende. */
+@keyframes hud-in {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Escaneo horizontal que cruza la barra HUD como un radar. */
+@keyframes hud-scan {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
 }
