@@ -15,6 +15,11 @@
     "underConstructionDesc": "Esta sección aún no está disponible en el sistema. Vuelve más tarde.",
     "back": "VOLVER A INICIO"
   },
+  "settings": {
+    "title": "AJUSTES",
+    "language": "IDIOMA",
+    "dev": "HERRAMIENTAS DEV"
+  },
   "home": {
     "title": "Who's Human",
     "tagline": "Engaña. Observa. Sobrevive.",

@@ -7,14 +7,16 @@ const LANGUAGES = [
 ];
 
 // Selector de idioma estilo terminal: etiqueta de sistema + chips conmutables.
-function LanguageSelector() {
+function LanguageSelector({ showLabel = true }: { showLabel?: boolean }) {
   const { i18n } = useTranslation();
 
   return (
     <div className="flex items-center gap-2">
-      <span className="font-display hidden text-[0.6rem] font-bold uppercase tracking-[0.3em] text-neon-cyan/50 lg:inline">
-        // IDIOMA
-      </span>
+      {showLabel && (
+        <span className="font-display hidden text-[0.6rem] font-bold uppercase tracking-[0.3em] text-neon-cyan/50 lg:inline">
+          // IDIOMA
+        </span>
+      )}
       <div className="flex border border-neon-cyan/25 bg-bg/40">
         {LANGUAGES.map(({ code, label }) => {
           const active = i18n.language === code;

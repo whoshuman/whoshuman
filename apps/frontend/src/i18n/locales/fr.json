@@ -15,6 +15,11 @@
     "underConstructionDesc": "Cette section n'est pas encore disponible dans le système. Reviens plus tard.",
     "back": "RETOUR À L'ACCUEIL"
   },
+  "settings": {
+    "title": "PARAMÈTRES",
+    "language": "LANGUE",
+    "dev": "OUTILS DEV"
+  },
   "home": {
     "title": "Who's Human",
     "tagline": "Trompe. Observe. Survie.",

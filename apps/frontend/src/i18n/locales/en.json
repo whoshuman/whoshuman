@@ -15,6 +15,11 @@
     "underConstructionDesc": "This section is not available in the system yet. Come back later.",
     "back": "BACK TO HOME"
   },
+  "settings": {
+    "title": "SETTINGS",
+    "language": "LANGUAGE",
+    "dev": "DEV TOOLS"
+  },
   "home": {
     "title": "Who's Human",
     "tagline": "Deceive. Observe. Survive.",

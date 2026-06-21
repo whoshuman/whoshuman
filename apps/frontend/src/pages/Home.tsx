@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import skyHome3d from "../assets/sky-home-3d.png";
 import HomeScene from "../features/home-3d/HomeScene";
+import SettingsMenu from "../shared/SettingsMenu";
 import Login from "./Login";
 import Register from "./Register";
 import Lobby from "./Lobby";
@@ -74,27 +75,31 @@ function Home() {
 
       <HomeScene isZoomed={isZoomed} />
 
-      {/* Esquina superior izquierda: acceso de unidad. */}
+      {/* Esquina superior izquierda: ajustes (idioma + dev) y acceso de unidad. */}
       <div
-        className={`animate-hud-in absolute left-8 top-8 z-10 flex flex-col gap-2 transition duration-700 ${overlayFade}`}
+        className={`animate-hud-in absolute left-8 top-8 z-20 flex flex-col items-start gap-4 transition duration-700 ${overlayFade}`}
       >
-        <span className="font-display text-[0.6rem] font-bold uppercase tracking-[0.4em] text-neon-cyan/70">
-          // ACCESO
-        </span>
-        <button
-          type="button"
-          onClick={() => setView("login")}
-          className="border-2 border-neon-magenta bg-neon-magenta/15 px-6 py-2.5 text-left font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)]"
-        >
-          {t("home.login")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setView("register")}
-          className="border border-neon-cyan/60 bg-bg/40 px-6 py-2.5 text-left font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)]"
-        >
-          {t("home.register")}
-        </button>
+        <SettingsMenu />
+
+        <div className="flex flex-col items-start gap-2">
+          <span className="font-display text-[0.6rem] font-bold uppercase tracking-[0.4em] text-neon-cyan/70">
+            // ACCESO
+          </span>
+          <button
+            type="button"
+            onClick={() => setView("login")}
+            className="w-full border-2 border-neon-magenta bg-neon-magenta/15 px-6 py-2.5 text-left font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)]"
+          >
+            {t("home.login")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("register")}
+            className="w-full border border-neon-cyan/60 bg-bg/40 px-6 py-2.5 text-left font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)]"
+          >
+            {t("home.register")}
+          </button>
+        </div>
       </div>
 
       {/* Centro: logo y claim. No captura clics para no tapar el fondo 3D. */}
