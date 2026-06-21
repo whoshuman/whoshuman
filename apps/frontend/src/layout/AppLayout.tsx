@@ -11,7 +11,9 @@ const ROUTES_WITH_BACKGROUND = new Set([
   "/lobby",
   "/profile",
   "/manual",
-  "/about"
+  "/about",
+  "/faq",
+  "/support"
 ]);
 // Rutas reconocidas por el router. Si la ruta actual no esta aqui, es un 404.
 const KNOWN_ROUTES = new Set([
@@ -23,6 +25,8 @@ const KNOWN_ROUTES = new Set([
   "/profile",
   "/manual",
   "/about",
+  "/faq",
+  "/support",
   "/design-system"
 ]);
 
@@ -49,8 +53,9 @@ function AppLayout() {
   // El 404 (defaultNotFoundComponent) no es una ruta del arbol: se detecta por descarte.
   const isNotFound = !KNOWN_ROUTES.has(pathname);
   const showBackground = ROUTES_WITH_BACKGROUND.has(pathname) || isNotFound;
-  // El juego es full-screen con su propio HUD, asi que la barra superior no se monta ahi.
-  const showHud = pathname !== "/game";
+  // El juego y la home son pantallas inmersivas con su propio HUD de esquinas,
+  // asi que la barra superior no se monta en ellas.
+  const showHud = pathname !== "/game" && pathname !== "/";
 
   return (
     <div>

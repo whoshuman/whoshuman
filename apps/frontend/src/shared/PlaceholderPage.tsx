@@ -17,7 +17,7 @@ function PlaceholderPage({ titleKey }: PlaceholderPageProps) {
         <div className="h-[32rem] w-[32rem] bg-neon-cyan/8 blur-3xl" />
       </div>
 
-      <div className="animate-crt-on [transform-origin:center] relative border border-neon-cyan/50 bg-surface px-16 py-12 shadow-[0_0_48px_rgba(36,245,255,0.18),inset_0_0_48px_rgba(36,245,255,0.03)]">
+      <div className="animate-unfold-down origin-top relative border border-neon-cyan/50 bg-surface px-16 py-12 shadow-[0_0_48px_rgba(36,245,255,0.18),inset_0_0_48px_rgba(36,245,255,0.03)]">
         {/* Cabecera terminal */}
         <div className="absolute left-0 right-0 top-0 border-b border-neon-cyan/30 bg-neon-cyan/8 px-8 py-3">
           <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-cyan">

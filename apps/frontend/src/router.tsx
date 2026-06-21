@@ -10,6 +10,8 @@ import Game from "./pages/Game";
 import Profile from "./pages/Profile";
 import Manual from "./pages/Manual";
 import About from "./pages/About";
+import Faq from "./pages/Faq";
+import Support from "./pages/Support";
 import DesignSystem from "./pages/DesignSystem";
 import NotFound from "./pages/NotFound";
 
@@ -65,6 +67,18 @@ const aboutRoute = createRoute({
   component: About
 });
 
+const faqRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/faq",
+  component: Faq
+});
+
+const supportRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/support",
+  component: Support
+});
+
 const designSystemRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/design-system",
@@ -80,6 +94,8 @@ const routeTree = rootRoute.addChildren([
   profileRoute,
   manualRoute,
   aboutRoute,
+  faqRoute,
+  supportRoute,
   designSystemRoute
 ]);
 

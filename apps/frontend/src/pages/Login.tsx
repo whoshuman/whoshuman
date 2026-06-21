@@ -10,7 +10,7 @@ function Login() {
         <div className="h-[32rem] w-[32rem] bg-neon-magenta/8 blur-3xl" />
       </div>
 
-      <div className="animate-crt-on [transform-origin:center] relative w-full max-w-md border border-neon-magenta/50 bg-surface shadow-[0_0_48px_rgba(255,43,214,0.2),inset_0_0_48px_rgba(255,43,214,0.03)]">
+      <div className="animate-unfold-down origin-top relative w-full max-w-md border border-neon-magenta/50 bg-surface shadow-[0_0_48px_rgba(255,43,214,0.2),inset_0_0_48px_rgba(255,43,214,0.03)]">
         {/* Cabecera del panel */}
         <div className="border-b border-neon-magenta/30 bg-neon-magenta/10 px-8 py-4">
           <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-magenta">

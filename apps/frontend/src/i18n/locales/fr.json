@@ -26,8 +26,12 @@
       "profile": "Profil",
       "manual": "Manuel",
       "logout": "Quitter",
-      "about": "À propos du projet"
-    }
+      "about": "À propos du projet",
+      "faq": "FAQ",
+      "support": "Support"
+    },
+    "login": "Se connecter",
+    "register": "S'inscrire"
   },
   "login": {
     "protocol": "PROTOCOLE D'ACCÈS — SYSTÈME CHASSEUR",

@@ -26,8 +26,12 @@
       "profile": "Profile",
       "manual": "Manual",
       "logout": "Log out",
-      "about": "About the project"
-    }
+      "about": "About the project",
+      "faq": "FAQ",
+      "support": "Support"
+    },
+    "login": "Log in",
+    "register": "Sign up"
   },
   "login": {
     "protocol": "ACCESS PROTOCOL — HUNTER SYSTEM",

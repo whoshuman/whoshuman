@@ -26,8 +26,12 @@
       "profile": "Perfil",
       "manual": "Manual",
       "logout": "Salir",
-      "about": "Sobre el proyecto"
-    }
+      "about": "Sobre el proyecto",
+      "faq": "FAQ",
+      "support": "Soporte"
+    },
+    "login": "Iniciar sesión",
+    "register": "Registrarse"
   },
   "login": {
     "protocol": "PROTOCOLO DE ACCESO — SISTEMA CAZADOR",

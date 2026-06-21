@@ -10,7 +10,7 @@ function Register() {
         <div className="h-[32rem] w-[32rem] bg-neon-cyan/6 blur-3xl" />
       </div>
 
-      <div className="animate-crt-on [transform-origin:center] relative w-full max-w-md border border-neon-cyan/50 bg-surface shadow-[0_0_48px_rgba(36,245,255,0.18),inset_0_0_48px_rgba(36,245,255,0.03)]">
+      <div className="animate-unfold-down origin-top relative w-full max-w-md border border-neon-cyan/50 bg-surface shadow-[0_0_48px_rgba(36,245,255,0.18),inset_0_0_48px_rgba(36,245,255,0.03)]">
         {/* Cabecera del panel */}
         <div className="border-b border-neon-cyan/30 bg-neon-cyan/8 px-8 py-4">
           <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-cyan">

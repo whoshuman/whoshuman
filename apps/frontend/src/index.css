@@ -20,6 +20,7 @@
   --animate-glitch: glitch 0.4s steps(1) forwards;
   --animate-flicker-in: flicker-in 1.8s ease-out forwards;
   --animate-hud-in: hud-in 0.6s ease-out forwards;
+  --animate-unfold-down: unfold-down 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Define fuentes, colores y estilos base para toda la aplicacion. */
@@ -111,6 +112,13 @@ body {
 @keyframes neon-breathe-cyan {
   0%, 100% { text-shadow: 0 0 18px rgb(36 245 255 / 0.65), 0 0 46px rgb(36 245 255 / 0.4); }
   50%      { text-shadow: 0 0 30px rgb(36 245 255 / 1), 0 0 66px rgb(36 245 255 / 0.6); }
+}
+
+/* El modal se despliega desde su borde superior hacia abajo, como surgiendo del clic. */
+@keyframes unfold-down {
+  0%   { transform: scaleY(0); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: scaleY(1); opacity: 1; }
 }
 
 /* Entrada de la barra HUD superior: baja y se enciende. */

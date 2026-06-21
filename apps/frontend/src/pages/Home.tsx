@@ -1,20 +1,13 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 import skyHome3d from "../assets/sky-home-3d.png";
 import HomeScene from "../features/home-3d/HomeScene";
 
-// Opciones del menu tras el zoom a la ciudad. `key` apunta a la traduccion home.menu.<key>.
-// Solo "play" tiene ruta destino; el resto son pantallas stub.
-const homeOptions = [
-  { key: "play", position: "left-1/2 top-[14%] -translate-x-1/2", tone: "magenta" },
-  { key: "profile", position: "left-[14%] top-[32%]", tone: "cyan" },
-  { key: "manual", position: "right-[14%] top-[32%]", tone: "cyan" },
-  { key: "logout", position: "left-[22%] top-[64%]", tone: "cyan" },
-  { key: "about", position: "right-[18%] top-[64%]", tone: "cyan" }
-] as const;
+// Duracion del zoom de camara antes de entrar a la zona de despliegue (lobby).
+const ZOOM_TO_LOBBY_MS = 1100;
 
 // El logo combina el encendido de neon (una vez) con una respiracion del glow en bucle.
 const titleWhoStyle: CSSProperties = {
@@ -31,28 +24,31 @@ const claimStyle: CSSProperties = {
   textShadow: "0 0 14px rgb(36 245 255 / 0.5)"
 };
 
-const optionButtonShadow = {
-  cyan: "0 0 24px rgb(36 245 255 / 0.42)",
-  magenta: "0 0 24px rgb(255 43 214 / 0.42)"
-} as const;
+// Enlaces secundarios de la esquina inferior izquierda (info / soporte).
+const footerLinks = [
+  { to: "/about", key: "about" },
+  { to: "/manual", key: "manual" },
+  { to: "/faq", key: "faq" },
+  { to: "/support", key: "support" }
+] as const;
 
 function Home() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  // Simula el paso de landing publica a menu principal hasta conectar auth/navegacion real.
+  // Al pulsar Jugar la camara hace zoom a la ciudad y luego navegamos al lobby.
   const [isZoomed, setIsZoomed] = useState(false);
 
-  // Accion de cada opcion del menu. Lo que no tiene ruta todavia se queda sin handler.
-  function handleOption(key: (typeof homeOptions)[number]["key"]) {
-    if (key === "play") void navigate({ to: "/lobby" });
-    if (key === "profile") void navigate({ to: "/profile" });
-    if (key === "manual") void navigate({ to: "/manual" });
-    if (key === "about") void navigate({ to: "/about" });
-    if (key === "logout") setIsZoomed(false);
+  function handlePlay() {
+    if (isZoomed) return;
+    setIsZoomed(true);
+    setTimeout(() => void navigate({ to: "/lobby" }), ZOOM_TO_LOBBY_MS);
   }
 
+  // Mientras hace zoom, la interfaz se desvanece para dejar ver el viaje de camara.
+  const overlayFade = isZoomed ? "pointer-events-none opacity-0" : "opacity-100";
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-bg">
+    <main className="relative h-screen overflow-hidden bg-bg">
       {/* Cielo 2D: se separa del canvas para evitar cargar una textura 3D innecesaria. */}
       <img
         src={skyHome3d}
@@ -65,13 +61,33 @@ function Home() {
 
       <HomeScene isZoomed={isZoomed} />
 
-      {/* Landing inicial con titulo, claim y acceso al juego. */}
-      <section
-        className={`relative z-10 flex min-h-screen flex-col items-center justify-center px-8 pb-20 pt-16 text-center transition duration-700 ${
-          isZoomed ? "pointer-events-none translate-y-16 opacity-0" : "translate-y-6 opacity-100"
+      {/* Esquina superior izquierda: acceso de unidad. */}
+      <div
+        className={`animate-hud-in absolute left-8 top-8 z-10 flex flex-col gap-2 transition duration-700 ${overlayFade}`}
+      >
+        <span className="font-display text-[0.6rem] font-bold uppercase tracking-[0.4em] text-neon-cyan/70">
+          // ACCESO
+        </span>
+        <Link
+          to="/login"
+          className="border-2 border-neon-magenta bg-neon-magenta/15 px-6 py-2.5 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)]"
+        >
+          {t("home.login")}
+        </Link>
+        <Link
+          to="/register"
+          className="border border-neon-cyan/60 bg-bg/40 px-6 py-2.5 font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)]"
+        >
+          {t("home.register")}
+        </Link>
+      </div>
+
+      {/* Centro: logo y claim. No captura clics para no tapar el fondo 3D. */}
+      <div
+        className={`pointer-events-none absolute inset-0 z-0 flex -translate-y-8 flex-col items-center justify-center px-8 text-center transition duration-700 ${
+          isZoomed ? "scale-110 opacity-0" : "opacity-100"
         }`}
       >
-        {/* Etiqueta de sistema sobre el logo. */}
         <p className="font-display mb-6 text-xs font-bold uppercase tracking-[0.45em] text-neon-cyan/70 [text-shadow:0_0_12px_rgb(36_245_255_/_0.5)]">
           // SISTEMA CAZADOR — V.42
         </p>
@@ -86,80 +102,48 @@ function Home() {
         </h1>
 
         <p
-          className="mt-10 font-display text-2xl font-semibold uppercase tracking-[0.36em] text-text-main"
+          className="mt-8 font-display text-xl font-semibold uppercase tracking-[0.36em] text-text-main"
           style={claimStyle}
         >
           - {t("home.claim")} -
         </p>
+      </div>
 
-        {/* Boton principal estilo terminal: panel con esquinas y eyebrow. */}
-        <button
-          type="button"
-          onClick={() => setIsZoomed(true)}
-          className="group relative mt-12 border-2 border-neon-magenta bg-bg/60 px-20 py-5 transition hover:bg-neon-magenta/15 hover:shadow-[0_0_40px_rgb(255_43_214_/_0.5)] active:translate-y-px"
-          style={{ boxShadow: "0 0 22px rgb(255 43 214 / 0.42)" }}
-        >
-          <span className="absolute left-0 top-0 h-3 w-3 border-l-2 border-t-2 border-neon-cyan" />
-          <span className="absolute right-0 top-0 h-3 w-3 border-r-2 border-t-2 border-neon-cyan" />
-          <span className="absolute bottom-0 left-0 h-3 w-3 border-b-2 border-l-2 border-neon-cyan" />
-          <span className="absolute bottom-0 right-0 h-3 w-3 border-b-2 border-r-2 border-neon-cyan" />
-          <span className="font-display block text-[0.6rem] font-bold uppercase tracking-[0.4em] text-neon-cyan/70">
-            // INICIAR SECUENCIA
-          </span>
-          <span className="font-display block text-3xl font-black uppercase tracking-widest text-text-main transition group-hover:[text-shadow:0_0_18px_rgb(255_43_214_/_0.8)]">
-            {t("home.play")} →
-          </span>
-        </button>
-      </section>
-
-      {/* Menu principal tras el zoom: cada opcion es un panel terminal. */}
-      <section
-        className={`absolute inset-0 z-20 transition duration-700 ${
-          isZoomed ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
+      {/* Esquina inferior derecha: lanzar partida (zoom + viaje al lobby). */}
+      <button
+        type="button"
+        onClick={handlePlay}
+        className={`group animate-hud-in absolute bottom-10 right-10 z-10 block border-2 border-neon-magenta bg-bg/65 px-16 py-5 text-right transition duration-700 hover:bg-neon-magenta/15 hover:shadow-[0_0_44px_rgb(255_43_214_/_0.55)] active:translate-y-px ${overlayFade}`}
+        style={{ boxShadow: "0 0 24px rgb(255 43 214 / 0.42)" }}
       >
-        {homeOptions.map((option, index) => (
-          <button
-            key={option.key}
-            type="button"
-            onClick={() => handleOption(option.key)}
-            style={{
-              boxShadow:
-                option.tone === "cyan" ? optionButtonShadow.cyan : optionButtonShadow.magenta,
-              animationDelay: `${index * 0.08}s`
-            }}
-            className={`group absolute ${option.position} ${
-              isZoomed ? "animate-crt-on" : ""
-            } min-w-60 border-2 bg-bg/75 px-8 py-4 text-left backdrop-blur-sm transition hover:-translate-y-0.5 ${
-              option.tone === "cyan"
-                ? "border-neon-cyan hover:bg-neon-cyan/15 hover:shadow-[0_0_32px_rgb(36_245_255_/_0.5)]"
-                : "border-neon-magenta hover:bg-neon-magenta/15 hover:shadow-[0_0_32px_rgb(255_43_214_/_0.55)]"
-            }`}
-          >
-            {/* Esquinas decorativas en color complementario al borde. */}
-            <span
-              className={`absolute left-0 top-0 h-2.5 w-2.5 border-l-2 border-t-2 ${
-                option.tone === "cyan" ? "border-neon-magenta" : "border-neon-cyan"
-              }`}
-            />
-            <span
-              className={`absolute bottom-0 right-0 h-2.5 w-2.5 border-b-2 border-r-2 ${
-                option.tone === "cyan" ? "border-neon-magenta" : "border-neon-cyan"
-              }`}
-            />
-            <span
-              className={`font-display block text-[0.55rem] font-bold uppercase tracking-[0.35em] ${
-                option.tone === "cyan" ? "text-neon-cyan/60" : "text-neon-magenta/70"
-              }`}
+        <span className="absolute left-0 top-0 h-3 w-3 border-l-2 border-t-2 border-neon-cyan" />
+        <span className="absolute right-0 top-0 h-3 w-3 border-r-2 border-t-2 border-neon-cyan" />
+        <span className="absolute bottom-0 left-0 h-3 w-3 border-b-2 border-l-2 border-neon-cyan" />
+        <span className="absolute bottom-0 right-0 h-3 w-3 border-b-2 border-r-2 border-neon-cyan" />
+        <span className="font-display block text-[0.6rem] font-bold uppercase tracking-[0.4em] text-neon-cyan/70">
+          // INICIAR SECUENCIA
+        </span>
+        <span className="font-display block text-4xl font-black uppercase tracking-widest text-text-main transition group-hover:[text-shadow:0_0_20px_rgb(255_43_214_/_0.85)]">
+          {t("home.play")} →
+        </span>
+      </button>
+
+      {/* Esquina inferior izquierda: info y soporte en pequeño. */}
+      <nav
+        className={`absolute bottom-9 left-8 z-10 flex flex-wrap items-center gap-x-4 gap-y-1 transition duration-700 ${overlayFade}`}
+      >
+        {footerLinks.map((link, index) => (
+          <span key={link.key} className="flex items-center gap-4">
+            {index > 0 && <span className="text-neon-cyan/25">/</span>}
+            <Link
+              to={link.to}
+              className="font-display text-[0.7rem] font-bold uppercase tracking-[0.25em] text-text-muted/60 transition hover:text-neon-cyan hover:[text-shadow:0_0_10px_rgb(36_245_255_/_0.6)]"
             >
-              // {String(index + 1).padStart(2, "0")}
-            </span>
-            <span className="font-display block text-xl font-black uppercase tracking-wider text-text-main">
-              {t(`home.menu.${option.key}`)}
-            </span>
-          </button>
+              {t(`home.menu.${link.key}`)}
+            </Link>
+          </span>
         ))}
-      </section>
+      </nav>
     </main>
   );
 }
