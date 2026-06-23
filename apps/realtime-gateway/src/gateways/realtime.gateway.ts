@@ -20,6 +20,7 @@ import type {
   GameLeavePayload,
   LobbyJoinPayload,
   LobbyLeavePayload,
+  LobbyReadyPayload,
   PlayerInputPayload
 } from "@whoshuman/shared-types";
 import { MessagingService } from "../common/messaging.service";
@@ -158,6 +159,25 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     });
 
     socket.emit(ServerSocketEvents.lobbyLeft, { lobbyId });
+  }
+
+  @SubscribeMessage(ClientSocketEvents.lobbyReady)
+  async handleLobbyReady(
+    @ConnectedSocket() socket: RealtimeSocket,
+    @MessageBody() payload: LobbyReadyPayload
+  ) {
+    const user = this.requireUser(socket);
+    const lobbyId = socket.data.lobbyId;
+    if (!lobbyId) {
+      socket.emit(ServerSocketEvents.gatewayError, { message: "Not in a lobby" });
+      return;
+    }
+
+    await this.publishToNats(MatchmakingSubjects.setReady, {
+      userId: user.sub,
+      lobbyId,
+      ready: payload?.ready === true
+    });
   }
 
   @SubscribeMessage(ClientSocketEvents.gameJoin)

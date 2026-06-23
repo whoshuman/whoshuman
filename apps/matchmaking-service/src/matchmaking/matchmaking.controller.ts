@@ -16,4 +16,9 @@ export class MatchmakingController {
   async handleLeaveQueue(@Payload() payload: unknown) {
     await this.matchmaking.leaveQueue(payload);
   }
+
+  @EventPattern(MatchmakingSubjects.setReady)
+  async handleSetReady(@Payload() payload: unknown) {
+    await this.matchmaking.setReady(payload);
+  }
 }

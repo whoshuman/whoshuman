@@ -5,7 +5,6 @@ interface EnvVars {
   NATS_SERVERS: string[];
   MATCHMAKING_MIN_PLAYERS: number;
   MATCHMAKING_MAX_PLAYERS: number;
-  MATCHMAKING_COUNTDOWN_MS: number;
 }
 
 const envSchema = joi
@@ -16,8 +15,7 @@ const envSchema = joi
       .number()
       .integer()
       .min(joi.ref("MATCHMAKING_MIN_PLAYERS"))
-      .default(8),
-    MATCHMAKING_COUNTDOWN_MS: joi.number().integer().min(0).default(10000)
+      .default(8)
   })
   .unknown(true);
 
@@ -37,6 +35,5 @@ const envVars = validationResult.value;
 export const envs = {
   natsServers: envVars.NATS_SERVERS,
   matchmakingMinPlayers: envVars.MATCHMAKING_MIN_PLAYERS,
-  matchmakingMaxPlayers: envVars.MATCHMAKING_MAX_PLAYERS,
-  matchmakingCountdownMs: envVars.MATCHMAKING_COUNTDOWN_MS
+  matchmakingMaxPlayers: envVars.MATCHMAKING_MAX_PLAYERS
 };
