@@ -13,6 +13,7 @@ COPY apps/game-service/package.json ./apps/game-service/package.json
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @whoshuman/shared-events build
+RUN pnpm --filter @whoshuman/shared-types build
 
 COPY apps/game-service ./apps/game-service
 
