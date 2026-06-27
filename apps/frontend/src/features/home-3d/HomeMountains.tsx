@@ -9,9 +9,9 @@ type HomeMountainsProps = {
 
 // Dimensiones del terreno wireframe. Mas segmentos = malla mas detallada (y mas coste).
 const WIDTH = 2000;
-const DEPTH = 420;
-const SEGMENTS_X = 100;
-const SEGMENTS_Z = 22;
+const DEPTH = 240;
+const SEGMENTS_X = 50;
+const SEGMENTS_Z = 10;
 const PEAK_HEIGHT = 54;
 
 // Aplica el relieve animado (crestas que ondulan) al attribute de posiciones de una geometria.
@@ -61,7 +61,7 @@ function HomeMountains({ color, fillColor }: HomeMountainsProps) {
 
   return (
     // Detras de toda la ciudad (edificios llegan a ~z -385) y delante del sol (z -560).
-    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -52, -460]}>
+    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -90, -150]}>
       {/* Caras solidas y opacas: entran en el pase opaco para que los edificios las tapen
           correctamente por profundidad. polygonOffset las empuja tras la rejilla. */}
       <mesh ref={fillRef}>
