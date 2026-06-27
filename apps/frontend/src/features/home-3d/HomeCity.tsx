@@ -1,3 +1,5 @@
+import { useThree } from "@react-three/fiber";
+
 import { cityBuildings } from "./homeCityData";
 import type { NeonPaletteProps } from "./homeSceneTypes";
 
@@ -5,11 +7,24 @@ type HomeCityProps = NeonPaletteProps & {
   colorBase: string;
 };
 
+// Ancho aproximado del conjunto de edificios sin escalar (rango x + anchos).
+const CITY_BASE_WIDTH = 350;
+// Distancia camara -> ciudad y campo de vision vertical de la escena de home.
+const CITY_DISTANCE = 356;
+const VERTICAL_FOV = 58;
+
 // Ciudad procedural de fondo: volumenes simples, profundidad y detalles neon.
 function HomeCity({ colorBase, colorCyan, colorGreen, colorMagenta, colorOrange }: HomeCityProps) {
+  const { size } = useThree();
+
+  // Escalamos la ciudad en X segun el aspect ratio para que cubra todo el ancho visible.
+  const aspect = size.width / size.height;
+  const visibleWidth = 2 * Math.tan((VERTICAL_FOV * Math.PI) / 360) * CITY_DISTANCE * aspect;
+  const scaleX = Math.max(1.58, (visibleWidth * 1.05) / CITY_BASE_WIDTH);
+
   return (
-    // La ciudad se coloca muy al fondo y se escala en X/Z para ocupar el horizonte.
-    <group position={[0, -48, -300]} scale={[1.58, 1, 1.12]}>
+    // La ciudad se coloca muy al fondo; el ancho se adapta al viewport para no dejar huecos.
+    <group position={[0, -48, -300]} scale={[scaleX, 1, 1.12]}>
       {cityBuildings.map((building, buildingIndex) => {
         // Rotamos la paleta por edificio para evitar una ciudad plana de un solo color.
         const neonPalette = [colorCyan, colorMagenta, colorOrange, colorGreen];

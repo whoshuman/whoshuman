@@ -1,6 +1,8 @@
+import { AdaptiveDpr, PerformanceMonitor } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
+import { Suspense } from "react";
 
-import HomeCity from "./HomeCity";
+import HomeCityModel from "./HomeCityModel";
 import HomeCityTraffic from "./HomeCityTraffic";
 import HomeGrid from "./HomeGrid";
 import HomeMountains from "./HomeMountains";
@@ -12,6 +14,7 @@ import { getCssColor } from "./homeSceneUtils";
 // y el fondo global (SceneBackground) lo monta con camara estatica.
 function RetrowaveLandscape() {
   // Los colores salen de los tokens CSS para mantener la escena alineada con el design system.
+  const colorBg = getCssColor("--color-bg");
   const colorSurface = getCssColor("--color-surface");
   const colorNeonCyan = getCssColor("--color-neon-cyan");
   const colorNeonMagenta = getCssColor("--color-neon-magenta");
@@ -20,22 +23,31 @@ function RetrowaveLandscape() {
 
   return (
     <>
+      {/* Rendimiento adaptativo: PerformanceMonitor vigila los fps y AdaptiveDpr baja la
+          resolucion solo cuando la GPU sufre (la ciudad GLB es pesada, ~27M vertices).
+          En reposo y en equipos potentes no cambia nada: calidad completa. */}
+      <PerformanceMonitor />
+      <AdaptiveDpr pixelated={false} />
+
       <HomeSun color={colorNeonMagenta} />
       <HomeMountains color={colorNeonCyan} fillColor={colorSurface} />
-      <HomeCity
-        colorBase={colorSurface}
-        colorCyan={colorNeonCyan}
-        colorGreen={colorSuccess}
-        colorMagenta={colorNeonMagenta}
-        colorOrange={colorSunOrange}
-      />
+      {/* Luces solo para el GLB (PBR): sin ellas la ciudad sale negra y solo brillan
+          los neones emisivos. El sol/grid/montañas usan meshBasicMaterial, no les afecta. */}
+      <ambientLight intensity={1.4} />
+      <directionalLight position={[0, 80, 30]} intensity={2.6} color={colorNeonCyan} />
+      <directionalLight position={[0, 40, -60]} intensity={1.4} color={colorNeonMagenta} />
+
+      {/* Suspense hace de red de seguridad mientras el GLB de la ciudad descarga. */}
+      <Suspense fallback={null}>
+        <HomeCityModel />
+      </Suspense>
       <HomeCityTraffic
         colorCyan={colorNeonCyan}
         colorGreen={colorSuccess}
         colorMagenta={colorNeonMagenta}
         colorOrange={colorSunOrange}
       />
-      <HomeGrid colorMain={colorNeonCyan} colorSecondary={colorNeonMagenta} />
+      <HomeGrid colorMain={colorNeonCyan} colorSecondary={colorNeonMagenta} colorFloor={colorBg} />
 
       {/* Bloom hace que los materiales basicos neon respiren sin depender de luces reales. */}
       <EffectComposer>
