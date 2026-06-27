@@ -18,7 +18,9 @@
   "settings": {
     "title": "PARAMÈTRES",
     "language": "LANGUE",
-    "dev": "OUTILS DEV"
+    "dev": "OUTILS DEV",
+    "audio": "AUDIO",
+    "music": "MUSIQUE"
   },
   "home": {
     "title": "Who's Human",

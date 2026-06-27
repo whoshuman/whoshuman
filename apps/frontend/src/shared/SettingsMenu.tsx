@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 import LanguageSelector from "./LanguageSelector";
+import { useMusic } from "./musicStore";
 
 type SettingsMenuProps = {
   // Lado por el que se ancla el panel desplegable respecto al boton.
@@ -14,6 +15,8 @@ type SettingsMenuProps = {
 function SettingsMenu({ align = "left" }: SettingsMenuProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const musicEnabled = useMusic((state) => state.enabled);
+  const toggleMusic = useMusic((state) => state.toggle);
 
   return (
     <div className="relative">
@@ -73,6 +76,26 @@ function SettingsMenu({ align = "left" }: SettingsMenuProps) {
               {t("settings.language")}
             </p>
             <LanguageSelector showLabel={false} />
+
+            {/* Seccion audio: activar/desactivar la musica de fondo. */}
+            <div className="mt-5 border-t border-neon-cyan/15 pt-4">
+              <p className="font-display mb-2 text-[0.6rem] font-bold uppercase tracking-[0.3em] text-text-muted/60">
+                {t("settings.audio")}
+              </p>
+              <button
+                type="button"
+                onClick={toggleMusic}
+                aria-pressed={musicEnabled}
+                className={`flex w-full items-center justify-between border px-3 py-2 font-display text-xs font-bold uppercase tracking-wider transition ${
+                  musicEnabled
+                    ? "border-neon-cyan bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan/20"
+                    : "border-neon-cyan/30 text-text-muted/60 hover:border-neon-cyan/50"
+                }`}
+              >
+                <span>{t("settings.music")}</span>
+                <span>{musicEnabled ? "ON" : "OFF"}</span>
+              </button>
+            </div>
 
             {/* Seccion herramientas de desarrollo. */}
             <div className="mt-5 border-t border-neon-cyan/15 pt-4">

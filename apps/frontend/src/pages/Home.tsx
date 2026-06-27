@@ -11,6 +11,7 @@ import Register from "./Register";
 import Lobby from "./Lobby";
 import ProfileEdit from "./ProfileEdit";
 import AboutTeam from "./AboutTeam";
+import { useMusic } from "../shared/musicStore";
 
 // Vistas que se montan como overlay sobre la home sin cambiar de ruta.
 type HomeView = "home" | "login" | "register" | "lobby";
@@ -50,6 +51,7 @@ function Home() {
   const [profileOpen, setProfileOpen] = useState(false);
   // Sobre el proyecto: la camara se da la vuelta completa y muestra al equipo.
   const [aboutOpen, setAboutOpen] = useState(false);
+  const startMusic = useMusic((state) => state.start);
 
   function closeView() {
     setView("home");
@@ -60,6 +62,8 @@ function Home() {
 
   function handlePlay() {
     if (isZoomed) return;
+    // El clic es un gesto de usuario valido para arrancar el audio (autoplay permitido).
+    startMusic();
     // Zoom de camara hacia la ciudad y, al terminar, abre la zona de despliegue.
     setIsZoomed(true);
     setTimeout(() => setView("lobby"), ZOOM_TO_LOBBY_MS);
