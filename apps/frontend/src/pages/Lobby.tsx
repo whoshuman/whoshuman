@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import CornerBrackets from "../shared/CornerBrackets";
+
 type LobbyProps = {
   // En modo embebido se monta como overlay tras el zoom de la home (no como ruta).
   embedded?: boolean;
   onClose?: () => void;
+  // Abre la pantalla de edicion de perfil (panel DATOS DE UNIDAD).
+  onEditProfile?: () => void;
 };
 
-function Lobby({ embedded = false, onClose }: LobbyProps) {
+function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
   const { t } = useTranslation();
   const [glitching, setGlitching] = useState(false);
 
@@ -42,15 +46,19 @@ function Lobby({ embedded = false, onClose }: LobbyProps) {
         <div className="grid grid-cols-3 gap-6">
           {/* Panel izquierdo — perfil y matchmaking */}
           <div className="col-span-1 flex flex-col gap-4">
-            {/* Datos de unidad */}
-            <div className="animate-crt-on [transform-origin:center] relative border border-neon-cyan bg-surface p-6 shadow-[0_0_24px_rgba(36,245,255,0.16)]">
-              <span className="absolute left-0 top-0 h-3 w-3 border-l-2 border-t-2 border-neon-magenta" />
-              <span className="absolute right-0 top-0 h-3 w-3 border-r-2 border-t-2 border-neon-magenta" />
-              <span className="absolute bottom-0 left-0 h-3 w-3 border-b-2 border-l-2 border-neon-magenta" />
-              <span className="absolute bottom-0 right-0 h-3 w-3 border-b-2 border-r-2 border-neon-magenta" />
+            {/* Datos de unidad — abre la edicion de perfil (la camara gira a la derecha). */}
+            <button
+              type="button"
+              onClick={onEditProfile}
+              className="animate-crt-on group [transform-origin:center] relative block w-full border border-neon-cyan bg-surface p-6 text-left shadow-[0_0_24px_rgba(36,245,255,0.16)] transition hover:border-neon-cyan hover:bg-neon-cyan/5 hover:shadow-[0_0_36px_rgba(36,245,255,0.32)]"
+            >
+              <CornerBrackets color="var(--color-neon-magenta)" />
 
-              <p className="font-display mb-4 text-xs font-bold uppercase tracking-[0.25em] text-neon-cyan">
-                // {t("lobby.unitData")}
+              <p className="font-display mb-4 flex items-center justify-between text-xs font-bold uppercase tracking-[0.25em] text-neon-cyan">
+                <span>// {t("lobby.unitData")}</span>
+                <span className="text-neon-magenta opacity-0 transition group-hover:opacity-100">
+                  {t("profile.title")} →
+                </span>
               </p>
               <div className="mb-4 flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-2xl font-black text-neon-cyan [text-shadow:0_0_12px_rgba(36,245,255,0.6)]">
@@ -78,17 +86,14 @@ function Lobby({ embedded = false, onClose }: LobbyProps) {
                   <p className="font-display font-bold text-text-main">—</p>
                 </div>
               </div>
-            </div>
+            </button>
 
             {/* Matchmaking */}
             <div
               className="animate-crt-on [transform-origin:center] relative border border-neon-magenta bg-surface p-6 shadow-[0_0_32px_rgba(255,43,214,0.22)]"
               style={{ animationDelay: "0.15s", opacity: 0 }}
             >
-              <span className="absolute left-0 top-0 h-3 w-3 border-l-2 border-t-2 border-neon-cyan" />
-              <span className="absolute right-0 top-0 h-3 w-3 border-r-2 border-t-2 border-neon-cyan" />
-              <span className="absolute bottom-0 left-0 h-3 w-3 border-b-2 border-l-2 border-neon-cyan" />
-              <span className="absolute bottom-0 right-0 h-3 w-3 border-b-2 border-r-2 border-neon-cyan" />
+              <CornerBrackets color="var(--color-neon-cyan)" />
 
               <p className="font-display mb-2 text-xs font-bold uppercase tracking-[0.25em] text-neon-magenta">
                 // {t("lobby.autoDeployTitle")}
@@ -110,8 +115,7 @@ function Lobby({ embedded = false, onClose }: LobbyProps) {
               className="animate-crt-on [transform-origin:center] relative border border-neon-cyan/30 bg-surface p-6"
               style={{ animationDelay: "0.3s", opacity: 0 }}
             >
-              <span className="absolute left-0 top-0 h-3 w-3 border-l-2 border-t-2 border-neon-magenta" />
-              <span className="absolute right-0 top-0 h-3 w-3 border-r-2 border-t-2 border-neon-magenta" />
+              <CornerBrackets color="var(--color-neon-magenta)" corners={["tl", "tr"]} />
 
               <p className="font-display mb-6 text-xs font-bold uppercase tracking-[0.25em] text-neon-cyan">
                 // {t("lobby.activeOps")}

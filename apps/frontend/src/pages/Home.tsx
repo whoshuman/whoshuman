@@ -9,6 +9,8 @@ import SettingsMenu from "../shared/SettingsMenu";
 import Login from "./Login";
 import Register from "./Register";
 import Lobby from "./Lobby";
+import ProfileEdit from "./ProfileEdit";
+import AboutTeam from "./AboutTeam";
 
 // Vistas que se montan como overlay sobre la home sin cambiar de ruta.
 type HomeView = "home" | "login" | "register" | "lobby";
@@ -44,10 +46,16 @@ function Home() {
   // La home actua de shell: las vistas de acceso y despliegue se abren aqui mismo.
   const [view, setView] = useState<HomeView>("home");
   const [isZoomed, setIsZoomed] = useState(false);
+  // Edicion de perfil: la camara gira a la derecha y se abre el panel sobre el lobby.
+  const [profileOpen, setProfileOpen] = useState(false);
+  // Sobre el proyecto: la camara se da la vuelta completa y muestra al equipo.
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   function closeView() {
     setView("home");
     setIsZoomed(false);
+    setProfileOpen(false);
+    setAboutOpen(false);
   }
 
   function handlePlay() {
@@ -57,8 +65,8 @@ function Home() {
     setTimeout(() => setView("lobby"), ZOOM_TO_LOBBY_MS);
   }
 
-  // La interfaz de la landing se desvanece cuando hay zoom o una vista abierta.
-  const dimmed = isZoomed || view !== "home";
+  // La interfaz de la landing se desvanece cuando hay zoom, vuelta al equipo o vista abierta.
+  const dimmed = isZoomed || aboutOpen || view !== "home";
   const overlayFade = dimmed ? "pointer-events-none opacity-0" : "opacity-100";
 
   return (
@@ -73,7 +81,7 @@ function Home() {
       {/* Oscurece el cielo y ayuda a integrar el fondo con el grid y la ciudad. */}
       <div className="absolute inset-0 bg-linear-to-b from-bg/20 via-bg/35 to-bg/80" />
 
-      <HomeScene isZoomed={isZoomed} />
+      <HomeScene isZoomed={isZoomed} lookRight={profileOpen} lookBack={aboutOpen} />
 
       {/* Esquina superior derecha: rueda de ajustes (idioma + herramientas dev). */}
       <div
@@ -160,12 +168,23 @@ function Home() {
         {footerLinks.map((link, index) => (
           <span key={link.key} className="flex items-center gap-4">
             {index > 0 && <span className="text-neon-cyan/25">/</span>}
-            <Link
-              to={link.to}
-              className="font-display text-[0.7rem] font-bold uppercase tracking-[0.25em] text-text-muted/60 transition hover:text-neon-cyan hover:[text-shadow:0_0_10px_rgb(36_245_255_/_0.6)]"
-            >
-              {t(`home.menu.${link.key}`)}
-            </Link>
+            {link.key === "about" ? (
+              // "Sobre el proyecto" no navega: gira la camara 180 y muestra al equipo.
+              <button
+                type="button"
+                onClick={() => setAboutOpen(true)}
+                className="font-display text-[0.7rem] font-bold uppercase tracking-[0.25em] text-text-muted/60 transition hover:text-neon-cyan hover:[text-shadow:0_0_10px_rgb(36_245_255_/_0.6)]"
+              >
+                {t(`home.menu.${link.key}`)}
+              </button>
+            ) : (
+              <Link
+                to={link.to}
+                className="font-display text-[0.7rem] font-bold uppercase tracking-[0.25em] text-text-muted/60 transition hover:text-neon-cyan hover:[text-shadow:0_0_10px_rgb(36_245_255_/_0.6)]"
+              >
+                {t(`home.menu.${link.key}`)}
+              </Link>
+            )}
           </span>
         ))}
       </nav>
@@ -181,11 +200,18 @@ function Home() {
           <Register embedded onClose={closeView} onSwitch={() => setView("login")} />
         </div>
       )}
-      {view === "lobby" && (
-        <div className="animate-fade-in fixed inset-0 z-30 bg-bg/90 backdrop-blur-sm">
-          <Lobby embedded onClose={closeView} />
+      {/* Zona de despliegue: se oculta cuando se abre la edicion de perfil. */}
+      {view === "lobby" && !profileOpen && (
+        <div className="animate-fade-in fixed inset-0 z-30 bg-bg/30">
+          <Lobby embedded onClose={closeView} onEditProfile={() => setProfileOpen(true)} />
         </div>
       )}
+
+      {/* Edicion de perfil: pantalla diegetica montada en un edificio (camara apunta a la derecha). */}
+      {view === "lobby" && profileOpen && <ProfileEdit onClose={() => setProfileOpen(false)} />}
+
+      {/* Sobre el proyecto: la camara se da la vuelta y aparece la ficha del equipo. */}
+      {view === "home" && aboutOpen && <AboutTeam onClose={() => setAboutOpen(false)} />}
     </main>
   );
 }
