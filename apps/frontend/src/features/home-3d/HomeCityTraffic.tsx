@@ -1,5 +1,6 @@
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
+import { SphereGeometry } from "three";
 import type { Group } from "three";
 
 import { cityParticles, flyingVehicles } from "./homeTrafficData";
@@ -9,6 +10,10 @@ import type { NeonPaletteProps } from "./homeSceneTypes";
 function HomeCityTraffic({ colorCyan, colorGreen, colorMagenta, colorOrange }: NeonPaletteProps) {
   const vehiclesRef = useRef<Group>(null);
   const neonPalette = [colorCyan, colorMagenta, colorOrange, colorGreen];
+
+  // Una sola geometria de esfera (baja resolucion) compartida por todas las particulas:
+  // a distancia de fondo 8x8 segmentos no se distingue de 12x12 y evita 16 geometrias.
+  const particleGeometry = useMemo(() => new SphereGeometry(0.75, 8, 8), []);
 
   useFrame(({ clock }) => {
     const elapsedTime = clock.getElapsedTime();
@@ -35,8 +40,11 @@ function HomeCityTraffic({ colorCyan, colorGreen, colorMagenta, colorOrange }: N
     <group position={[0, -48, -145]}>
       {/* Puntos de luz estaticos que simulan drones, senales o contaminacion luminica. */}
       {cityParticles.map((particle, index) => (
-        <mesh key={index} position={[particle.x, particle.y, particle.z]}>
-          <sphereGeometry args={[0.75, 12, 12]} />
+        <mesh
+          key={index}
+          geometry={particleGeometry}
+          position={[particle.x, particle.y, particle.z]}
+        >
           <meshBasicMaterial color={neonPalette[particle.colorIndex]} transparent opacity={0.82} />
         </mesh>
       ))}
