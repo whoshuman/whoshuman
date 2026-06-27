@@ -57,6 +57,41 @@ body {
   padding: 4rem 0;
 }
 
+/* Panel neon reutilizable: borde + halo controlados por --accent (por defecto cian). No fija
+   fondo a proposito, para combinarse con bg-surface, bg-surface/85, etc. segun el caso. */
+.panel-neon {
+  --accent: var(--color-neon-cyan);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+/* Boton con color de acento via --accent: relleno al pasar el raton, todo en CSS (sin JS). */
+.btn-accent {
+  border: 1px solid var(--accent, var(--color-neon-cyan));
+  color: var(--accent, var(--color-neon-cyan));
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    box-shadow 0.2s;
+}
+.btn-accent:hover {
+  background-color: var(--accent, var(--color-neon-cyan));
+  color: var(--color-bg);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--accent, var(--color-neon-cyan)) 55%, transparent);
+}
+
+/* Accesibilidad / equipos lentos: si el usuario pide menos movimiento, apagamos bucles de
+   animacion y transiciones largas (las animaciones CSS dejan de consumir recursos). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 /* Animacion de encendido de pantalla de tubo CRT al montar paneles. */
 @keyframes crt-on {
   0%   { transform: scaleY(0.005) scaleX(0.08); opacity: 1;   filter: brightness(12) blur(2px); }
@@ -138,4 +173,20 @@ body {
 @keyframes hud-scan {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(200%); }
+}
+
+/* Barrido vertical de una linea de scan para pantallas diegeticas tipo CRT. */
+@keyframes screen-scan {
+  0%   { transform: translateY(-120%); }
+  100% { transform: translateY(120%); }
+}
+
+/* Parpadeo sutil de pantalla encendida (tubo inestable). */
+@keyframes screen-flicker {
+  0%, 100% { opacity: 1; }
+  48%      { opacity: 1; }
+  50%      { opacity: 0.92; }
+  52%      { opacity: 0.98; }
+  80%      { opacity: 1; }
+  82%      { opacity: 0.95; }
 }
