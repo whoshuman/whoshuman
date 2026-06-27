@@ -81,6 +81,24 @@
     "statusInProgress": "EN CURSO",
     "join": "UNIRSE"
   },
+  "profile": {
+    "eyebrow": "CONFIGURACIÓN DE UNIDAD",
+    "title": "EDITAR PERFIL",
+    "subtitle": "Actualiza la identidad de tu unidad en el sistema Cazador.",
+    "callsign": "DISTINTIVO",
+    "callsignHint": "Identificador visible en operaciones",
+    "bio": "BIO / NOTAS",
+    "bioHint": "Opcional · máx 140 caracteres",
+    "avatar": "ID DE AVATAR",
+    "save": "GUARDAR CAMBIOS",
+    "cancel": "CANCELAR",
+    "saved": "PERFIL ACTUALIZADO"
+  },
+  "about": {
+    "eyebrow": "PERSONAL DEL PROYECTO",
+    "title": "EL EQUIPO",
+    "subtitle": "Unidades tras el sistema Cazador."
+  },
   "game": {
     "scene": "Escena 3D — Three.js",
     "time": "Tiempo",

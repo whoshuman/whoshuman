@@ -81,6 +81,24 @@
     "statusInProgress": "EN COURS",
     "join": "REJOINDRE"
   },
+  "profile": {
+    "eyebrow": "CONFIGURATION D'UNITÉ",
+    "title": "MODIFIER LE PROFIL",
+    "subtitle": "Mettez à jour l'identité de votre unité dans le système Chasseur.",
+    "callsign": "INDICATIF",
+    "callsignHint": "Identifiant visible en opérations",
+    "bio": "BIO / NOTES",
+    "bioHint": "Optionnel · max 140 caractères",
+    "avatar": "ID D'AVATAR",
+    "save": "ENREGISTRER",
+    "cancel": "ANNULER",
+    "saved": "PROFIL MIS À JOUR"
+  },
+  "about": {
+    "eyebrow": "PERSONNEL DU PROJET",
+    "title": "L'ÉQUIPE",
+    "subtitle": "Unités derrière le système Chasseur."
+  },
   "game": {
     "scene": "Scène 3D — Three.js",
     "time": "Temps",

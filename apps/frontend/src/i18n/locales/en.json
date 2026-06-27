@@ -81,6 +81,24 @@
     "statusInProgress": "IN PROGRESS",
     "join": "JOIN"
   },
+  "profile": {
+    "eyebrow": "UNIT CONFIGURATION",
+    "title": "EDIT PROFILE",
+    "subtitle": "Update your unit identity in the Hunter system.",
+    "callsign": "CALLSIGN",
+    "callsignHint": "Visible identifier in operations",
+    "bio": "BIO / NOTES",
+    "bioHint": "Optional · max 140 characters",
+    "avatar": "AVATAR ID",
+    "save": "SAVE CHANGES",
+    "cancel": "CANCEL",
+    "saved": "PROFILE UPDATED"
+  },
+  "about": {
+    "eyebrow": "PROJECT PERSONNEL",
+    "title": "THE TEAM",
+    "subtitle": "Units behind the Hunter system."
+  },
   "game": {
     "scene": "3D Scene — Three.js",
     "time": "Time",
