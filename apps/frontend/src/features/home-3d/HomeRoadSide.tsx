@@ -47,9 +47,11 @@ function HomeRoadSide() {
     const group = groupRef.current;
     if (!group) return;
     // Cada marcador avanza hacia la camara; al pasarla, vuelve al fondo manteniendo el ritmo.
+    // while (no if): si la pestaña estuvo en segundo plano, el delta es enorme; el bucle
+    // garantiza que el marcador nunca quede en z negativo (no se cuela en la vista de la home).
     for (const child of group.children) {
       child.position.z -= delta * SPEED;
-      if (child.position.z < RECYCLE_Z) {
+      while (child.position.z < RECYCLE_Z) {
         child.position.z += RANGE;
       }
     }
