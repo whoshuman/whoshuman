@@ -150,6 +150,7 @@ function Home() {
       <button
         type="button"
         onClick={handlePlay}
+        data-sfx="access"
         className={`group animate-hud-in absolute bottom-10 right-10 z-10 block border-2 border-neon-magenta bg-bg/65 px-16 py-5 text-right transition duration-700 hover:bg-neon-magenta/15 hover:shadow-[0_0_44px_rgb(255_43_214_/_0.55)] active:translate-y-px ${overlayFade}`}
         style={{ boxShadow: "0 0 24px rgb(255 43 214 / 0.42)" }}
       >
