@@ -29,7 +29,8 @@ function applyRelief(position: BufferAttribute, base: Array<[number, number]>, t
     height += Math.sin(time * 0.7 + x * 0.018) * 0.22;
 
     const envelope = 0.35 + ((depth + DEPTH / 2) / DEPTH) * 0.95;
-    position.setZ(i, height * PEAK_HEIGHT * envelope);
+    // Solo relieve hacia arriba: la base queda anclada a la grid, nunca por debajo.
+    position.setZ(i, Math.max(0, height) * PEAK_HEIGHT * envelope);
   }
   position.needsUpdate = true;
 }

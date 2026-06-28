@@ -36,23 +36,23 @@ function RetrowaveLandscape() {
       <HomeMoon color={colorNeonViolet} />
       {/* Anillo de montañas alrededor de toda la grid: 4 franjas (N/S/E/O) que rodean el
           perimetro, asi se ven montañas se mire hacia donde se mire (incluida la luna). */}
-      <HomeMountains color={colorNeonCyan} fillColor={colorSurface} position={[0, -90, -850]} />
+      <HomeMountains color={colorNeonCyan} fillColor={colorSurface} position={[0, -50, -850]} />
       <HomeMountains
         color={colorNeonCyan}
         fillColor={colorSurface}
-        position={[0, -90, 850]}
+        position={[0, -50, 850]}
         rotationY={Math.PI}
       />
       <HomeMountains
         color={colorNeonCyan}
         fillColor={colorSurface}
-        position={[-850, -90, 0]}
+        position={[-850, -50, 0]}
         rotationY={Math.PI / 2}
       />
       <HomeMountains
         color={colorNeonCyan}
         fillColor={colorSurface}
-        position={[850, -90, 0]}
+        position={[850, -50, 0]}
         rotationY={-Math.PI / 2}
       />
       {/* Luces solo para el GLB (PBR): sin ellas la ciudad sale negra y solo brillan
