@@ -27,7 +27,7 @@ function createSunTexture() {
 
   // Scanlines: huecos transparentes cada vez mas gruesos y separados hacia abajo.
   ctx.globalCompositeOperation = "destination-out";
-  let y = size * 0.5;
+  let y = size * 0.28;
   let gap = 4;
   while (y < size) {
     const thickness = gap * 0.85;
@@ -45,7 +45,7 @@ function HomeSun({ color }: HomeSunProps) {
   return (
     // Mas alla del anillo de montañas (z -850) para que asome por detras de las crestas;
     // la cresta norte opaca le tapa la base, igual que la luna en el lado opuesto.
-    <group position={[0, 60, -1000]}>
+    <group position={[0, 40, -1000]}>
       {/* Halo exterior difuso. Mas grande para que la corona se eleve sobre ciudad y montañas. */}
       <mesh position={[0, 0, -1.2]}>
         <circleGeometry args={[215, 64]} />
