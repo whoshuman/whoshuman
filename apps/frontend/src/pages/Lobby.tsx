@@ -58,7 +58,8 @@ function OperationCard({
 
 function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
   const { t } = useTranslation();
-  const [modal, setModal] = useState<RoomModalMode | null>(null);
+  // "menu" = las tres fichas; un modo = la pantalla expandida de esa operacion (in-place).
+  const [mode, setMode] = useState<RoomModalMode | "menu">("menu");
   // Sonido holografico al aparecer el lobby (perfil + tarjetas).
   useHologramSound(0);
   useHologramSound(180);
@@ -140,35 +141,37 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
         <p className="mt-3 text-lg text-text-muted">{t("lobby.deploySubtitle")}</p>
       </section>
 
-      {/* Tres tarjetas de operacion centradas. */}
-      <div className="mx-auto grid max-w-5xl grid-cols-3 gap-6">
-        <OperationCard
-          accent="var(--color-neon-magenta)"
-          glyph="+"
-          title={t("lobby.createRoom")}
-          description={t("lobby.createRoomDesc")}
-          onClick={() => setModal("create")}
-          delay={0.1}
-        />
-        <OperationCard
-          accent="var(--color-neon-cyan)"
-          glyph="→"
-          title={t("lobby.joinRoom")}
-          description={t("lobby.joinRoomDesc")}
-          onClick={() => setModal("join")}
-          delay={0.2}
-        />
-        <OperationCard
-          accent="var(--color-neon-violet)"
-          glyph="⌕"
-          title={t("lobby.searchRooms")}
-          description={t("lobby.searchRoomsDesc")}
-          onClick={() => setModal("search")}
-          delay={0.3}
-        />
-      </div>
-
-      {modal && <RoomModal mode={modal} onClose={() => setModal(null)} />}
+      {/* Menu: tres fichas. Al elegir una, colapsan y se expande su pantalla en su lugar. */}
+      {mode === "menu" ? (
+        <div className="mx-auto grid max-w-5xl grid-cols-3 gap-6">
+          <OperationCard
+            accent="var(--color-neon-magenta)"
+            glyph="+"
+            title={t("lobby.createRoom")}
+            description={t("lobby.createRoomDesc")}
+            onClick={() => setMode("create")}
+            delay={0.1}
+          />
+          <OperationCard
+            accent="var(--color-neon-cyan)"
+            glyph="→"
+            title={t("lobby.joinRoom")}
+            description={t("lobby.joinRoomDesc")}
+            onClick={() => setMode("join")}
+            delay={0.2}
+          />
+          <OperationCard
+            accent="var(--color-neon-violet)"
+            glyph="⌕"
+            title={t("lobby.searchRooms")}
+            description={t("lobby.searchRoomsDesc")}
+            onClick={() => setMode("search")}
+            delay={0.3}
+          />
+        </div>
+      ) : (
+        <RoomModal mode={mode} onBack={() => setMode("menu")} />
+      )}
     </main>
   );
 }

@@ -8,7 +8,8 @@ export type RoomModalMode = "create" | "join" | "search";
 
 type RoomModalProps = {
   mode: RoomModalMode;
-  onClose: () => void;
+  // Vuelve al menu de operaciones (no cierra el lobby).
+  onBack: () => void;
 };
 
 // Salas abiertas de ejemplo (mock; el backend de matchmaking aun no existe).
@@ -24,8 +25,9 @@ const labelClass = "mb-2 block text-xs font-bold uppercase tracking-widest text-
 const primaryButton =
   "mt-2 w-full border-2 border-neon-magenta bg-neon-magenta py-3.5 font-display font-black uppercase tracking-widest text-bg shadow-[0_0_24px_rgba(255,43,214,0.5)] transition hover:brightness-110 hover:shadow-[0_0_40px_rgba(255,43,214,0.7)] active:translate-y-px";
 
-// Modal de salas (crear / unirse / buscar). Aparicion holografica como el resto de modales.
-function RoomModal({ mode, onClose }: RoomModalProps) {
+// Panel de salas (crear / unirse / buscar). Se expande en el lugar de las fichas (no es un
+// modal por encima); vuelve al menu con el boton de atras. Aparicion holografica.
+function RoomModal({ mode, onBack }: RoomModalProps) {
   const { t } = useTranslation();
   useHologramSound();
 
@@ -37,26 +39,24 @@ function RoomModal({ mode, onClose }: RoomModalProps) {
     mode === "create" ? "room.createTitle" : mode === "join" ? "room.joinTitle" : "room.searchTitle";
 
   return (
-    <div className="animate-fade-in fixed inset-0 z-40 flex items-center justify-center bg-bg/70 p-8 backdrop-blur-sm">
-      <div className="animate-unfold-down origin-top relative w-full max-w-md border border-neon-magenta/50 bg-surface shadow-[0_0_48px_rgba(255,43,214,0.2)]">
-        <CornerBrackets color="var(--color-neon-cyan)" />
+    <div className="animate-unfold-down origin-top relative mx-auto w-full max-w-lg border border-neon-magenta/50 bg-surface shadow-[0_0_48px_rgba(255,43,214,0.2)]">
+      <CornerBrackets color="var(--color-neon-cyan)" />
 
-        {/* Cabecera */}
-        <div className="flex items-center justify-between border-b border-neon-magenta/30 bg-neon-magenta/10 px-6 py-4">
-          <p className="font-display text-sm font-black uppercase tracking-[0.2em] text-neon-magenta">
-            // {t(titleKey)}
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("common.back")}
-            className="font-display text-lg leading-none text-neon-magenta/70 transition hover:text-neon-magenta"
-          >
-            ✕
-          </button>
-        </div>
+      {/* Cabecera: titulo de la operacion + volver al menu. */}
+      <div className="flex items-center justify-between border-b border-neon-magenta/30 bg-neon-magenta/10 px-6 py-4">
+        <p className="font-display text-sm font-black uppercase tracking-[0.2em] text-neon-magenta">
+          // {t(titleKey)}
+        </p>
+        <button
+          type="button"
+          onClick={onBack}
+          className="border border-neon-cyan/40 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
+        >
+          ← {t("common.back")}
+        </button>
+      </div>
 
-        <div className="flex flex-col gap-5 p-6">
+      <div className="flex flex-col gap-5 p-6">
           {mode === "create" && (
             <>
               <div>
@@ -157,7 +157,6 @@ function RoomModal({ mode, onClose }: RoomModalProps) {
           )}
         </div>
       </div>
-    </div>
   );
 }
 
