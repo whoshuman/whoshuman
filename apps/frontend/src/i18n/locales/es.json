@@ -75,7 +75,7 @@
   "lobby": {
     "eyebrow": "TERMINAL DE OPERACIONES",
     "deployTitle": "ZONA DE DESPLIEGUE",
-    "deploySubtitle": "Selecciona una operación activa o solicita despliegue automático.",
+    "deploySubtitle": "Crea una operación, únete a una activa o rastrea salas abiertas.",
     "unitData": "DATOS DE UNIDAD",
     "statusActive": "SISTEMA ACTIVO",
     "operations": "Operaciones",
