@@ -13,11 +13,12 @@ type HomeMountainsProps = {
 // Dimensiones del terreno wireframe. Mas segmentos = malla mas detallada (y mas coste).
 const WIDTH = 2000;
 const DEPTH = 240;
-const SEGMENTS_X = 64;
-const SEGMENTS_Z = 12;
-const PEAK_HEIGHT = 88;
-// Suelo de relieve: evita grandes zonas planas pegadas a la grid (salvo el borde frontal).
-const RIDGE_FLOOR = 0.28;
+// Low-poly: pocos segmentos = caras grandes y angulares (estetica facetada synthwave).
+const SEGMENTS_X = 28;
+const SEGMENTS_Z = 6;
+const PEAK_HEIGHT = 110;
+// Suelo de relieve bajo: valles hundidos para que las cimas resalten puntiagudas.
+const RIDGE_FLOOR = 0.12;
 
 // Colores del degradado vertical de la rejilla: cyan en la base -> magenta en las cimas.
 const COLOR_LOW = new Color("#24f5ff");
@@ -35,8 +36,9 @@ function reliefAt(x: number, depth: number, time: number) {
     0.12 * Math.sin(x * 0.17 + time * 0.3);
 
   let m = (r + 1) / 2; // 0..1
-  m = Math.pow(Math.max(0, Math.min(1, m)), 1.25); // afila los valles
-  m = RIDGE_FLOOR + (1 - RIDGE_FLOOR) * m; // nunca del todo plano
+  // Exponente alto = pocas cimas altas y muchos valles bajos -> silueta puntiaguda.
+  m = Math.pow(Math.max(0, Math.min(1, m)), 2.6);
+  m = RIDGE_FLOOR + (1 - RIDGE_FLOOR) * m;
 
   // El borde frontal (depth minimo) vale 0 -> anclado a la grid; sube hacia el fondo.
   const front = (depth + DEPTH / 2) / DEPTH; // 0 delante .. 1 detras
