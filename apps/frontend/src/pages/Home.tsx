@@ -30,10 +30,6 @@ const titleHumanStyle: CSSProperties = {
   animation: "flicker-in 1.8s ease-out 0.25s both, neon-breathe-cyan 4s ease-in-out 2.05s infinite"
 };
 
-const claimStyle: CSSProperties = {
-  textShadow: "0 0 14px rgb(36 245 255 / 0.5)"
-};
-
 // Enlaces secundarios de la esquina inferior izquierda (info / soporte).
 const footerLinks = [
   { to: "/about", key: "about" },
@@ -116,36 +112,9 @@ function Home() {
         <SettingsMenu align="right" />
       </div>
 
-      {/* Esquina superior izquierda: acceso de unidad. */}
+      {/* Centro: logo + accesos. El bloque no captura clics; solo los botones. */}
       <div
-        className={`animate-hud-in absolute left-8 top-8 z-10 transition duration-700 ${overlayFade}`}
-      >
-        <div className="flex flex-col items-start gap-2">
-          <span className="font-display text-[0.6rem] font-bold uppercase tracking-[0.4em] text-neon-cyan/70">
-            // ACCESO
-          </span>
-          <button
-            type="button"
-            onClick={() => setView("login")}
-            data-sfx="silent"
-            className="w-full border-2 border-neon-magenta bg-neon-magenta/15 px-6 py-2.5 text-left font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)]"
-          >
-            {t("home.login")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("register")}
-            data-sfx="silent"
-            className="w-full border border-neon-cyan/60 bg-bg/40 px-6 py-2.5 text-left font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)]"
-          >
-            {t("home.register")}
-          </button>
-        </div>
-      </div>
-
-      {/* Centro: logo y claim. No captura clics para no tapar el fondo 3D. */}
-      <div
-        className={`pointer-events-none absolute inset-0 z-0 flex -translate-y-8 flex-col items-center justify-center px-8 text-center transition duration-700 ${
+        className={`pointer-events-none absolute inset-0 z-10 flex -translate-y-16 flex-col items-center justify-center px-8 text-center transition duration-700 ${
           dimmed ? "scale-110 opacity-0" : "opacity-100"
         }`}
       >
@@ -162,33 +131,37 @@ function Home() {
           </span>
         </h1>
 
-        <p
-          className="mt-8 font-display text-xl font-semibold uppercase tracking-[0.36em] text-text-main"
-          style={claimStyle}
-        >
-          - {t("home.claim")} -
-        </p>
+        {/* Accesos bajo el titulo: identificarse, registrar unidad o desplegar como invitado. */}
+        <div className="pointer-events-auto mt-12 flex flex-col items-center gap-4">
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={() => setView("login")}
+              data-sfx="silent"
+              className="border-2 border-neon-magenta bg-neon-magenta/15 px-9 py-3.5 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)]"
+            >
+              {t("home.login")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("register")}
+              data-sfx="silent"
+              className="border border-neon-cyan/60 bg-bg/40 px-9 py-3.5 font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)]"
+            >
+              {t("home.register")}
+            </button>
+          </div>
+          {/* Despliegue sin identificar (invitado). */}
+          <button
+            type="button"
+            onClick={handlePlay}
+            data-sfx="access"
+            className="group font-display text-xs font-bold uppercase tracking-[0.3em] text-text-muted/70 transition hover:text-neon-cyan"
+          >
+            {t("home.playGuest")} <span className="text-neon-cyan">→</span>
+          </button>
+        </div>
       </div>
-
-      {/* Esquina inferior derecha: lanzar partida (zoom + zona de despliegue). */}
-      <button
-        type="button"
-        onClick={handlePlay}
-        data-sfx="access"
-        className={`group animate-hud-in absolute bottom-10 right-10 z-10 block border-2 border-neon-magenta bg-bg/65 px-16 py-5 text-right transition duration-700 hover:bg-neon-magenta/15 hover:shadow-[0_0_44px_rgb(255_43_214_/_0.55)] active:translate-y-px ${overlayFade}`}
-        style={{ boxShadow: "0 0 24px rgb(255 43 214 / 0.42)" }}
-      >
-        <span className="absolute left-0 top-0 h-3 w-3 border-l-2 border-t-2 border-neon-cyan" />
-        <span className="absolute right-0 top-0 h-3 w-3 border-r-2 border-t-2 border-neon-cyan" />
-        <span className="absolute bottom-0 left-0 h-3 w-3 border-b-2 border-l-2 border-neon-cyan" />
-        <span className="absolute bottom-0 right-0 h-3 w-3 border-b-2 border-r-2 border-neon-cyan" />
-        <span className="font-display block text-[0.6rem] font-bold uppercase tracking-[0.4em] text-neon-cyan/70">
-          // INICIAR SECUENCIA
-        </span>
-        <span className="font-display block text-4xl font-black uppercase tracking-widest text-text-main transition group-hover:[text-shadow:0_0_20px_rgb(255_43_214_/_0.85)]">
-          {t("home.play")} →
-        </span>
-      </button>
 
       {/* Esquina inferior izquierda: info y soporte en pequeño. */}
       <nav

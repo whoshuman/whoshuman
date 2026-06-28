@@ -38,7 +38,8 @@
       "support": "Support"
     },
     "login": "Se connecter",
-    "register": "S'inscrire"
+    "register": "S'inscrire",
+    "playGuest": "DÉPLOYER EN INVITÉ"
   },
   "login": {
     "protocol": "PROTOCOLE D'ACCÈS — SYSTÈME CHASSEUR",

@@ -38,7 +38,8 @@
       "support": "Support"
     },
     "login": "Log in",
-    "register": "Sign up"
+    "register": "Sign up",
+    "playGuest": "DEPLOY AS GUEST"
   },
   "login": {
     "protocol": "ACCESS PROTOCOL — HUNTER SYSTEM",

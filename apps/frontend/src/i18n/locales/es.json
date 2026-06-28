@@ -38,7 +38,8 @@
       "support": "Soporte"
     },
     "login": "Iniciar sesión",
-    "register": "Registrarse"
+    "register": "Registrarse",
+    "playGuest": "JUGAR COMO INVITADO"
   },
   "login": {
     "protocol": "PROTOCOLO DE ACCESO — SISTEMA CAZADOR",
