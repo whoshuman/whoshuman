@@ -4,8 +4,10 @@ import { Suspense } from "react";
 
 import HomeCityModel from "./HomeCityModel";
 import HomeCityTraffic from "./HomeCityTraffic";
+import HomeDeLorean from "./HomeDeLorean";
 import HomeGrid from "./HomeGrid";
 import HomeMoon from "./HomeMoon";
+import HomeRoad from "./HomeRoad";
 import HomeMountains from "./HomeMountains";
 import HomeSun from "./HomeSun";
 import { getCssColor } from "./homeSceneUtils";
@@ -34,6 +36,9 @@ function RetrowaveLandscape() {
       <HomeSun color={colorNeonMagenta} />
       {/* Luna en el lado opuesto al sol: visible al darse la vuelta la camara (sobre el proyecto). */}
       <HomeMoon color={colorNeonViolet} />
+      {/* Carretera (tapiz en movimiento) hacia la luna con un DeLorean encima; solo se ve al girar. */}
+      <HomeRoad />
+      <HomeDeLorean />
       {/* Anillo de montañas alrededor de toda la grid: 4 franjas (N/S/E/O) que rodean el
           perimetro, asi se ven montañas se mire hacia donde se mire (incluida la luna). */}
       <HomeMountains fillColor={colorSurface} position={[0, -50, -850]} />
