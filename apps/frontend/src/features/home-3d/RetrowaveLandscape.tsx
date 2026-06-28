@@ -13,10 +13,17 @@ import HomeMountains from "./HomeMountains";
 import HomeSun from "./HomeSun";
 import { getCssColor } from "./homeSceneUtils";
 
+type RetrowaveLandscapeProps = {
+  // Escena del lado de la luna (carretera + DeLorean + montañas laterales + luna). Solo es
+  // visible cuando la camara gira (la home). En los fondos estaticos (SceneBackground) nunca
+  // se ve, asi que se omite para no cargar el GLB del coche ni animarla en esas paginas.
+  showRoadScene?: boolean;
+};
+
 // Contenido 3D del paisaje retrowave (sol, ciudad, trafico, grid + bloom).
 // Se separa del Canvas para reutilizarlo: la home lo monta con camara animada
 // y el fondo global (SceneBackground) lo monta con camara estatica.
-function RetrowaveLandscape() {
+function RetrowaveLandscape({ showRoadScene = false }: RetrowaveLandscapeProps) {
   // Los colores salen de los tokens CSS para mantener la escena alineada con el design system.
   const colorBg = getCssColor("--color-bg");
   const colorSurface = getCssColor("--color-surface");
@@ -35,15 +42,19 @@ function RetrowaveLandscape() {
       <AdaptiveDpr pixelated={false} />
 
       <HomeSun color={colorNeonMagenta} />
-      {/* Luna en el lado opuesto al sol: visible al darse la vuelta la camara (sobre el proyecto). */}
-      <HomeMoon color={colorNeonViolet} />
-      {/* Carretera (tapiz en movimiento) hacia la luna con un DeLorean encima; solo se ve al girar. */}
-      <HomeRoad />
-      {/* Montañas laterales que corren con la carretera (tapiz) para vender el avance. */}
-      <HomeRoadSide />
-      <Suspense fallback={null}>
-        <HomeDeLorean />
-      </Suspense>
+
+      {/* Lado de la luna (carretera + DeLorean + montañas laterales + luna): solo en la home,
+          donde la camara puede girar para verlo. En fondos estaticos se omite por completo. */}
+      {showRoadScene && (
+        <>
+          <HomeMoon color={colorNeonViolet} />
+          <HomeRoad />
+          <HomeRoadSide />
+          <Suspense fallback={null}>
+            <HomeDeLorean />
+          </Suspense>
+        </>
+      )}
       {/* Anillo de montañas alrededor de toda la grid: 4 franjas (N/S/E/O) que rodean el
           perimetro, asi se ven montañas se mire hacia donde se mire (incluida la luna). */}
       <HomeMountains fillColor={colorSurface} position={[0, -50, -850]} />

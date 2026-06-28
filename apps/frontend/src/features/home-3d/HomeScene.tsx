@@ -17,7 +17,8 @@ function HomeScene({ isZoomed, lookRight, lookBack, carFocus }: HomeSceneProps) 
           lookBack={lookBack}
           carFocus={carFocus}
         />
-        <RetrowaveLandscape />
+        {/* La home es la unica vista que puede girar a ver la carretera/coche/luna. */}
+        <RetrowaveLandscape showRoadScene />
       </Canvas>
     </div>
   );
