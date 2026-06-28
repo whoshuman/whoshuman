@@ -86,7 +86,32 @@
     "units": "unités",
     "statusRecruiting": "RECRUTEMENT",
     "statusInProgress": "EN COURS",
-    "join": "REJOINDRE"
+    "join": "REJOINDRE",
+    "exit": "QUITTER",
+    "level": "NIVEAU",
+    "createRoom": "CRÉER UNE SALLE",
+    "createRoomDesc": "Configurez une nouvelle opération et recrutez des unités.",
+    "joinRoom": "REJOINDRE",
+    "joinRoomDesc": "Entrez un code de salle pour vous déployer.",
+    "searchRooms": "CHERCHER DES SALLES",
+    "searchRoomsDesc": "Parcourez les opérations ouvertes et rejoignez-en une."
+  },
+  "room": {
+    "createTitle": "CRÉER UNE SALLE",
+    "roomName": "NOM DE SALLE",
+    "roomNamePlaceholder": "Nom de l'opération",
+    "mode": "MODE",
+    "maxPlayers": "UNITÉS MAX",
+    "create": "CRÉER",
+    "joinTitle": "REJOINDRE",
+    "roomCode": "CODE DE SALLE",
+    "roomCodePlaceholder": "ex. WH-7X2K",
+    "join": "REJOINDRE",
+    "searchTitle": "SALLES OUVERTES",
+    "refresh": "ACTUALISER",
+    "noRooms": "Aucune salle ouverte pour le moment.",
+    "units": "unités",
+    "waiting": "EN ATTENTE"
   },
   "profile": {
     "eyebrow": "CONFIGURATION D'UNITÉ",

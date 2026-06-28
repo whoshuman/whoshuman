@@ -86,7 +86,32 @@
     "units": "units",
     "statusRecruiting": "RECRUITING",
     "statusInProgress": "IN PROGRESS",
-    "join": "JOIN"
+    "join": "JOIN",
+    "exit": "EXIT",
+    "level": "LEVEL",
+    "createRoom": "CREATE ROOM",
+    "createRoomDesc": "Set up a new operation and recruit units.",
+    "joinRoom": "JOIN ROOM",
+    "joinRoomDesc": "Enter a room code to deploy with a squad.",
+    "searchRooms": "FIND ROOMS",
+    "searchRoomsDesc": "Browse open operations and join one."
+  },
+  "room": {
+    "createTitle": "CREATE ROOM",
+    "roomName": "ROOM NAME",
+    "roomNamePlaceholder": "Operation name",
+    "mode": "MODE",
+    "maxPlayers": "MAX UNITS",
+    "create": "CREATE",
+    "joinTitle": "JOIN ROOM",
+    "roomCode": "ROOM CODE",
+    "roomCodePlaceholder": "e.g. WH-7X2K",
+    "join": "JOIN",
+    "searchTitle": "OPEN ROOMS",
+    "refresh": "REFRESH",
+    "noRooms": "No open rooms right now.",
+    "units": "units",
+    "waiting": "WAITING"
   },
   "profile": {
     "eyebrow": "UNIT CONFIGURATION",
