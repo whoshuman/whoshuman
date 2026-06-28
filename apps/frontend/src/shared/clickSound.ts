@@ -78,8 +78,12 @@ export function installGlobalClickSound() {
 
       ensureAudio();
       // Un ancestro con data-sfx define un sonido propio (p. ej. JUGAR); si no, "click".
+      // data-sfx="silent" desactiva el click (p. ej. login/registro, que ya suenan al abrir
+      // su modal con el sonido de holograma).
       const custom = target?.closest<HTMLElement>("[data-sfx]");
-      playSound(custom?.dataset.sfx ?? "click");
+      const sfx = custom?.dataset.sfx ?? "click";
+      if (sfx === "silent") return;
+      playSound(sfx);
     },
     // Captura: garantiza el sonido aunque el handler del elemento detenga la propagacion.
     { capture: true }

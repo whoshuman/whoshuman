@@ -127,6 +127,7 @@ function Home() {
           <button
             type="button"
             onClick={() => setView("login")}
+            data-sfx="silent"
             className="w-full border-2 border-neon-magenta bg-neon-magenta/15 px-6 py-2.5 text-left font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)]"
           >
             {t("home.login")}
@@ -134,6 +135,7 @@ function Home() {
           <button
             type="button"
             onClick={() => setView("register")}
+            data-sfx="silent"
             className="w-full border border-neon-cyan/60 bg-bg/40 px-6 py-2.5 text-left font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)]"
           >
             {t("home.register")}
