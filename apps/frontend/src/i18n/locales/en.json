@@ -112,7 +112,8 @@
     "refresh": "REFRESH",
     "noRooms": "No open rooms right now.",
     "units": "units",
-    "waiting": "WAITING"
+    "waiting": "WAITING",
+    "back": "BACK"
   },
   "profile": {
     "eyebrow": "UNIT CONFIGURATION",

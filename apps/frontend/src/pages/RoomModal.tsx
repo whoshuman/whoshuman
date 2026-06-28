@@ -52,7 +52,7 @@ function RoomModal({ mode, onBack }: RoomModalProps) {
           onClick={onBack}
           className="border border-neon-cyan/40 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
         >
-          ← {t("common.back")}
+          ← {t("room.back")}
         </button>
       </div>
 

@@ -112,7 +112,8 @@
     "refresh": "ACTUALISER",
     "noRooms": "Aucune salle ouverte pour le moment.",
     "units": "unités",
-    "waiting": "EN ATTENTE"
+    "waiting": "EN ATTENTE",
+    "back": "RETOUR"
   },
   "profile": {
     "eyebrow": "CONFIGURATION D'UNITÉ",
