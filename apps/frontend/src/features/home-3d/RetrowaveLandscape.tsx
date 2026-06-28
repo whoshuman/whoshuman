@@ -38,7 +38,9 @@ function RetrowaveLandscape() {
       <HomeMoon color={colorNeonViolet} />
       {/* Carretera (tapiz en movimiento) hacia la luna con un DeLorean encima; solo se ve al girar. */}
       <HomeRoad />
-      <HomeDeLorean />
+      <Suspense fallback={null}>
+        <HomeDeLorean />
+      </Suspense>
       {/* Anillo de montañas alrededor de toda la grid: 4 franjas (N/S/E/O) que rodean el
           perimetro, asi se ven montañas se mire hacia donde se mire (incluida la luna). */}
       <HomeMountains fillColor={colorSurface} position={[0, -50, -850]} />
