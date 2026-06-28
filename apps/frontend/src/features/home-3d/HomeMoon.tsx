@@ -62,8 +62,9 @@ function HomeMoon({ color }: HomeMoonProps) {
   const moonTexture = useMemo(() => createMoonTexture(), []);
 
   return (
-    // Espejo del sol: el sol esta en -Z, la luna en +Z. Algo mas alta y pequena que el sol.
-    <group position={[0, 24, 600]} rotation={[0, Math.PI, 0]}>
+    // Espejo del sol en +Z, pero MAS ALLA del anillo de montañas (z 850) para que asome
+    // por detras de las crestas: el fill opaco de las montañas la tapa por abajo.
+    <group position={[0, 34, 1000]} rotation={[0, Math.PI, 0]}>
       {/* Halo exterior difuso frio. */}
       <mesh position={[0, 0, -1.2]}>
         <circleGeometry args={[96, 64]} />
