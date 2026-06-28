@@ -23,7 +23,7 @@ function HomeCameraRig({
     const target = carFocus
       ? // Perseguidor algo cenital: detras y por encima del coche, mirando hacia abajo a el.
         // Con rotationY -PI (mira +Z) el picado necesita rotationX POSITIVO para mirar abajo.
-        { x: 0, y: -18, z: 104, rotationX: 0.33, rotationY: -Math.PI }
+        { x: 0, y: -18, z: 86, rotationX: 0.4, rotationY: -Math.PI }
       : lookBack
         ? { x: 0, y: -14, z: 56, rotationX: 0, rotationY: -Math.PI }
         : lookRight
