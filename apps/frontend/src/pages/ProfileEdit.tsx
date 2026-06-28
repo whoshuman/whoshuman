@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useHologramSound } from "../shared/useHologramSound";
+
 type ProfileEditProps = {
   onClose: () => void;
 };
@@ -18,6 +20,8 @@ const scanlinesStyle: CSSProperties = {
 // de la ciudad. La camara apunta a la derecha y este panel simula la pantalla del edificio.
 function ProfileEdit({ onClose }: ProfileEditProps) {
   const { t } = useTranslation();
+  // Sonido de aparicion holografica al abrirse la pantalla.
+  useHologramSound();
   // Estado local de formulario (mock, sin backend todavia).
   const [callsign, setCallsign] = useState("UNIDAD_JD");
   const [bio, setBio] = useState("");

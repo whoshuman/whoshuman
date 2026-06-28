@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 import OAuthButtons from "../shared/OAuthButtons";
+import { useHologramSound } from "../shared/useHologramSound";
 
 type LoginProps = {
   // En modo embebido se monta como overlay dentro de otra pantalla (la home),
@@ -13,6 +14,8 @@ type LoginProps = {
 
 function Login({ embedded = false, onClose, onSwitch }: LoginProps) {
   const { t } = useTranslation();
+  // Sonido de aparicion holografica al abrirse el panel.
+  useHologramSound();
 
   return (
     <main

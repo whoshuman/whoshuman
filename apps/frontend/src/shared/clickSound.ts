@@ -8,7 +8,8 @@
 
 const SOUNDS: Record<string, string> = {
   click: "/sounds/futuristic-ui-click-davies-aguirre-2-2-00-01.mp3",
-  access: "/sounds/digital-ui-access-granted-alert-vadi-sound-2-2-00-01.mp3"
+  access: "/sounds/digital-ui-access-granted-alert-vadi-sound-2-2-00-01.mp3",
+  hologram: "/sounds/latent-rick-hologram-menu-appear-ui-546562.mp3"
 };
 
 let context: AudioContext | null = null;
@@ -46,6 +47,13 @@ function playSound(name: string) {
   source.buffer = buffer;
   source.connect(gain);
   source.start(0);
+}
+
+// Reproduce un sonido de UI por nombre desde fuera (p. ej. al abrirse un modal holografico).
+// Garantiza que el audio este inicializado aunque no haya saltado aun el listener de clicks.
+export function playUiSound(name: string) {
+  ensureAudio();
+  playSound(name);
 }
 
 // Instala (una sola vez) el listener global de sonidos de UI.

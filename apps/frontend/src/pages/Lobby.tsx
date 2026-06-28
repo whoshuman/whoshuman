@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import CornerBrackets from "../shared/CornerBrackets";
+import { useHologramSound } from "../shared/useHologramSound";
 
 type LobbyProps = {
   // En modo embebido se monta como overlay tras el zoom de la home (no como ruta).
@@ -14,6 +15,11 @@ type LobbyProps = {
 function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
   const { t } = useTranslation();
   const [glitching, setGlitching] = useState(false);
+  // Sonido holografico por cada uno de los 3 paneles, sincronizado con su entrada escalonada
+  // (animationDelay 0 / 0.15s / 0.3s) -> cascada de aparicion.
+  useHologramSound(0);
+  useHologramSound(150);
+  useHologramSound(300);
 
   function handleMission() {
     setGlitching(true);
