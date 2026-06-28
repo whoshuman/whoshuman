@@ -1,9 +1,9 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import type { BufferAttribute, Mesh } from "three";
+import { BufferAttribute, Color } from "three";
+import type { Mesh } from "three";
 
 type HomeMountainsProps = {
-  color: string;
   fillColor: string;
   // Posicion del lado y giro en Y para colocar varias franjas formando un anillo.
   position?: [number, number, number];
@@ -13,33 +13,64 @@ type HomeMountainsProps = {
 // Dimensiones del terreno wireframe. Mas segmentos = malla mas detallada (y mas coste).
 const WIDTH = 2000;
 const DEPTH = 240;
-const SEGMENTS_X = 50;
-const SEGMENTS_Z = 10;
-const PEAK_HEIGHT = 54;
+const SEGMENTS_X = 64;
+const SEGMENTS_Z = 12;
+const PEAK_HEIGHT = 88;
+// Suelo de relieve: evita grandes zonas planas pegadas a la grid (salvo el borde frontal).
+const RIDGE_FLOOR = 0.28;
 
-// Aplica el relieve animado (crestas que ondulan) al attribute de posiciones de una geometria.
-function applyRelief(position: BufferAttribute, base: Array<[number, number]>, time: number) {
-  for (let i = 0; i < position.count; i += 1) {
-    const [x, depth] = base[i];
+// Colores del degradado vertical de la rejilla: cyan en la base -> magenta en las cimas.
+const COLOR_LOW = new Color("#24f5ff");
+const COLOR_HIGH = new Color("#ff2bd6");
+const tmpColor = new Color();
 
-    const ridge = Math.sin(x * 0.025) * Math.cos(x * 0.011 + 1.3);
-    const detail = Math.sin(x * 0.07 + depth * 0.04) * 0.45;
-    let height = ridge + detail;
-    height = Math.sign(height) * Math.pow(Math.abs(height), 1.4);
-    height += Math.sin(time * 0.7 + x * 0.018) * 0.22;
+// Altura del relieve (siempre >= 0). El borde frontal queda a 0 (anclado a la grid) y el
+// interior sube con crestas fractales; devuelve [0..1] normalizado para teñir la rejilla.
+function reliefAt(x: number, depth: number, time: number) {
+  // Varias octavas de seno = perfil de cordillera mas rico y dentado.
+  const r =
+    0.5 * Math.sin(x * 0.018 + time * 0.15) +
+    0.3 * Math.sin(x * 0.045 + depth * 0.05) +
+    0.2 * Math.sin(x * 0.09 + 2.1) +
+    0.12 * Math.sin(x * 0.17 + time * 0.3);
 
-    const envelope = 0.35 + ((depth + DEPTH / 2) / DEPTH) * 0.95;
-    // Solo relieve hacia arriba: la base queda anclada a la grid, nunca por debajo.
-    position.setZ(i, Math.max(0, height) * PEAK_HEIGHT * envelope);
-  }
-  position.needsUpdate = true;
+  let m = (r + 1) / 2; // 0..1
+  m = Math.pow(Math.max(0, Math.min(1, m)), 1.25); // afila los valles
+  m = RIDGE_FLOOR + (1 - RIDGE_FLOOR) * m; // nunca del todo plano
+
+  // El borde frontal (depth minimo) vale 0 -> anclado a la grid; sube hacia el fondo.
+  const front = (depth + DEPTH / 2) / DEPTH; // 0 delante .. 1 detras
+  const amp = Math.pow(front, 0.7);
+
+  return m * amp;
 }
 
-// Relieve montañoso retrowave al fondo: caras opacas en el interior y rejilla neon encima.
+// Aplica el relieve a las posiciones y, opcionalmente, el degradado de color a la rejilla.
+function applyRelief(
+  position: BufferAttribute,
+  base: Array<[number, number]>,
+  time: number,
+  colors?: BufferAttribute
+) {
+  for (let i = 0; i < position.count; i += 1) {
+    const [x, depth] = base[i];
+    const norm = reliefAt(x, depth, time);
+    position.setZ(i, norm * PEAK_HEIGHT);
+
+    if (colors) {
+      // Tinte por altura: las cimas tiran a magenta, la base a cyan (mas brillo arriba = mas bloom).
+      tmpColor.copy(COLOR_LOW).lerp(COLOR_HIGH, Math.min(1, norm * 1.15));
+      colors.setXYZ(i, tmpColor.r, tmpColor.g, tmpColor.b);
+    }
+  }
+  position.needsUpdate = true;
+  if (colors) colors.needsUpdate = true;
+}
+
+// Relieve montañoso retrowave: caras opacas dentro y rejilla neon con degradado encima.
 function HomeMountains({
-  color,
   fillColor,
-  position = [0, -90, -150],
+  position = [0, -50, -150],
   rotationY = 0
 }: HomeMountainsProps) {
   const fillRef = useRef<Mesh>(null);
@@ -63,9 +94,16 @@ function HomeMountains({
       baseRef.current = points;
     }
 
+    // Crea (una vez) el attribute de color de la rejilla para el degradado por altura.
+    if (!wire.geometry.attributes.color) {
+      const colorArray = new Float32Array(wirePos.count * 3);
+      wire.geometry.setAttribute("color", new BufferAttribute(colorArray, 3));
+    }
+    const wireColors = wire.geometry.attributes.color as BufferAttribute;
+
     const time = clock.getElapsedTime();
     applyRelief(fillPos, baseRef.current, time);
-    applyRelief(wirePos, baseRef.current, time);
+    applyRelief(wirePos, baseRef.current, time, wireColors);
   });
 
   return (
@@ -84,11 +122,11 @@ function HomeMountains({
           />
         </mesh>
 
-        {/* Rejilla neon por encima de las caras. Opaca para respetar la oclusion con la ciudad;
-            el bloom de la escena le da el brillo neon. */}
+        {/* Rejilla neon con degradado vertical (cyan -> magenta) por vertex colors;
+            el bloom de la escena le da el brillo neon en las cimas. */}
         <mesh ref={wireRef}>
           <planeGeometry args={[WIDTH, DEPTH, SEGMENTS_X, SEGMENTS_Z]} />
-          <meshBasicMaterial color={color} wireframe />
+          <meshBasicMaterial vertexColors wireframe />
         </mesh>
       </group>
     </group>
