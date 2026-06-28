@@ -46,7 +46,7 @@ function createMoonTexture() {
   // Particiones (scanlines): huecos transparentes cada vez mas gruesos hacia abajo, igual
   // que el sol, para que la mitad inferior se "deshaga" en franjas.
   ctx.globalCompositeOperation = "destination-out";
-  let y = size * 0.5;
+  let y = size * 0.42;
   let gap = 4;
   while (y < size) {
     const thickness = gap * 0.85;
