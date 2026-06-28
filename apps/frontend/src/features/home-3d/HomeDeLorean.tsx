@@ -12,7 +12,8 @@ function HomeDeLorean() {
 
   return (
     // Grupo exterior: lo coloca en la carretera, lo orienta hacia la luna y lo escala.
-    <group position={[0, -49.5, 150]} rotation={[0, Math.PI / 2, 0]} scale={2.4}>
+    // Cerca de la camara cenital para verse en el primer plano, bajo las fichas del equipo.
+    <group position={[0, -49.5, 138]} rotation={[0, Math.PI / 2, 0]} scale={2.4}>
       <primitive object={scene} position={CENTER} />
     </group>
   );

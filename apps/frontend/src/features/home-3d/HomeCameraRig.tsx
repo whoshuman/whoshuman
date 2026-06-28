@@ -21,9 +21,9 @@ function HomeCameraRig({
   useFrame(({ camera }) => {
     // Estados: cenital coche, equipo (vuelta), perfil (derecha), lobby (zoom) y home (lejos).
     const target = carFocus
-      ? // Camara de perseguidor (tercera persona): detras del coche (z 150) y algo elevada,
-        // mirando hacia adelante (+Z, hacia la luna) con leve picado, estilo juego de coches.
-        { x: 0, y: -40, z: 116, rotationX: -0.2, rotationY: -Math.PI }
+      ? // Perseguidor algo cenital: detras y por encima del coche, mirando hacia abajo a el.
+        // Con rotationY -PI (mira +Z) el picado necesita rotationX POSITIVO para mirar abajo.
+        { x: 0, y: -18, z: 104, rotationX: 0.5, rotationY: -Math.PI }
       : lookBack
         ? { x: 0, y: -14, z: 56, rotationX: 0, rotationY: -Math.PI }
         : lookRight

@@ -212,19 +212,9 @@ function Home() {
       {/* Edicion de perfil: pantalla diegetica montada en un edificio (camara apunta a la derecha). */}
       {view === "lobby" && profileOpen && <ProfileEdit onClose={() => setProfileOpen(false)} />}
 
-      {/* Sobre el proyecto: la camara se da la vuelta y aparece la ficha del equipo.
-          En el picado cenital sobre el coche, las fichas se atenuan. */}
-      {view === "home" && aboutOpen && <AboutTeam onClose={closeAbout} dimmed={carFocus} />}
-      {/* Boton de volver siempre disponible durante el picado al coche (las fichas estan atenuadas). */}
-      {view === "home" && aboutOpen && carFocus && (
-        <button
-          type="button"
-          onClick={closeAbout}
-          className="fixed right-10 top-8 z-50 border border-neon-cyan/40 bg-bg/60 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan backdrop-blur-sm transition hover:bg-neon-cyan/10"
-        >
-          ← {t("common.back")}
-        </button>
-      )}
+      {/* Sobre el proyecto: la camara se da la vuelta, baja al coche y aparece el equipo
+          (las fichas permanecen visibles sobre la vista del coche). */}
+      {view === "home" && aboutOpen && <AboutTeam onClose={closeAbout} />}
     </main>
   );
 }
