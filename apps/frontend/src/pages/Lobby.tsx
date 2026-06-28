@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 
 import CornerBrackets from "../shared/CornerBrackets";
+import SettingsMenu from "../shared/SettingsMenu";
 import { useHologramSound } from "../shared/useHologramSound";
 import RoomModal, { type RoomModalMode } from "./RoomModal";
 
@@ -113,15 +114,19 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
           </span>
         </button>
 
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="border border-neon-cyan/40 bg-bg/40 px-5 py-2 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:border-neon-cyan hover:bg-neon-cyan/10"
-          >
-            {t("lobby.exit")} ✕
-          </button>
-        )}
+        {/* Arriba derecha: SALIR y, debajo, los ajustes (idioma / audio). */}
+        <div className="flex flex-col items-end gap-3">
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="border border-neon-cyan/40 bg-bg/40 px-5 py-2 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:border-neon-cyan hover:bg-neon-cyan/10"
+            >
+              {t("lobby.exit")} ✕
+            </button>
+          )}
+          <SettingsMenu align="right" />
+        </div>
       </div>
 
       {/* Titulo centrado, en una sola linea. */}
