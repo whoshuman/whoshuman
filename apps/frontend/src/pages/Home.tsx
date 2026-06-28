@@ -125,7 +125,7 @@ function Home() {
           dimmed ? "scale-110 opacity-0" : "opacity-100"
         }`}
       >
-        <p className="font-display mb-6 text-xs font-bold uppercase tracking-[0.45em] text-neon-cyan/70 [text-shadow:0_0_12px_rgb(36_245_255_/_0.5)]">
+        <p className="font-display mb-6 inline-block border border-neon-cyan/25 bg-bg/55 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.45em] text-neon-cyan backdrop-blur-sm [text-shadow:0_0_12px_rgb(36_245_255_/_0.5)]">
           // SISTEMA CAZADOR — V.42
         </p>
 
