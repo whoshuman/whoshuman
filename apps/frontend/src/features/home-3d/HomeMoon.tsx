@@ -43,15 +43,16 @@ function createMoonTexture() {
     ctx.fill();
   }
 
-  // Scanlines: huecos transparentes cada vez mas gruesos hacia abajo (espejo del sol).
+  // Particiones (scanlines): huecos transparentes cada vez mas gruesos hacia abajo, igual
+  // que el sol, para que la mitad inferior se "deshaga" en franjas.
   ctx.globalCompositeOperation = "destination-out";
-  let y = size * 0.55;
+  let y = size * 0.5;
   let gap = 4;
   while (y < size) {
-    const thickness = gap * 0.8;
+    const thickness = gap * 0.85;
     ctx.fillRect(0, y, size, thickness);
     y += gap + thickness;
-    gap += 1.7;
+    gap += 1.6;
   }
 
   return new CanvasTexture(canvas);
@@ -64,20 +65,20 @@ function HomeMoon({ color }: HomeMoonProps) {
   return (
     // Espejo del sol en +Z, pero MAS ALLA del anillo de montañas (z 850) para que asome
     // por detras de las crestas: el fill opaco de las montañas la tapa por abajo.
-    <group position={[0, 34, 1000]} rotation={[0, Math.PI, 0]}>
+    <group position={[0, 74, 1000]} rotation={[0, Math.PI, 0]}>
       {/* Halo exterior difuso frio. */}
       <mesh position={[0, 0, -1.2]}>
-        <circleGeometry args={[96, 64]} />
+        <circleGeometry args={[138, 64]} />
         <meshBasicMaterial color={color} transparent opacity={0.1} depthWrite={false} />
       </mesh>
       <mesh position={[0, 0, -0.8]}>
-        <circleGeometry args={[74, 64]} />
+        <circleGeometry args={[106, 64]} />
         <meshBasicMaterial color={"#bdb4ff"} transparent opacity={0.16} depthWrite={false} />
       </mesh>
 
-      {/* Disco lunar con degradado, crateres y scanlines. */}
+      {/* Disco lunar con degradado, crateres y particiones (scanlines). */}
       <mesh>
-        <circleGeometry args={[58, 64]} />
+        <circleGeometry args={[84, 64]} />
         <meshBasicMaterial map={moonTexture} transparent depthWrite={false} />
       </mesh>
     </group>
