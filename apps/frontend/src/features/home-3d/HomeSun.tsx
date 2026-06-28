@@ -43,21 +43,22 @@ function HomeSun({ color }: HomeSunProps) {
   const sunTexture = useMemo(() => createSunTexture(), []);
 
   return (
-    // El sol queda al fondo de todo (tras las montañas). Radios escalados para mantener su tamaño.
-    <group position={[0, -9, -560]}>
-      {/* Halo exterior difuso. */}
+    // Mas alla del anillo de montañas (z -850) para que asome por detras de las crestas;
+    // la cresta norte opaca le tapa la base, igual que la luna en el lado opuesto.
+    <group position={[0, 60, -1000]}>
+      {/* Halo exterior difuso. Mas grande para que la corona se eleve sobre ciudad y montañas. */}
       <mesh position={[0, 0, -1.2]}>
-        <circleGeometry args={[121, 64]} />
+        <circleGeometry args={[215, 64]} />
         <meshBasicMaterial color={color} transparent opacity={0.1} depthWrite={false} />
       </mesh>
       <mesh position={[0, 0, -0.8]}>
-        <circleGeometry args={[93, 64]} />
+        <circleGeometry args={[165, 64]} />
         <meshBasicMaterial color={"#ffb35c"} transparent opacity={0.18} depthWrite={false} />
       </mesh>
 
       {/* Disco solar con degradado y scanlines. */}
       <mesh>
-        <circleGeometry args={[78, 64]} />
+        <circleGeometry args={[138, 64]} />
         <meshBasicMaterial map={sunTexture} transparent depthWrite={false} />
       </mesh>
     </group>
