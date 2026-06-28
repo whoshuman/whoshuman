@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import HomeCityModel from "./HomeCityModel";
 import HomeCityTraffic from "./HomeCityTraffic";
 import HomeGrid from "./HomeGrid";
+import HomeMoon from "./HomeMoon";
 import HomeMountains from "./HomeMountains";
 import HomeSun from "./HomeSun";
 import { getCssColor } from "./homeSceneUtils";
@@ -18,6 +19,7 @@ function RetrowaveLandscape() {
   const colorSurface = getCssColor("--color-surface");
   const colorNeonCyan = getCssColor("--color-neon-cyan");
   const colorNeonMagenta = getCssColor("--color-neon-magenta");
+  const colorNeonViolet = getCssColor("--color-neon-violet");
   const colorSunOrange = getCssColor("--color-sun-orange");
   const colorSuccess = getCssColor("--color-success");
 
@@ -30,7 +32,29 @@ function RetrowaveLandscape() {
       <AdaptiveDpr pixelated={false} />
 
       <HomeSun color={colorNeonMagenta} />
-      <HomeMountains color={colorNeonCyan} fillColor={colorSurface} />
+      {/* Luna en el lado opuesto al sol: visible al darse la vuelta la camara (sobre el proyecto). */}
+      <HomeMoon color={colorNeonViolet} />
+      {/* Anillo de montañas alrededor de toda la grid: 4 franjas (N/S/E/O) que rodean el
+          perimetro, asi se ven montañas se mire hacia donde se mire (incluida la luna). */}
+      <HomeMountains color={colorNeonCyan} fillColor={colorSurface} position={[0, -90, -850]} />
+      <HomeMountains
+        color={colorNeonCyan}
+        fillColor={colorSurface}
+        position={[0, -90, 850]}
+        rotationY={Math.PI}
+      />
+      <HomeMountains
+        color={colorNeonCyan}
+        fillColor={colorSurface}
+        position={[-850, -90, 0]}
+        rotationY={Math.PI / 2}
+      />
+      <HomeMountains
+        color={colorNeonCyan}
+        fillColor={colorSurface}
+        position={[850, -90, 0]}
+        rotationY={-Math.PI / 2}
+      />
       {/* Luces solo para el GLB (PBR): sin ellas la ciudad sale negra y solo brillan
           los neones emisivos. El sol/grid/montañas usan meshBasicMaterial, no les afecta. */}
       <ambientLight intensity={1.4} />

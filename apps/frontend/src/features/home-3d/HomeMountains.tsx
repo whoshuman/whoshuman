@@ -5,6 +5,9 @@ import type { BufferAttribute, Mesh } from "three";
 type HomeMountainsProps = {
   color: string;
   fillColor: string;
+  // Posicion del lado y giro en Y para colocar varias franjas formando un anillo.
+  position?: [number, number, number];
+  rotationY?: number;
 };
 
 // Dimensiones del terreno wireframe. Mas segmentos = malla mas detallada (y mas coste).
@@ -32,7 +35,12 @@ function applyRelief(position: BufferAttribute, base: Array<[number, number]>, t
 }
 
 // Relieve montañoso retrowave al fondo: caras opacas en el interior y rejilla neon encima.
-function HomeMountains({ color, fillColor }: HomeMountainsProps) {
+function HomeMountains({
+  color,
+  fillColor,
+  position = [0, -90, -150],
+  rotationY = 0
+}: HomeMountainsProps) {
   const fillRef = useRef<Mesh>(null);
   const wireRef = useRef<Mesh>(null);
   // Posiciones base (x = ancho, y = profundidad) cacheadas en el primer frame.
@@ -60,26 +68,28 @@ function HomeMountains({ color, fillColor }: HomeMountainsProps) {
   });
 
   return (
-    // Detras de toda la ciudad (edificios llegan a ~z -385) y delante del sol (z -560).
-    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -90, -150]}>
-      {/* Caras solidas y opacas: entran en el pase opaco para que los edificios las tapen
-          correctamente por profundidad. polygonOffset las empuja tras la rejilla. */}
-      <mesh ref={fillRef}>
-        <planeGeometry args={[WIDTH, DEPTH, SEGMENTS_X, SEGMENTS_Z]} />
-        <meshBasicMaterial
-          color={fillColor}
-          polygonOffset
-          polygonOffsetFactor={1}
-          polygonOffsetUnits={1}
-        />
-      </mesh>
+    // El grupo exterior coloca el lado (posicion + giro en Y); el interior tumba el plano.
+    <group position={position} rotation={[0, rotationY, 0]}>
+      <group rotation={[-Math.PI / 2, 0, 0]}>
+        {/* Caras solidas y opacas: entran en el pase opaco para que los edificios las tapen
+            correctamente por profundidad. polygonOffset las empuja tras la rejilla. */}
+        <mesh ref={fillRef}>
+          <planeGeometry args={[WIDTH, DEPTH, SEGMENTS_X, SEGMENTS_Z]} />
+          <meshBasicMaterial
+            color={fillColor}
+            polygonOffset
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
+          />
+        </mesh>
 
-      {/* Rejilla neon por encima de las caras. Opaca para respetar la oclusion con la ciudad;
-          el bloom de la escena le da el brillo neon. */}
-      <mesh ref={wireRef}>
-        <planeGeometry args={[WIDTH, DEPTH, SEGMENTS_X, SEGMENTS_Z]} />
-        <meshBasicMaterial color={color} wireframe />
-      </mesh>
+        {/* Rejilla neon por encima de las caras. Opaca para respetar la oclusion con la ciudad;
+            el bloom de la escena le da el brillo neon. */}
+        <mesh ref={wireRef}>
+          <planeGeometry args={[WIDTH, DEPTH, SEGMENTS_X, SEGMENTS_Z]} />
+          <meshBasicMaterial color={color} wireframe />
+        </mesh>
+      </group>
     </group>
   );
 }
