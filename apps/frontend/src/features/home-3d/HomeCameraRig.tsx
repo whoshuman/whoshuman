@@ -6,23 +6,33 @@ type HomeCameraRigProps = {
   lookRight?: boolean;
   // Gira la camara 180 grados para la pantalla del equipo (sobre el proyecto).
   lookBack?: boolean;
+  // Tras el giro, baja a vista cenital (de pajaro) cercana sobre el coche.
+  carFocus?: boolean;
 };
 
-// Interpola la camara entre la vista inicial, el acercamiento, el giro a la derecha
-// y la vuelta completa (180 grados) hacia el equipo.
-function HomeCameraRig({ isZoomed, lookRight = false, lookBack = false }: HomeCameraRigProps) {
+// Interpola la camara entre la vista inicial, el acercamiento, el giro a la derecha,
+// la vuelta completa (180 grados) y el picado cenital sobre el coche.
+function HomeCameraRig({
+  isZoomed,
+  lookRight = false,
+  lookBack = false,
+  carFocus = false
+}: HomeCameraRigProps) {
   useFrame(({ camera }) => {
-    // Estados: equipo (vuelta), perfil (derecha), lobby (zoom) y home (lejos).
-    const target = lookBack
-      ? { x: 0, y: -14, z: 56, rotationX: 0, rotationY: -Math.PI }
-      : lookRight
-        ? { x: 14, y: -21, z: -28, rotationX: -0.16, rotationY: -0.62 }
-        : isZoomed
-          ? { x: 0, y: -21, z: -28, rotationX: -0.16, rotationY: 0 }
-          : { x: 0, y: -18, z: 56, rotationX: -0.22, rotationY: 0 };
+    // Estados: cenital coche, equipo (vuelta), perfil (derecha), lobby (zoom) y home (lejos).
+    const target = carFocus
+      ? // Encima del coche (z 150, suelo y -49.5) mirando recto hacia abajo (picado cenital).
+        { x: 0, y: -22, z: 150, rotationX: -Math.PI / 2, rotationY: 0 }
+      : lookBack
+        ? { x: 0, y: -14, z: 56, rotationX: 0, rotationY: -Math.PI }
+        : lookRight
+          ? { x: 14, y: -21, z: -28, rotationX: -0.16, rotationY: -0.62 }
+          : isZoomed
+            ? { x: 0, y: -21, z: -28, rotationX: -0.16, rotationY: 0 }
+            : { x: 0, y: -18, z: 56, rotationX: -0.22, rotationY: 0 };
 
-    // El giro a la derecha es rapido; la vuelta de 180 es algo mas lenta para verla girar.
-    const ease = lookBack ? 0.06 : lookRight ? 0.12 : 0.045;
+    // Giro derecha rapido; vuelta de 180 y picado al coche algo mas lentos (cinematica).
+    const ease = lookBack || carFocus ? 0.05 : lookRight ? 0.12 : 0.045;
 
     camera.position.x += (target.x - camera.position.x) * ease;
     camera.position.y += (target.y - camera.position.y) * ease;

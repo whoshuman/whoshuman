@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -51,13 +51,28 @@ function Home() {
   const [profileOpen, setProfileOpen] = useState(false);
   // Sobre el proyecto: la camara se da la vuelta completa y muestra al equipo.
   const [aboutOpen, setAboutOpen] = useState(false);
+  // Tras completarse el giro, la camara baja a vista cenital sobre el coche.
+  const [carFocus, setCarFocus] = useState(false);
   const startMusic = useMusic((state) => state.start);
+
+  // Secuencia de "sobre el proyecto": primero el giro de 180, luego el picado al coche.
+  // El reset de carFocus se hace al cerrar (closeAbout/closeView), no en el effect.
+  useEffect(() => {
+    if (!aboutOpen) return;
+    const timer = setTimeout(() => setCarFocus(true), 1700);
+    return () => clearTimeout(timer);
+  }, [aboutOpen]);
+
+  function closeAbout() {
+    setAboutOpen(false);
+    setCarFocus(false);
+  }
 
   function closeView() {
     setView("home");
     setIsZoomed(false);
     setProfileOpen(false);
-    setAboutOpen(false);
+    closeAbout();
   }
 
   function handlePlay() {
@@ -71,7 +86,9 @@ function Home() {
 
   // La interfaz de la landing se desvanece cuando hay zoom, vuelta al equipo o vista abierta.
   const dimmed = isZoomed || aboutOpen || view !== "home";
-  const overlayFade = dimmed ? "pointer-events-none opacity-0" : "opacity-100";
+  // invisible (visibility:hidden) ademas de opacity-0 porque la animacion de entrada
+  // (animate-hud-in, fill forwards) fija opacity:1 y anularia solo el opacity-0.
+  const overlayFade = dimmed ? "pointer-events-none invisible opacity-0" : "opacity-100";
 
   return (
     <main className="relative h-screen overflow-hidden bg-bg">
@@ -85,7 +102,12 @@ function Home() {
       {/* Oscurece el cielo y ayuda a integrar el fondo con el grid y la ciudad. */}
       <div className="absolute inset-0 bg-linear-to-b from-bg/20 via-bg/35 to-bg/80" />
 
-      <HomeScene isZoomed={isZoomed} lookRight={profileOpen} lookBack={aboutOpen} />
+      <HomeScene
+        isZoomed={isZoomed}
+        lookRight={profileOpen}
+        lookBack={aboutOpen}
+        carFocus={carFocus}
+      />
 
       {/* Esquina superior derecha: rueda de ajustes (idioma + herramientas dev). */}
       <div
@@ -215,8 +237,19 @@ function Home() {
       {/* Edicion de perfil: pantalla diegetica montada en un edificio (camara apunta a la derecha). */}
       {view === "lobby" && profileOpen && <ProfileEdit onClose={() => setProfileOpen(false)} />}
 
-      {/* Sobre el proyecto: la camara se da la vuelta y aparece la ficha del equipo. */}
-      {view === "home" && aboutOpen && <AboutTeam onClose={() => setAboutOpen(false)} />}
+      {/* Sobre el proyecto: la camara se da la vuelta y aparece la ficha del equipo.
+          En el picado cenital sobre el coche, las fichas se atenuan. */}
+      {view === "home" && aboutOpen && <AboutTeam onClose={closeAbout} dimmed={carFocus} />}
+      {/* Boton de volver siempre disponible durante el picado al coche (las fichas estan atenuadas). */}
+      {view === "home" && aboutOpen && carFocus && (
+        <button
+          type="button"
+          onClick={closeAbout}
+          className="fixed right-10 top-8 z-50 border border-neon-cyan/40 bg-bg/60 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan backdrop-blur-sm transition hover:bg-neon-cyan/10"
+        >
+          ← {t("common.back")}
+        </button>
+      )}
     </main>
   );
 }

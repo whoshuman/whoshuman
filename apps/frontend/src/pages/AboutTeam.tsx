@@ -10,6 +10,8 @@ import sergioPhoto from "../assets/team/sergio.png";
 
 type AboutTeamProps = {
   onClose: () => void;
+  // Atenua las fichas (la camara hace picado cenital sobre el coche).
+  dimmed?: boolean;
 };
 
 type Member = {
@@ -131,11 +133,15 @@ function CyberAvatar({ accent, name }: { accent: string; name: string }) {
 }
 
 // Pantalla del equipo: aparece cuando la camara se da la vuelta completa (sobre el proyecto).
-function AboutTeam({ onClose }: AboutTeamProps) {
+function AboutTeam({ onClose, dimmed = false }: AboutTeamProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="animate-fade-in fixed inset-0 z-40 flex flex-col items-center justify-center px-10">
+    <div
+      className={`animate-fade-in fixed inset-0 z-40 flex flex-col items-center justify-center px-10 transition-opacity duration-700 ${
+        dimmed ? "pointer-events-none invisible opacity-0" : "opacity-100"
+      }`}
+    >
       <div className="mb-10 flex w-full max-w-6xl items-start justify-between">
         <div>
           <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-magenta">
