@@ -8,6 +8,7 @@ import HomeDeLorean from "./HomeDeLorean";
 import HomeGrid from "./HomeGrid";
 import HomeMoon from "./HomeMoon";
 import HomeRoad from "./HomeRoad";
+import HomeRoadSide from "./HomeRoadSide";
 import HomeMountains from "./HomeMountains";
 import HomeSun from "./HomeSun";
 import { getCssColor } from "./homeSceneUtils";
@@ -38,6 +39,8 @@ function RetrowaveLandscape() {
       <HomeMoon color={colorNeonViolet} />
       {/* Carretera (tapiz en movimiento) hacia la luna con un DeLorean encima; solo se ve al girar. */}
       <HomeRoad />
+      {/* Montañas laterales que corren con la carretera (tapiz) para vender el avance. */}
+      <HomeRoadSide />
       <Suspense fallback={null}>
         <HomeDeLorean />
       </Suspense>
