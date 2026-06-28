@@ -66,6 +66,11 @@
     "haveAccount": "¿Unidad ya registrada?",
     "access": "ACCEDER"
   },
+  "oauth": {
+    "continueWith": "O CONTINÚA CON",
+    "google": "Google",
+    "school": "42 School"
+  },
   "lobby": {
     "eyebrow": "TERMINAL DE OPERACIONES",
     "deployTitle": "ZONA DE DESPLIEGUE",

@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
+import OAuthButtons from "../shared/OAuthButtons";
+
 type RegisterProps = {
   // En modo embebido se monta como overlay dentro de otra pantalla (la home),
   // con boton de cierre y cambio a login por callback en vez de navegar por ruta.
@@ -122,6 +124,9 @@ function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
               {t("register.submit")} →
             </button>
           </div>
+
+          {/* Acceso con proveedores externos (Google / 42). */}
+          <OAuthButtons />
 
           <div className="mt-8 border-t border-neon-cyan/15 pt-6">
             <p className="text-center text-sm text-text-muted">
