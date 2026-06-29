@@ -20,8 +20,8 @@ function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
     <main
       className={
         embedded
-          ? "relative flex h-full w-full items-center justify-center p-8"
-          : "relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden"
+          ? "relative flex min-h-full w-full items-center justify-center p-4 sm:p-8"
+          : "relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden p-4 sm:p-0"
       }
     >
       {/* Halo detras del panel */}
@@ -31,7 +31,7 @@ function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
 
       <div className="animate-unfold-down origin-top relative w-full max-w-md border border-neon-cyan/50 bg-surface shadow-[0_0_48px_rgba(36,245,255,0.18),inset_0_0_48px_rgba(36,245,255,0.03)]">
         {/* Cabecera del panel */}
-        <div className="flex items-center justify-between border-b border-neon-cyan/30 bg-neon-cyan/8 px-8 py-4">
+        <div className="flex items-center justify-between border-b border-neon-cyan/30 bg-neon-cyan/8 px-5 py-4 sm:px-8">
           <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-cyan">
             // {t("register.protocol")}
           </p>
@@ -47,14 +47,14 @@ function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
           )}
         </div>
 
-        <div className="p-8">
+        <div className="p-5 sm:p-8">
           {/* Esquinas decorativas */}
           <span className="absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-neon-magenta" />
           <span className="absolute right-0 top-0 h-4 w-4 border-r-2 border-t-2 border-neon-magenta" />
           <span className="absolute bottom-0 left-0 h-4 w-4 border-b-2 border-l-2 border-neon-magenta" />
           <span className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-neon-magenta" />
 
-          <h1 className="font-display mb-1 text-5xl font-black leading-none text-text-main [text-shadow:0_0_28px_rgba(36,245,255,0.55),0_0_56px_rgba(255,43,214,0.2)]">
+          <h1 className="font-display mb-1 text-[clamp(2.25rem,7vw,3rem)] font-black leading-none text-text-main [text-shadow:0_0_28px_rgba(36,245,255,0.55),0_0_56px_rgba(255,43,214,0.2)]">
             {t("register.title")}
           </h1>
           <p className="mb-8 text-sm text-text-muted">{t("register.subtitle")}</p>
