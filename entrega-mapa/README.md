@@ -22,17 +22,18 @@ Alternativas: extensión **Live Server** de VS Code, o `npx serve`.
 Three.js y el decoder DRACO se cargan desde CDN → hace falta internet.
 
 ### Controles
-| Tecla | Acción |
-|-------|--------|
-| **W A S D** | Mover (haz click primero para capturar el ratón) |
-| **Ratón** | Cámara orbital |
-| **Shift** | Correr |
-| **Espacio** | Saltar |
-| **F** | Poseer el NPC más cercano (el que dejas pasa a ser NPC) |
-| **V** | Alternar 1ª / 3ª persona |
-| **Rueda** | Zoom |
-| **`[` `]`** | Tamaño del personaje en vivo |
-| **Esc** | Liberar el ratón |
+
+| Tecla       | Acción                                                  |
+| ----------- | ------------------------------------------------------- |
+| **W A S D** | Mover (haz click primero para capturar el ratón)        |
+| **Ratón**   | Cámara orbital                                          |
+| **Shift**   | Correr                                                  |
+| **Espacio** | Saltar                                                  |
+| **F**       | Poseer el NPC más cercano (el que dejas pasa a ser NPC) |
+| **V**       | Alternar 1ª / 3ª persona                                |
+| **Rueda**   | Zoom                                                    |
+| **`[` `]`** | Tamaño del personaje en vivo                            |
+| **Esc**     | Liberar el ratón                                        |
 
 ---
 
@@ -53,6 +54,7 @@ fuente/
 > ejecutar el demo; se incluye por si el equipo de assets lo quiere.
 
 ### El mapa — `beta-city.glb`
+
 - Ciudad de estilo low-poly (base: Kenney City Kit + edificios propios).
 - **Iluminación de día en tiempo real** (cielo + sol), look limpio y uniforme
   como el render de referencia (`beta-mapa.png`). Sin zonas oscuras ni costuras.
@@ -62,6 +64,7 @@ fuente/
   personajes se escalan a ~0.4 para encajar.
 
 ### Los personajes — `personajes/*.glb`
+
 - Pack **Kenney Mini Characters**: 12 modelos, **rigeados y animados**.
 - **31 clips de animación** cada uno. Los usados en la demo:
   `idle`, `walk`, `sprint`, `jump`, `fall`. Otros disponibles:
@@ -82,14 +85,15 @@ Todo está en `index.html`, comentado. Piezas clave:
 - **Suelo / gravedad**: `Raycaster` hacia abajo contra las mallas de suelo
   (las que su nombre empieza por `road|tile|driveway|path`). El personaje se
   apoya en la calle y NO puede subirse a edificios (solo el suelo es "pisable").
-- **NPCs**: cada uno tiene una ruta de *waypoints* aleatorios sobre el suelo;
+- **NPCs**: cada uno tiene una ruta de _waypoints_ aleatorios sobre el suelo;
   caminan de uno a otro con pausas. (No esquivan entre ellos todavía.)
 - **Poseer**: el jugador puede tomar el control de cualquier NPC (tecla F).
 - **Cámara**: 3ª persona orbital (pointer-lock); `V` cambia a 1ª persona.
 
 ### Notas para el port a React Three Fiber
+
 - El mapa es un GLB normal: `useGLTF('beta-city-baked.glb')`.
-- Como la luz va horneada (materiales *emissive*), pon `toneMapping` neutro y
+- Como la luz va horneada (materiales _emissive_), pon `toneMapping` neutro y
   `emissiveIntensity = 1.0` para verlo fiel (ver el bloque de carga en `index.html`).
 - El sistema de movimiento/animación es agnóstico de framework: la lógica de
   `AnimationMixer`, raycast de suelo e IA de NPCs se traslada tal cual.

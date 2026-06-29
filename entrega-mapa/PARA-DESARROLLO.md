@@ -5,21 +5,21 @@ el mapa de sus secciones y los cambios más típicos, por si tenéis que ajustar
 
 ## Estructura de `index.html` (de arriba a abajo)
 
-| Sección | Qué hace | Dónde |
-|---|---|---|
-| **CONFIG** | Constantes que se tocan a mano | bloque `===== CONFIG =====` al inicio del `<script>` |
-| **Escena / cámara / renderer** | Lienzo 3D, tone mapping, fondo | justo después de CONFIG |
-| **Luces** | Luz de día (cielo + sol + relleno) | `HemisphereLight`, `AmbientLight`, `sun`, `fill` |
-| **Carga GLTF** | `GLTFLoader` + `DRACOLoader` | `loader` |
-| **Suelo / colisión** | Qué cuenta como pisable + raycast | `FLOOR_PAT`, `collidables`, `groundHeight()` |
-| **Personaje** | Malla + animaciones | `makeCharacter()`, `setAnim()`, `physics()` |
-| **NPCs (IA)** | Rutas de waypoints y paseo | `randomGroundPoint()`, `makePath()`, `npcUpdate()` |
-| **Control jugador** | WASD, saltar, correr | `playerUpdate()` |
-| **Poseer / cambiar** | Tomar el control de un NPC | `possess()`, `possessNearest()` (tecla **F**) |
-| **Cámara 3ª/1ª persona** | Seguimiento orbital | `updateCamera()` (tecla **V**) |
-| **Input** | Teclado / ratón / rueda | bloque `---- Input ----` |
-| **Bucle** | Update por frame + render | `animate()` |
-| **Arranque** | Carga ciudad + personajes y coloca todo | `loadCity()`, `loadModel()`, bloque final |
+| Sección                        | Qué hace                                | Dónde                                                |
+| ------------------------------ | --------------------------------------- | ---------------------------------------------------- |
+| **CONFIG**                     | Constantes que se tocan a mano          | bloque `===== CONFIG =====` al inicio del `<script>` |
+| **Escena / cámara / renderer** | Lienzo 3D, tone mapping, fondo          | justo después de CONFIG                              |
+| **Luces**                      | Luz de día (cielo + sol + relleno)      | `HemisphereLight`, `AmbientLight`, `sun`, `fill`     |
+| **Carga GLTF**                 | `GLTFLoader` + `DRACOLoader`            | `loader`                                             |
+| **Suelo / colisión**           | Qué cuenta como pisable + raycast       | `FLOOR_PAT`, `collidables`, `groundHeight()`         |
+| **Personaje**                  | Malla + animaciones                     | `makeCharacter()`, `setAnim()`, `physics()`          |
+| **NPCs (IA)**                  | Rutas de waypoints y paseo              | `randomGroundPoint()`, `makePath()`, `npcUpdate()`   |
+| **Control jugador**            | WASD, saltar, correr                    | `playerUpdate()`                                     |
+| **Poseer / cambiar**           | Tomar el control de un NPC              | `possess()`, `possessNearest()` (tecla **F**)        |
+| **Cámara 3ª/1ª persona**       | Seguimiento orbital                     | `updateCamera()` (tecla **V**)                       |
+| **Input**                      | Teclado / ratón / rueda                 | bloque `---- Input ----`                             |
+| **Bucle**                      | Update por frame + render               | `animate()`                                          |
+| **Arranque**                   | Carga ciudad + personajes y coloca todo | `loadCity()`, `loadModel()`, bloque final            |
 
 ## Cambios típicos
 
