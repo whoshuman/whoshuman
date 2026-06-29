@@ -40,7 +40,7 @@ const NAV_LINKS = [
 ] as const;
 
 const navChipBase =
-  "relative border px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider transition";
+  "relative shrink-0 border px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider transition";
 const navChipInactive =
   "border-transparent text-text-muted/70 hover:border-neon-cyan/30 hover:text-neon-cyan";
 const navChipActive =
@@ -63,7 +63,7 @@ function AppLayout() {
 
       <div className="relative z-10 flex min-h-screen flex-col">
         {showHud && (
-          <header className="animate-hud-in sticky top-0 z-50 flex h-16 items-center justify-between gap-4 overflow-hidden border-b border-neon-cyan/30 bg-bg/75 px-6 backdrop-blur-md">
+          <header className="animate-hud-in sticky top-0 z-50 flex h-16 items-center justify-between gap-2 overflow-hidden border-b border-neon-cyan/30 bg-bg/75 px-3 backdrop-blur-md sm:gap-4 sm:px-6">
             {/* Linea de escaneo tipo radar que cruza la barra. */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px">
               <div
@@ -72,18 +72,18 @@ function AppLayout() {
               />
             </div>
 
-            {/* Logo / marca a la izquierda. */}
-            <Link to="/" className="group flex items-center gap-2">
+            {/* Logo / marca a la izquierda. El texto se oculta en movil para dejar sitio. */}
+            <Link to="/" className="group flex shrink-0 items-center gap-2">
               <span className="text-lg leading-none text-neon-magenta [text-shadow:0_0_12px_rgb(255_43_214_/_0.7)]">
                 ◢
               </span>
-              <span className="font-display text-sm font-black uppercase tracking-[0.22em] text-text-main transition group-hover:[text-shadow:0_0_14px_rgb(36_245_255_/_0.6)]">
+              <span className="font-display hidden text-sm font-black uppercase tracking-[0.22em] text-text-main transition group-hover:[text-shadow:0_0_14px_rgb(36_245_255_/_0.6)] sm:inline">
                 WHO<span className="text-neon-cyan">/</span>HUMAN
               </span>
             </Link>
 
-            {/* Navegacion central estilo HUD. */}
-            <nav className="flex items-center gap-1">
+            {/* Navegacion central estilo HUD. Scroll horizontal si no caben en movil. */}
+            <nav className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.key}
@@ -97,16 +97,16 @@ function AppLayout() {
               ))}
             </nav>
 
-            {/* Idioma + acceso de desarrollo. */}
-            <div className="flex items-center gap-3">
+            {/* Idioma + acceso de desarrollo (el enlace dev se oculta en movil por espacio). */}
+            <div className="flex shrink-0 items-center gap-3">
               <LanguageSelector />
-              <span className="h-5 w-px bg-neon-cyan/20" />
+              <span className="hidden h-5 w-px bg-neon-cyan/20 sm:block" />
               <Link
                 to="/design-system"
-                className="border border-neon-violet/50 bg-neon-violet/10 px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-violet transition hover:bg-neon-violet/20"
+                className="hidden border border-neon-violet/50 bg-neon-violet/10 px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-violet transition hover:bg-neon-violet/20 sm:block"
                 activeProps={{
                   className:
-                    "border border-neon-violet bg-neon-violet/25 px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-violet"
+                    "hidden border border-neon-violet bg-neon-violet/25 px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-violet sm:block"
                 }}
               >
                 <span className="mr-1 opacity-60">[DEV]</span>
