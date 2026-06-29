@@ -13,7 +13,8 @@
   "common": {
     "underConstruction": "MODULE UNDER CONSTRUCTION",
     "underConstructionDesc": "This section is not available in the system yet. Come back later.",
-    "back": "BACK TO HOME"
+    "back": "BACK TO HOME",
+    "backShort": "BACK"
   },
   "settings": {
     "title": "SETTINGS",
@@ -126,6 +127,7 @@
     "bioHint": "Optional · max 140 characters",
     "avatar": "AVATAR ID",
     "save": "SAVE CHANGES",
+    "saveShort": "SAVE",
     "cancel": "CANCEL",
     "saved": "PROFILE UPDATED"
   },

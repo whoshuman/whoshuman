@@ -13,7 +13,8 @@
   "common": {
     "underConstruction": "MÓDULO EN CONSTRUCCIÓN",
     "underConstructionDesc": "Esta sección aún no está disponible en el sistema. Vuelve más tarde.",
-    "back": "VOLVER A INICIO"
+    "back": "VOLVER A INICIO",
+    "backShort": "ATRÁS"
   },
   "settings": {
     "title": "AJUSTES",
@@ -126,6 +127,7 @@
     "bioHint": "Opcional · máx 140 caracteres",
     "avatar": "ID DE AVATAR",
     "save": "GUARDAR CAMBIOS",
+    "saveShort": "GUARDAR",
     "cancel": "CANCELAR",
     "saved": "PERFIL ACTUALIZADO"
   },
