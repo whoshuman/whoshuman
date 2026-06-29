@@ -31,14 +31,7 @@ function createRoadTexture() {
   // Sin relleno: el lienzo queda transparente -> la carretera es solo la rejilla luminosa.
 
   // Helper: linea con halo neon (glow). vertical = columna longitudinal; horizontal = travesaño.
-  const glowLine = (
-    x: number,
-    y: number,
-    lw: number,
-    lh: number,
-    color: string,
-    blur: number
-  ) => {
+  const glowLine = (x: number, y: number, lw: number, lh: number, color: string, blur: number) => {
     ctx.save();
     ctx.shadowBlur = blur;
     ctx.shadowColor = color;

@@ -81,7 +81,11 @@ function RetrowaveLandscape({ showRoadScene = false, carX = 0 }: RetrowaveLandsc
       />
       {/* La rejilla del mapa no se ve en "sobre el proyecto" (camara hacia la luna): se omite. */}
       {!showRoadScene && (
-        <HomeGrid colorMain={colorNeonCyan} colorSecondary={colorNeonMagenta} colorFloor={colorBg} />
+        <HomeGrid
+          colorMain={colorNeonCyan}
+          colorSecondary={colorNeonMagenta}
+          colorFloor={colorBg}
+        />
       )}
 
       {/* Bloom hace que los materiales basicos neon respiren sin depender de luces reales. */}

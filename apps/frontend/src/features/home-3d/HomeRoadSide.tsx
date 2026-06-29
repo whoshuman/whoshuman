@@ -77,9 +77,7 @@ function buildRidgeStrip(innerPositive: boolean): RidgeStrip {
     const x = position.getX(i); // a lo ancho [-T/2, T/2]
     const y = position.getY(i); // a lo largo [-L/2, L/2]
     // edgeT: 0 en el borde pegado a la carretera, 1 en el exterior. La amplitud crece hacia fuera.
-    const edgeT = innerPositive
-      ? (THICKNESS / 2 - x) / THICKNESS
-      : (x + THICKNESS / 2) / THICKNESS;
+    const edgeT = innerPositive ? (THICKNESS / 2 - x) / THICKNESS : (x + THICKNESS / 2) / THICKNESS;
     amp[i] = Math.pow(Math.max(0, Math.min(1, edgeT)), 0.7);
     u[i] = y / LENGTH;
   }
