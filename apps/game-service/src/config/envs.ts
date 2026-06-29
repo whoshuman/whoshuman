@@ -4,6 +4,9 @@ import * as joi from "joi";
 interface EnvVars {
   NATS_SERVERS: string[];
   DATABASE_URL: string;
+  GAME_TICK_MS: number;
+  GAME_SPEED: number;
+  GAME_MAP_SIZE: number;
 }
 
 const envSchema = joi
@@ -12,7 +15,10 @@ const envSchema = joi
     DATABASE_URL: joi
       .string()
       .uri({ scheme: [/postgresql/] })
-      .required()
+      .required(),
+    GAME_TICK_MS: joi.number().integer().min(1).default(50),
+    GAME_SPEED: joi.number().positive().default(5),
+    GAME_MAP_SIZE: joi.number().positive().default(50)
   })
   .unknown(true);
 
@@ -31,5 +37,8 @@ const envVars = validationResult.value;
 
 export const envs = {
   natsServers: envVars.NATS_SERVERS,
-  databaseUrl: envVars.DATABASE_URL
+  databaseUrl: envVars.DATABASE_URL,
+  gameTickMs: envVars.GAME_TICK_MS,
+  gameSpeed: envVars.GAME_SPEED,
+  gameMapSize: envVars.GAME_MAP_SIZE
 };
