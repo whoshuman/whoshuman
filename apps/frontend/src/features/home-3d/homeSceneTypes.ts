@@ -6,6 +6,10 @@ export type HomeSceneProps = {
   lookBack?: boolean;
   // Tras el giro, baja a vista cenital cercana sobre el coche.
   carFocus?: boolean;
+  // Carril del coche: x bajo la tarjeta del equipo seleccionada.
+  carX?: number;
+  // Monta la escena de la carretera (luna + coche + montañas) solo en "sobre el proyecto".
+  showRoad?: boolean;
 };
 
 // Props comunes para componentes que necesitan la paleta neon completa.

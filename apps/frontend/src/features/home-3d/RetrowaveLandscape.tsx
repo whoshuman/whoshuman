@@ -18,12 +18,14 @@ type RetrowaveLandscapeProps = {
   // visible cuando la camara gira (la home). En los fondos estaticos (SceneBackground) nunca
   // se ve, asi que se omite para no cargar el GLB del coche ni animarla en esas paginas.
   showRoadScene?: boolean;
+  // Carril del coche: x bajo la tarjeta del equipo seleccionada.
+  carX?: number;
 };
 
 // Contenido 3D del paisaje retrowave (sol, ciudad, trafico, grid + bloom).
 // Se separa del Canvas para reutilizarlo: la home lo monta con camara animada
 // y el fondo global (SceneBackground) lo monta con camara estatica.
-function RetrowaveLandscape({ showRoadScene = false }: RetrowaveLandscapeProps) {
+function RetrowaveLandscape({ showRoadScene = false, carX = 0 }: RetrowaveLandscapeProps) {
   // Los colores salen de los tokens CSS para mantener la escena alineada con el design system.
   const colorBg = getCssColor("--color-bg");
   const colorSurface = getCssColor("--color-surface");
@@ -51,7 +53,7 @@ function RetrowaveLandscape({ showRoadScene = false }: RetrowaveLandscapeProps) 
           <HomeRoad />
           <HomeRoadSide />
           <Suspense fallback={null}>
-            <HomeDeLorean />
+            <HomeDeLorean targetX={carX} />
           </Suspense>
         </>
       )}
@@ -77,7 +79,10 @@ function RetrowaveLandscape({ showRoadScene = false }: RetrowaveLandscapeProps) 
         colorMagenta={colorNeonMagenta}
         colorOrange={colorSunOrange}
       />
-      <HomeGrid colorMain={colorNeonCyan} colorSecondary={colorNeonMagenta} colorFloor={colorBg} />
+      {/* La rejilla del mapa no se ve en "sobre el proyecto" (camara hacia la luna): se omite. */}
+      {!showRoadScene && (
+        <HomeGrid colorMain={colorNeonCyan} colorSecondary={colorNeonMagenta} colorFloor={colorBg} />
+      )}
 
       {/* Bloom hace que los materiales basicos neon respiren sin depender de luces reales. */}
       <EffectComposer>
