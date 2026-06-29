@@ -50,10 +50,10 @@ function ManualModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="animate-fade-in fixed inset-0 z-40 flex items-center justify-center bg-bg/70 backdrop-blur-sm">
       <div
-        className="panel-neon max-w-md bg-surface/90 p-8 text-center backdrop-blur-sm"
+        className="panel-neon mx-4 max-w-md bg-surface/90 p-6 text-center backdrop-blur-sm sm:p-8"
         style={{ "--accent": "#ff2bd6" } as CSSProperties}
       >
-        <p className="font-display text-2xl font-black uppercase leading-tight text-text-main [text-shadow:0_0_18px_rgb(255_43_214_/_0.5)]">
+        <p className="font-display text-xl font-black uppercase leading-tight text-text-main [text-shadow:0_0_18px_rgb(255_43_214_/_0.5)] sm:text-2xl">
           {t("home.manualJoke")}
         </p>
         <button
@@ -61,7 +61,8 @@ function ManualModal({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           className="mt-6 border border-neon-cyan/50 px-6 py-2 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
         >
-          {t("common.back")}
+          <span className="sm:hidden">{t("common.backShort")}</span>
+          <span className="hidden sm:inline">{t("common.back")}</span>
         </button>
       </div>
     </div>
@@ -154,22 +155,22 @@ function Home() {
 
       {/* Esquina superior derecha: rueda de ajustes (idioma + herramientas dev). */}
       <div
-        className={`animate-hud-in absolute right-8 top-8 z-20 transition duration-700 ${overlayFade}`}
+        className={`animate-hud-in absolute right-4 top-4 z-20 transition duration-700 sm:right-8 sm:top-8 ${overlayFade}`}
       >
         <SettingsMenu align="right" />
       </div>
 
       {/* Centro: logo + accesos. El bloque no captura clics; solo los botones. */}
       <div
-        className={`pointer-events-none absolute inset-0 z-10 flex -translate-y-16 flex-col items-center justify-center px-8 text-center transition duration-700 ${
+        className={`pointer-events-none absolute inset-0 z-10 flex -translate-y-10 flex-col items-center justify-center px-6 text-center transition duration-700 sm:-translate-y-16 sm:px-8 ${
           dimmed ? "scale-110 opacity-0" : "opacity-100"
         }`}
       >
-        <p className="font-display mb-6 inline-block border border-neon-cyan/25 bg-bg/55 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.45em] text-neon-cyan backdrop-blur-sm [text-shadow:0_0_12px_rgb(36_245_255_/_0.5)]">
+        <p className="font-display mb-4 inline-block border border-neon-cyan/25 bg-bg/55 px-3 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.3em] text-neon-cyan backdrop-blur-sm [text-shadow:0_0_12px_rgb(36_245_255_/_0.5)] sm:mb-6 sm:px-4 sm:text-xs sm:tracking-[0.45em]">
           // SISTEMA CAZADOR — V.42
         </p>
 
-        <h1 className="flex flex-col items-center font-display text-[7.6rem] font-black uppercase leading-[0.82]">
+        <h1 className="flex flex-col items-center font-display text-[clamp(3.25rem,14vw,7.6rem)] font-black uppercase leading-[0.82]">
           <span className="text-text-main" style={titleWhoStyle}>
             Who&apos;s
           </span>
@@ -179,13 +180,13 @@ function Home() {
         </h1>
 
         {/* Accesos bajo el titulo: identificarse, registrar unidad o desplegar como invitado. */}
-        <div className="pointer-events-auto mt-12 flex flex-col items-center gap-4">
-          <div className="flex gap-4">
+        <div className="pointer-events-auto mt-8 flex flex-col items-center gap-4 sm:mt-12">
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
             <button
               type="button"
               onClick={() => setView("login")}
               data-sfx="silent"
-              className="border-2 border-neon-magenta bg-neon-magenta/15 px-9 py-3.5 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)]"
+              className="border-2 border-neon-magenta bg-neon-magenta/15 px-7 py-3 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)] sm:px-9 sm:py-3.5"
             >
               {t("home.login")}
             </button>
@@ -193,7 +194,7 @@ function Home() {
               type="button"
               onClick={() => setView("register")}
               data-sfx="silent"
-              className="border border-neon-cyan/60 bg-bg/40 px-9 py-3.5 font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)]"
+              className="border border-neon-cyan/60 bg-bg/40 px-7 py-3 font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)] sm:px-9 sm:py-3.5"
             >
               {t("home.register")}
             </button>
@@ -212,14 +213,18 @@ function Home() {
 
       {/* Esquina inferior izquierda: info y soporte en pequeño. */}
       <nav
-        className={`absolute bottom-9 left-8 z-10 flex flex-wrap items-center gap-x-4 gap-y-1 transition duration-700 ${overlayFade}`}
+        className={`absolute bottom-5 left-4 right-4 z-10 flex flex-wrap items-center gap-x-4 gap-y-1 transition duration-700 sm:bottom-9 sm:left-8 sm:right-auto ${overlayFade}`}
       >
         {footerLinks.map((link, index) => (
           <span key={link.key} className="flex items-center gap-4">
             {index > 0 && <span className="text-neon-cyan/25">/</span>}
             {link.key === "about" ? (
               // "Sobre el proyecto" no navega: gira la camara 180 y muestra al equipo.
-              <button type="button" onClick={() => setAboutOpen(true)} className={FOOTER_LINK_CLASS}>
+              <button
+                type="button"
+                onClick={() => setAboutOpen(true)}
+                className={FOOTER_LINK_CLASS}
+              >
                 {t(`home.menu.${link.key}`)}
               </button>
             ) : link.key === "manual" ? (
@@ -242,12 +247,12 @@ function Home() {
 
       {/* Overlays integrados: se abren sobre la home con fundido + despliegue del panel. */}
       {view === "login" && (
-        <div className="animate-fade-in fixed inset-0 z-30 bg-bg/70 backdrop-blur-sm">
+        <div className="animate-fade-in fixed inset-0 z-30 overflow-y-auto bg-bg/70 backdrop-blur-sm">
           <Login embedded onClose={closeView} onSwitch={() => setView("register")} />
         </div>
       )}
       {view === "register" && (
-        <div className="animate-fade-in fixed inset-0 z-30 bg-bg/70 backdrop-blur-sm">
+        <div className="animate-fade-in fixed inset-0 z-30 overflow-y-auto bg-bg/70 backdrop-blur-sm">
           <Register embedded onClose={closeView} onSwitch={() => setView("login")} />
         </div>
       )}

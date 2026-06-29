@@ -144,7 +144,7 @@ function AboutTeam({ onClose, dimmed = false, onSelect }: AboutTeamProps) {
 
   return (
     <div
-      className={`animate-fade-in fixed inset-0 z-40 flex flex-col items-center justify-start px-10 pt-8 transition-opacity duration-700 ${
+      className={`animate-fade-in fixed inset-0 z-40 flex flex-col items-center justify-start overflow-y-auto px-4 pb-8 pt-16 transition-opacity duration-700 sm:px-10 sm:pt-8 ${
         dimmed ? "pointer-events-none invisible opacity-0" : "opacity-100"
       }`}
     >
@@ -152,9 +152,10 @@ function AboutTeam({ onClose, dimmed = false, onSelect }: AboutTeamProps) {
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-8 top-6 border border-neon-cyan/40 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
+        className="absolute right-4 top-4 z-10 border border-neon-cyan/40 bg-bg/60 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan backdrop-blur-sm transition hover:bg-neon-cyan/10 sm:right-8 sm:top-6"
       >
-        ← {t("common.back")}
+        ← <span className="sm:hidden">{t("common.backShort")}</span>
+        <span className="hidden sm:inline">{t("common.back")}</span>
       </button>
 
       {/* Cabecera del equipo, centrada. */}
@@ -162,14 +163,14 @@ function AboutTeam({ onClose, dimmed = false, onSelect }: AboutTeamProps) {
         <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-magenta">
           // {t("about.eyebrow")}
         </p>
-        <h1 className="font-display mt-2 text-5xl font-black leading-none text-text-main [text-shadow:0_0_28px_rgba(255,43,214,0.55),0_0_56px_rgba(36,245,255,0.24)]">
+        <h1 className="font-display mt-2 text-[clamp(1.875rem,6vw,3rem)] font-black leading-none text-text-main [text-shadow:0_0_28px_rgba(255,43,214,0.55),0_0_56px_rgba(36,245,255,0.24)]">
           {t("about.title")}
         </h1>
         <p className="mt-3 text-base text-text-muted">{t("about.subtitle")}</p>
       </div>
 
       {/* Tarjetas del equipo en la mitad superior. */}
-      <div className="grid w-full max-w-6xl grid-cols-5 gap-5">
+      <div className="grid w-full max-w-6xl grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
         {TEAM.map((member, index) => (
           <div
             key={member.name}
