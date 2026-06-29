@@ -39,7 +39,8 @@
     },
     "login": "Iniciar sesión",
     "register": "Registrarse",
-    "playGuest": "JUGAR COMO INVITADO"
+    "playGuest": "JUGAR COMO INVITADO",
+    "manualJoke": "¿Necesitas manual para esto?"
   },
   "login": {
     "protocol": "PROTOCOLO DE ACCESO — SISTEMA CAZADOR",
@@ -131,7 +132,9 @@
   "about": {
     "eyebrow": "PERSONAL DEL PROYECTO",
     "title": "EL EQUIPO",
-    "subtitle": "Unidades tras el sistema Cazador."
+    "subtitle": "Unidades tras el sistema Cazador.",
+    "storyTitle": "ORIGEN DEL PROYECTO",
+    "story": "Who's Human nace en la 42 como proyecto final ft_transcendence. Cinco unidades unieron fuerzas para construir un juego multijugador en tiempo real inspirado en Just Act Natural: cyborgs que se esconden entre humanos mientras un Cazador intenta desenmascararlos. Lo que empezo como un reto academico —microservicios, WebSockets y 3D en el navegador— acabo convirtiendose en un mundo cyberpunk propio."
   },
   "game": {
     "scene": "Escena 3D — Three.js",

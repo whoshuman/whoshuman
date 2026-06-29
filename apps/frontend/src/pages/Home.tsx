@@ -12,6 +12,7 @@ import Lobby from "./Lobby";
 import ProfileEdit from "./ProfileEdit";
 import AboutTeam from "./AboutTeam";
 import { useMusic } from "../shared/musicStore";
+import { useHologramSound } from "../shared/useHologramSound";
 
 // Vistas que se montan como overlay sobre la home sin cambiar de ruta.
 type HomeView = "home" | "login" | "register" | "lobby";
@@ -38,6 +39,35 @@ const footerLinks = [
   { to: "/support", key: "support" }
 ] as const;
 
+// Estilo comun de los enlaces del pie.
+const FOOTER_LINK_CLASS =
+  "font-display text-[0.7rem] font-bold uppercase tracking-[0.25em] text-text-muted/60 transition hover:text-neon-cyan hover:[text-shadow:0_0_10px_rgb(36_245_255_/_0.6)]";
+
+// Modal-broma del boton "Manual": el sistema se rie de que necesites instrucciones.
+function ManualModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  useHologramSound(0);
+  return (
+    <div className="animate-fade-in fixed inset-0 z-40 flex items-center justify-center bg-bg/70 backdrop-blur-sm">
+      <div
+        className="panel-neon max-w-md bg-surface/90 p-8 text-center backdrop-blur-sm"
+        style={{ "--accent": "#ff2bd6" } as CSSProperties}
+      >
+        <p className="font-display text-2xl font-black uppercase leading-tight text-text-main [text-shadow:0_0_18px_rgb(255_43_214_/_0.5)]">
+          {t("home.manualJoke")}
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-6 border border-neon-cyan/50 px-6 py-2 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
+        >
+          {t("common.back")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Home() {
   const { t } = useTranslation();
   // La home actua de shell: las vistas de acceso y despliegue se abren aqui mismo.
@@ -47,27 +77,42 @@ function Home() {
   const [profileOpen, setProfileOpen] = useState(false);
   // Sobre el proyecto: la camara se da la vuelta completa y muestra al equipo.
   const [aboutOpen, setAboutOpen] = useState(false);
+  // Modal-broma del boton "Manual".
+  const [manualOpen, setManualOpen] = useState(false);
   // Tras completarse el giro, la camara baja a vista cenital sobre el coche.
   const [carFocus, setCarFocus] = useState(false);
+  // Las tarjetas del equipo solo aparecen cuando la camara ya llego (no durante el movimiento).
+  const [teamReady, setTeamReady] = useState(false);
+  // Carril del coche: se desliza bajo la tarjeta del equipo seleccionada.
+  const [carX, setCarX] = useState(0);
   const startMusic = useMusic((state) => state.start);
+  const stopMusic = useMusic((state) => state.stop);
 
-  // Secuencia de "sobre el proyecto": primero el giro de 180, luego el picado al coche.
-  // El reset de carFocus se hace al cerrar (closeAbout/closeView), no en el effect.
+  // Secuencia de "sobre el proyecto": giro de 180 -> picado al coche (1700ms) -> tarjetas
+  // (2900ms, cuando la camara ya se asento). Los reset se hacen al cerrar, no en el effect.
   useEffect(() => {
     if (!aboutOpen) return;
-    const timer = setTimeout(() => setCarFocus(true), 1700);
-    return () => clearTimeout(timer);
+    const focusTimer = setTimeout(() => setCarFocus(true), 1700);
+    const cardsTimer = setTimeout(() => setTeamReady(true), 2900);
+    return () => {
+      clearTimeout(focusTimer);
+      clearTimeout(cardsTimer);
+    };
   }, [aboutOpen]);
 
   function closeAbout() {
     setAboutOpen(false);
     setCarFocus(false);
+    setTeamReady(false);
+    setCarX(0);
   }
 
   function closeView() {
     setView("home");
     setIsZoomed(false);
     setProfileOpen(false);
+    // Al volver a la home la musica se apaga con un fade-out.
+    stopMusic();
     closeAbout();
   }
 
@@ -103,6 +148,8 @@ function Home() {
         lookRight={profileOpen}
         lookBack={aboutOpen}
         carFocus={carFocus}
+        carX={carX}
+        showRoad={aboutOpen}
       />
 
       {/* Esquina superior derecha: rueda de ajustes (idioma + herramientas dev). */}
@@ -172,18 +219,20 @@ function Home() {
             {index > 0 && <span className="text-neon-cyan/25">/</span>}
             {link.key === "about" ? (
               // "Sobre el proyecto" no navega: gira la camara 180 y muestra al equipo.
+              <button type="button" onClick={() => setAboutOpen(true)} className={FOOTER_LINK_CLASS}>
+                {t(`home.menu.${link.key}`)}
+              </button>
+            ) : link.key === "manual" ? (
+              // "Manual" no navega: abre un modal-broma.
               <button
                 type="button"
-                onClick={() => setAboutOpen(true)}
-                className="font-display text-[0.7rem] font-bold uppercase tracking-[0.25em] text-text-muted/60 transition hover:text-neon-cyan hover:[text-shadow:0_0_10px_rgb(36_245_255_/_0.6)]"
+                onClick={() => setManualOpen(true)}
+                className={FOOTER_LINK_CLASS}
               >
                 {t(`home.menu.${link.key}`)}
               </button>
             ) : (
-              <Link
-                to={link.to}
-                className="font-display text-[0.7rem] font-bold uppercase tracking-[0.25em] text-text-muted/60 transition hover:text-neon-cyan hover:[text-shadow:0_0_10px_rgb(36_245_255_/_0.6)]"
-              >
+              <Link to={link.to} className={FOOTER_LINK_CLASS}>
                 {t(`home.menu.${link.key}`)}
               </Link>
             )}
@@ -214,7 +263,10 @@ function Home() {
 
       {/* Sobre el proyecto: la camara se da la vuelta, baja al coche y aparece el equipo
           (las fichas permanecen visibles sobre la vista del coche). */}
-      {view === "home" && aboutOpen && <AboutTeam onClose={closeAbout} />}
+      {view === "home" && aboutOpen && teamReady && <AboutTeam onClose={closeAbout} />}
+
+      {/* Modal-broma del boton Manual. */}
+      {manualOpen && <ManualModal onClose={() => setManualOpen(false)} />}
     </main>
   );
 }

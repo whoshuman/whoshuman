@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 
 import CornerBrackets from "../shared/CornerBrackets";
+import { useHologramSound } from "../shared/useHologramSound";
 import danielPhoto from "../assets/team/daniel.png";
 import davidPhoto from "../assets/team/david.png";
 import eduPhoto from "../assets/team/edu.png";
@@ -12,6 +13,8 @@ type AboutTeamProps = {
   onClose: () => void;
   // Atenua las fichas (la camara hace picado cenital sobre el coche).
   dimmed?: boolean;
+  // Selecciona una ficha: el coche se desliza al carril bajo esa tarjeta.
+  onSelect?: (index: number) => void;
 };
 
 type Member = {
@@ -133,39 +136,45 @@ function CyberAvatar({ accent, name }: { accent: string; name: string }) {
 }
 
 // Pantalla del equipo: aparece cuando la camara se da la vuelta completa (sobre el proyecto).
-function AboutTeam({ onClose, dimmed = false }: AboutTeamProps) {
+function AboutTeam({ onClose, dimmed = false, onSelect }: AboutTeamProps) {
   const { t } = useTranslation();
+  // Sonido de aparicion holografica al montar (las tarjetas ya salen tras el viaje de camara),
+  // igual que el resto de modales/paneles del sistema.
+  useHologramSound(0);
 
   return (
     <div
-      className={`animate-fade-in fixed inset-0 z-40 flex flex-col items-center justify-center px-10 transition-opacity duration-700 ${
+      className={`animate-fade-in fixed inset-0 z-40 flex flex-col items-center justify-start px-10 pt-8 transition-opacity duration-700 ${
         dimmed ? "pointer-events-none invisible opacity-0" : "opacity-100"
       }`}
     >
-      <div className="mb-10 flex w-full max-w-6xl items-start justify-between">
-        <div>
-          <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-magenta">
-            // {t("about.eyebrow")}
-          </p>
-          <h1 className="font-display mt-2 text-6xl font-black leading-none text-text-main [text-shadow:0_0_28px_rgba(255,43,214,0.55),0_0_56px_rgba(36,245,255,0.24)]">
-            {t("about.title")}
-          </h1>
-          <p className="mt-3 text-lg text-text-muted">{t("about.subtitle")}</p>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="border border-neon-cyan/40 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
-        >
-          ← {t("common.back")}
-        </button>
+      {/* Volver: arriba del todo, a la derecha de la pantalla. */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute right-8 top-6 border border-neon-cyan/40 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
+      >
+        ← {t("common.back")}
+      </button>
+
+      {/* Cabecera del equipo, centrada. */}
+      <div className="mb-7 w-full max-w-6xl text-center">
+        <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-magenta">
+          // {t("about.eyebrow")}
+        </p>
+        <h1 className="font-display mt-2 text-5xl font-black leading-none text-text-main [text-shadow:0_0_28px_rgba(255,43,214,0.55),0_0_56px_rgba(36,245,255,0.24)]">
+          {t("about.title")}
+        </h1>
+        <p className="mt-3 text-base text-text-muted">{t("about.subtitle")}</p>
       </div>
 
+      {/* Tarjetas del equipo en la mitad superior. */}
       <div className="grid w-full max-w-6xl grid-cols-5 gap-5">
         {TEAM.map((member, index) => (
           <div
             key={member.name}
-            className="panel-neon animate-crt-on [transform-origin:center] relative flex flex-col items-center bg-surface/85 p-5 text-center backdrop-blur-sm"
+            onClick={() => onSelect?.(index)}
+            className="panel-neon animate-crt-on [transform-origin:center] relative flex cursor-pointer flex-col items-center bg-surface/85 p-5 text-center backdrop-blur-sm transition-transform hover:-translate-y-1"
             style={
               {
                 "--accent": member.accent,
@@ -226,6 +235,7 @@ function AboutTeam({ onClose, dimmed = false }: AboutTeamProps) {
                 href={member.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
                 className="btn-accent mt-4 inline-flex w-full items-center justify-center gap-2 px-3 py-2 font-display text-[0.65rem] font-black uppercase tracking-[0.18em]"
                 style={{ "--accent": member.accent } as CSSProperties}
               >
@@ -243,6 +253,17 @@ function AboutTeam({ onClose, dimmed = false }: AboutTeamProps) {
             )}
           </div>
         ))}
+      </div>
+
+      {/* Historia del proyecto: panel entre las tarjetas y el coche (mitad central). */}
+      <div
+        className="panel-neon mt-8 w-full max-w-3xl bg-surface/85 p-6 text-center backdrop-blur-sm"
+        style={{ "--accent": "#24f5ff" } as CSSProperties}
+      >
+        <p className="font-display text-sm font-bold uppercase tracking-[0.25em] text-neon-cyan [text-shadow:0_0_14px_rgb(36_245_255_/_0.5)]">
+          {t("about.storyTitle")}
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-text-muted">{t("about.story")}</p>
       </div>
     </div>
   );
