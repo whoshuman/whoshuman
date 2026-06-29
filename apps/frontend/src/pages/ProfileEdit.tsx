@@ -41,13 +41,14 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
   return (
     // perspective da profundidad para que la pantalla se sienta inclinada sobre la fachada.
     <div
-      className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center"
+      className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto p-4"
       style={{ perspective: "1800px" }}
     >
-      {/* Carcasa de la pantalla: bisel oscuro grueso, ligeramente girada como sobre un muro. */}
+      {/* Carcasa de la pantalla: bisel oscuro grueso, ligeramente girada como sobre un muro.
+          En movil ocupa casi todo el ancho y se endereza (sin giro) para no salirse. */}
       <div
-        className="animate-crt-on pointer-events-auto relative w-[min(760px,60vw)] border-[14px] border-[#080612] bg-[#080612] shadow-[0_0_4px_#000,0_0_60px_rgba(36,245,255,0.25),0_40px_80px_rgba(0,0,0,0.6)]"
-        style={{ transform: "rotateY(-11deg) rotateX(1.5deg)", transformOrigin: "center right" }}
+        className="animate-crt-on pointer-events-auto relative w-[min(760px,94vw)] border-[10px] border-[#080612] bg-[#080612] shadow-[0_0_4px_#000,0_0_60px_rgba(36,245,255,0.25),0_40px_80px_rgba(0,0,0,0.6)] sm:w-[min(760px,60vw)] sm:border-[14px] sm:[transform:rotateY(-11deg)_rotateX(1.5deg)]"
+        style={{ transformOrigin: "center right" }}
       >
         {/* Tornillos de montaje en las esquinas del bisel. */}
         <span className="absolute -left-2.5 -top-2.5 h-2.5 w-2.5 bg-neon-cyan/60 shadow-[0_0_8px_rgba(36,245,255,0.8)]" />
@@ -57,7 +58,7 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
 
         {/* Superficie de la pantalla: fondo fosforo cian, borde neon interior y parpadeo. */}
         <div
-          className="relative overflow-hidden border border-neon-cyan/40 bg-[#04101a] px-10 py-9"
+          className="relative overflow-hidden border border-neon-cyan/40 bg-[#04101a] px-5 py-6 sm:px-10 sm:py-9"
           style={{ animation: "screen-flicker 5s ease-in-out infinite" }}
         >
           {/* Linea de scan que recorre la pantalla en bucle. */}
@@ -79,7 +80,7 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
                 <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-magenta">
                   // {t("profile.eyebrow")}
                 </p>
-                <h1 className="font-display mt-2 text-4xl font-black leading-none text-neon-cyan [text-shadow:0_0_18px_rgba(36,245,255,0.7)]">
+                <h1 className="font-display mt-2 text-[clamp(1.875rem,6vw,2.25rem)] font-black leading-none text-neon-cyan [text-shadow:0_0_18px_rgba(36,245,255,0.7)]">
                   {t("profile.title")}
                 </h1>
               </div>
@@ -88,7 +89,8 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
                 onClick={onClose}
                 className="border border-neon-cyan/40 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
               >
-                ← {t("common.back")}
+                ← <span className="sm:hidden">{t("common.backShort")}</span>
+                <span className="hidden sm:inline">{t("common.back")}</span>
               </button>
             </div>
 
@@ -152,7 +154,14 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
                 onClick={handleSave}
                 className="flex-1 border-2 border-neon-magenta bg-neon-magenta py-3 font-display font-black uppercase tracking-widest text-bg shadow-[0_0_20px_rgba(255,43,214,0.45)] transition hover:brightness-110 hover:shadow-[0_0_36px_rgba(255,43,214,0.65)] active:translate-y-px"
               >
-                {justSaved ? `✓ ${t("profile.saved")}` : t("profile.save")}
+                {justSaved ? (
+                  `✓ ${t("profile.saved")}`
+                ) : (
+                  <>
+                    <span className="sm:hidden">{t("profile.saveShort")}</span>
+                    <span className="hidden sm:inline">{t("profile.save")}</span>
+                  </>
+                )}
               </button>
               <button
                 type="button"

@@ -35,7 +35,7 @@ function OperationCard({
     <button
       type="button"
       onClick={onClick}
-      className="panel-neon animate-crt-on [transform-origin:center] group relative flex flex-col items-center gap-4 bg-surface/90 p-8 text-center transition hover:-translate-y-1"
+      className="panel-neon animate-crt-on [transform-origin:center] group relative flex flex-col items-center gap-4 bg-surface/90 p-5 text-center transition hover:-translate-y-1 sm:p-8"
       style={{ "--accent": accent, animationDelay: `${delay}s`, opacity: 0 } as CSSProperties}
     >
       <CornerBrackets color={accent} />
@@ -66,15 +66,15 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
 
   return (
     <main
-      className={`relative px-10 py-8 ${embedded ? "h-full overflow-y-auto" : "min-h-[calc(100vh-4rem)]"}`}
+      className={`relative px-4 py-6 sm:px-10 sm:py-8 ${embedded ? "h-full overflow-y-auto" : "min-h-[calc(100vh-4rem)]"}`}
     >
       {/* Fila superior: tarjeta de perfil (izquierda) y boton SALIR (derecha). */}
-      <div className="flex items-start justify-between gap-6">
+      <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         {/* Tarjeta de perfil del jugador (nivel, XP, stats). Abre la edicion de perfil. */}
         <button
           type="button"
           onClick={onEditProfile}
-          className="panel-neon animate-crt-on [transform-origin:center] group relative w-80 bg-surface/90 p-5 text-left transition hover:-translate-y-0.5"
+          className="panel-neon animate-crt-on [transform-origin:center] group relative w-full bg-surface/90 p-5 text-left transition hover:-translate-y-0.5 sm:w-80"
           style={{ "--accent": "var(--color-neon-cyan)", opacity: 0 } as CSSProperties}
         >
           <CornerBrackets color="var(--color-neon-magenta)" />
@@ -131,19 +131,19 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
       </div>
 
       {/* Titulo centrado, en una sola linea. */}
-      <section className="my-10 text-center">
+      <section className="my-8 text-center sm:my-10">
         <p className="font-display text-xs font-bold uppercase tracking-[0.4em] text-neon-magenta">
           // {t("lobby.eyebrow")}
         </p>
-        <h1 className="font-display mt-2 whitespace-nowrap text-5xl font-black leading-none text-text-main [text-shadow:0_0_28px_rgba(255,43,214,0.55),0_0_56px_rgba(36,245,255,0.24)]">
+        <h1 className="font-display mt-2 text-[clamp(1.875rem,6vw,3rem)] font-black leading-none text-text-main [text-shadow:0_0_28px_rgba(255,43,214,0.55),0_0_56px_rgba(36,245,255,0.24)] sm:whitespace-nowrap">
           {t("lobby.deployTitle")}
         </h1>
-        <p className="mt-3 text-lg text-text-muted">{t("lobby.deploySubtitle")}</p>
+        <p className="mt-3 text-base text-text-muted sm:text-lg">{t("lobby.deploySubtitle")}</p>
       </section>
 
       {/* Menu: tres fichas. Al elegir una, colapsan y se expande su pantalla en su lugar. */}
       {mode === "menu" ? (
-        <div className="mx-auto grid max-w-5xl grid-cols-3 gap-6">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
           <OperationCard
             accent="var(--color-neon-magenta)"
             glyph="+"
