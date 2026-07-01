@@ -61,9 +61,7 @@ export function installGlobalClickSound() {
   if (installed || typeof document === "undefined") return;
   installed = true;
 
-  // Pre-decodifica ya (el contexto nace suspendido hasta el primer gesto, pero decodificar
-  // no lo necesita) para que hasta el primer click suene.
-  ensureAudio();
+  // Se inicializa en el primer pointerdown para evitar depender de autoplay policies.
 
   document.addEventListener(
     "pointerdown",
