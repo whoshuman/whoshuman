@@ -20,7 +20,11 @@ let installed = false;
 // Crea (una vez) el contexto de audio y decodifica todos los sonidos en sus buffers.
 function ensureAudio() {
   if (context) return;
-  context = new AudioContext();
+  try {
+    context = new AudioContext();
+  } catch {
+    return;
+  }
   gain = context.createGain();
   gain.gain.value = 0.4;
   gain.connect(context.destination);
