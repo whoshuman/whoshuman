@@ -136,8 +136,8 @@
     "title": "L'ÉQUIPE",
     "subtitle": "Unités derrière le système Chasseur.",
     "storyTitle": "ORIGINE DU PROJET",
-    "story": "Who's Human est ne a 42 comme projet final ft_transcendence. Cinq unites ont uni leurs forces pour construire un jeu multijoueur en temps reel inspire de Just Act Natural : des cyborgs caches parmi les humains pendant qu'un Chasseur tente de les demasquer. Ce qui a commence comme un defi academique —microservices, WebSockets et 3D dans le navigateur— est devenu un monde cyberpunk a part entiere."
-  },
+    "story": "Who's Human est né à 42 comme projet final ft_transcendence. Cinq unités ont uni leurs forces pour construire un jeu multijoueur en temps réel inspiré de Just Act Natural : des cyborgs cachés parmi les humains pendant qu'un Chasseur tente de les démasquer. Ce qui a commencé comme un défi académique —microservices, WebSockets et 3D dans le navigateur— est devenu un monde cyberpunk à part entière."
+  }
   "game": {
     "scene": "Scène 3D — Three.js",
     "time": "Temps",
