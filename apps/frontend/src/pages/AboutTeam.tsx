@@ -174,7 +174,15 @@ function AboutTeam({ onClose, dimmed = false, onSelect }: AboutTeamProps) {
         {TEAM.map((member, index) => (
           <div
             key={member.name}
+            role="button"
+            tabIndex={0}
             onClick={() => onSelect?.(index)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect?.(index);
+              }
+            }}
             className="panel-neon animate-crt-on [transform-origin:center] relative flex cursor-pointer flex-col items-center bg-surface/85 p-5 text-center backdrop-blur-sm transition-transform hover:-translate-y-1"
             style={
               {
