@@ -30,8 +30,8 @@ const NEAR_Z = 80;
 const RECYCLE_Z = 86 - LENGTH / 2;
 const RANGE = STRIPS_PER_SIDE * LENGTH;
 // Velocidad del tapiz IGUAL que la carretera (HomeRoad): SCROLL_SPEED 1.1 * ROAD_LENGTH 1000
-// / REPEAT 34 = u/seg que avanza la textura de la carretera. Asi montañas y carretera van juntas.
-const SPEED = (1.1 * 1000) / 34;
+// / REPEAT 26 = u/seg que avanza la textura de la carretera. Asi montañas y carretera van juntas.
+const SPEED = (1.1 * 1000) / 26;
 // Mitad de la carretera (ROAD_WIDTH 66 / 2): el borde interior de la montaña arranca justo en
 // el borde de la carretera, sin hueco. Margen 0 = pegadas (su altura ahi es 0, plano al suelo).
 const ROAD_HALF = 33;
