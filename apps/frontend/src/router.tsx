@@ -7,6 +7,11 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Lobby from "./pages/Lobby";
 import Game from "./pages/Game";
+import Profile from "./pages/Profile";
+import Manual from "./pages/Manual";
+import About from "./pages/About";
+import Faq from "./pages/Faq";
+import Support from "./pages/Support";
 import DesignSystem from "./pages/DesignSystem";
 import NotFound from "./pages/NotFound";
 
@@ -44,6 +49,36 @@ const gameRoute = createRoute({
   component: Game
 });
 
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile",
+  component: Profile
+});
+
+const manualRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/manual",
+  component: Manual
+});
+
+const aboutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/about",
+  component: About
+});
+
+const faqRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/faq",
+  component: Faq
+});
+
+const supportRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/support",
+  component: Support
+});
+
 const designSystemRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/design-system",
@@ -56,6 +91,11 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   lobbyRoute,
   gameRoute,
+  profileRoute,
+  manualRoute,
+  aboutRoute,
+  faqRoute,
+  supportRoute,
   designSystemRoute
 ]);
 
