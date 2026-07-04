@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Modelos 3D pesados: no se commitean (generados/descargados localmente)
+public/models/*.glb
+# Excepcion: el DeLorean es ligero (~750KB) y parte de la escena, asi que si va al repo.
+!public/models/delorean.glb

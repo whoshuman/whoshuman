@@ -11,11 +11,11 @@ function DesignSystem() {
           Guia visual
         </p>
 
-        <h1 className="text-text-main font-display m-0 text-7xl leading-none [text-shadow:0_0_18px_rgba(255,43,214,0.45),0_0_36px_rgba(36,245,255,0.24)]">
+        <h1 className="text-text-main font-display m-0 text-[clamp(2.25rem,8vw,4.5rem)] leading-none [text-shadow:0_0_18px_rgba(255,43,214,0.45),0_0_36px_rgba(36,245,255,0.24)]">
           Design System
         </h1>
 
-        <p className="text-text-muted m-0 mt-4 text-2xl leading-normal">
+        <p className="text-text-muted m-0 mt-4 text-lg leading-normal sm:text-2xl">
           Referencia visual de colores, tipografia, componentes y estilo retrowave de Who's Human.
         </p>
       </section>
@@ -24,7 +24,7 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className={sectionTitleClass}>Colores</h2>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <article className="bg-surface border border-neon-cyan/30 p-4">
             <span className="mb-4 block h-20 bg-bg"></span>
             <h3 className="m-0 mb-1 text-base">Fondo noche</h3>
@@ -133,7 +133,7 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className={sectionTitleClass}>Botones</h2>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <article className="bg-surface border border-neon-cyan/30 p-4">
             <h3 className="m-0 mb-4 text-base">Primario</h3>
             <button
@@ -181,7 +181,7 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className={sectionTitleClass}>Formularios</h2>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <article className="bg-surface border border-neon-cyan/30 p-4">
             <h3 className="m-0 mb-4 text-base">Campo de texto</h3>
 
@@ -247,7 +247,7 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className={sectionTitleClass}>Paneles</h2>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <article className="bg-surface border border-neon-cyan/30 p-5">
             <h3 className="m-0 mb-3 text-lg">Panel base</h3>
             <p className="text-text-muted m-0">
@@ -275,7 +275,7 @@ function DesignSystem() {
       <section className="content-section">
         <h2 className={sectionTitleClass}>Badges / etiquetas</h2>
 
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <article className="bg-surface border border-neon-cyan/30 p-4">
             <h3 className="m-0 mb-4 text-base">Informacion</h3>
             <span className="text-neon-cyan inline-flex items-center border border-current bg-neon-cyan/10 px-3 py-1 text-sm font-bold">

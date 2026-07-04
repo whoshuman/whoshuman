@@ -10,29 +10,152 @@
   "footer": {
     "system": "SYSTÈME DE SURVEILLANCE WHO'S HUMAN // 42"
   },
+  "common": {
+    "underConstruction": "MODULE EN CONSTRUCTION",
+    "underConstructionDesc": "Cette section n'est pas encore disponible dans le système. Reviens plus tard.",
+    "back": "RETOUR À L'ACCUEIL",
+    "backShort": "RETOUR"
+  },
+  "settings": {
+    "title": "PARAMÈTRES",
+    "language": "LANGUE",
+    "dev": "OUTILS DEV",
+    "audio": "AUDIO",
+    "music": "MUSIQUE"
+  },
   "home": {
     "title": "Who's Human",
     "tagline": "Trompe. Observe. Survie.",
-    "credits": "Projet final 42 | Transcendence | Développé par : Jdelorme, smarin-a, zlu, descamil, ldiaz-ra"
+    "claim": "Trompe · Observe · Survie",
+    "credits": "Projet final 42 | Transcendence | Développé par : Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
+    "play": "Jouer",
+    "menu": {
+      "play": "Jouer",
+      "profile": "Profil",
+      "manual": "Manuel",
+      "logout": "Quitter",
+      "about": "À propos du projet",
+      "faq": "FAQ",
+      "support": "Support"
+    },
+    "login": "Se connecter",
+    "register": "S'inscrire",
+    "playGuest": "DÉPLOYER EN INVITÉ",
+    "manualJoke": "Tu as besoin d'un manuel pour ca ?"
   },
   "login": {
-    "title": "Accès Système",
-    "subtitle": "Identifiez vos identifiants."
+    "protocol": "PROTOCOLE D'ACCÈS — SYSTÈME CHASSEUR",
+    "title": "IDENTIFIER",
+    "subtitle": "Es-tu un cyborg ? Le système le saura.",
+    "emailLabel": "ID d'unité (email)",
+    "emailPlaceholder": "unite@domaine.com",
+    "passwordLabel": "Clé d'accès",
+    "keepSession": "Garder la session active",
+    "recover": "Récupérer l'accès",
+    "submit": "ACCÉDER AU SYSTÈME",
+    "noAccount": "Unité non enregistrée ?",
+    "createProfile": "CRÉER UN PROFIL"
   },
   "register": {
-    "title": "Enregistrement d'Unité",
-    "subtitle": "Créez votre profil système."
+    "protocol": "ENREGISTREMENT NOUVELLE UNITÉ — BASE DE DONNÉES",
+    "title": "S'INSCRIRE",
+    "subtitle": "Saisis tes données. Le système vérifiera ton identité.",
+    "usernameLabel": "Désignation d'unité",
+    "emailLabel": "ID d'unité (email)",
+    "emailPlaceholder": "unite@domaine.com",
+    "passwordLabel": "Clé d'accès",
+    "confirmLabel": "Confirmer la clé",
+    "submit": "CRÉER UNE UNITÉ",
+    "haveAccount": "Unité déjà enregistrée ?",
+    "access": "ACCÉDER"
+  },
+  "oauth": {
+    "continueWith": "OU CONTINUER AVEC",
+    "google": "Google",
+    "school": "42 School"
   },
   "lobby": {
-    "title": "Zone d'Attente",
-    "subtitle": "En attente d'attribution de partie."
+    "eyebrow": "TERMINAL D'OPÉRATIONS",
+    "deployTitle": "ZONE DE DÉPLOIEMENT",
+    "deploySubtitle": "Créez une opération, rejoignez-en une ou repérez des salles ouvertes.",
+    "unitData": "DONNÉES D'UNITÉ",
+    "statusActive": "SYSTÈME ACTIF",
+    "operations": "Opérations",
+    "neutralized": "Neutralis.",
+    "autoDeployTitle": "DÉPLOIEMENT AUTOMATIQUE",
+    "autoDeployText": "Le système t'attribuera une opération et un rôle automatiquement.",
+    "requestMission": "DEMANDER UNE MISSION",
+    "activeOps": "OPÉRATIONS ACTIVES",
+    "units": "unités",
+    "statusRecruiting": "RECRUTEMENT",
+    "statusInProgress": "EN COURS",
+    "join": "REJOINDRE",
+    "exit": "QUITTER",
+    "level": "NIVEAU",
+    "createRoom": "CRÉER UNE SALLE",
+    "createRoomDesc": "Configurez une nouvelle opération et recrutez des unités.",
+    "joinRoom": "REJOINDRE",
+    "joinRoomDesc": "Entrez un code de salle pour vous déployer.",
+    "searchRooms": "CHERCHER DES SALLES",
+    "searchRoomsDesc": "Parcourez les opérations ouvertes et rejoignez-en une."
+  },
+  "room": {
+    "createTitle": "CRÉER UNE SALLE",
+    "roomName": "NOM DE SALLE",
+    "roomNamePlaceholder": "Nom de l'opération",
+    "mode": "MODE",
+    "maxPlayers": "UNITÉS MAX",
+    "create": "CRÉER",
+    "joinTitle": "REJOINDRE",
+    "roomCode": "CODE DE SALLE",
+    "roomCodePlaceholder": "ex. WH-7X2K",
+    "join": "REJOINDRE",
+    "searchTitle": "SALLES OUVERTES",
+    "refresh": "ACTUALISER",
+    "noRooms": "Aucune salle ouverte pour le moment.",
+    "units": "unités",
+    "waiting": "EN ATTENTE",
+    "back": "RETOUR"
+  },
+  "profile": {
+    "eyebrow": "CONFIGURATION D'UNITÉ",
+    "title": "MODIFIER LE PROFIL",
+    "subtitle": "Mettez à jour l'identité de votre unité dans le système Chasseur.",
+    "callsign": "INDICATIF",
+    "callsignHint": "Identifiant visible en opérations",
+    "bio": "BIO / NOTES",
+    "bioHint": "Optionnel · max 140 caractères",
+    "avatar": "ID D'AVATAR",
+    "save": "ENREGISTRER",
+    "saveShort": "ENREG.",
+    "cancel": "ANNULER",
+    "saved": "PROFIL MIS À JOUR"
+  },
+  "about": {
+    "eyebrow": "PERSONNEL DU PROJET",
+    "title": "L'ÉQUIPE",
+    "subtitle": "Unités derrière le système Chasseur.",
+    "storyTitle": "ORIGINE DU PROJET",
+    "story": "Who's Human est né à 42 comme projet final ft_transcendence. Cinq unités ont uni leurs forces pour construire un jeu multijoueur en temps réel inspiré de Just Act Natural : des cyborgs cachés parmi les humains pendant qu'un Chasseur tente de les démasquer. Ce qui a commencé comme un défi académique —microservices, WebSockets et 3D dans le navigateur— est devenu un monde cyberpunk à part entière."
   },
   "game": {
-    "title": "Partie Active",
-    "subtitle": "Opération en cours."
+    "scene": "Scène 3D — Three.js",
+    "time": "Temps",
+    "round": "Manche",
+    "points": "Points",
+    "role": "Rôle",
+    "roleHidden": "Caché",
+    "item": "Objet",
+    "itemSmoke": "Bombe fumigène",
+    "use": "Utiliser [E]",
+    "suspicion": "Soupçon"
   },
   "notFound": {
-    "title": "404 — Route Introuvable",
-    "subtitle": "La route demandée n'existe pas dans le système."
+    "protocol": "ERREUR SYSTÈME — UNITÉ NON LOCALISÉE",
+    "errorCode": "CODE D'ERREUR",
+    "notLocated": "EMPLACEMENT INTROUVABLE",
+    "descLine1": "L'adresse demandée n'existe pas dans ce système.",
+    "descLine2": "Un cyborg qui tente de s'échapper ?",
+    "back": "RETOUR À LA BASE"
   }
 }
