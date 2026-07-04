@@ -57,3 +57,6 @@ AGENTS.md
 # specs/planes internos de diseño (no van al repo)
 docs/superpowers/
 
+# spike local de prueba del mapa (play.html, token, glb) — no va al repo
+entrega-mapa/
+
