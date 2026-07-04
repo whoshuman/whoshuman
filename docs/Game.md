@@ -33,11 +33,11 @@ El cliente nunca habla con el `game-service` directamente: pasa por el
 
 ```
 cliente (Socket.IO)
-   │  emit "game:player-input" { gameId, move:{x,z} }
+   │  emit "game:player-input" { gameId, forward, turn }
    ▼
 realtime-gateway
    │  valida que el socket está en esa partida
-   │  publish game.player.moved { userId, gameId, move }   (añade el userId del JWT)
+   │  publish game.player.moved { userId, gameId, forward, turn }   (añade el userId del JWT)
    ▼  NATS
 game-service
    │  guarda la "última intención" del jugador
@@ -56,7 +56,7 @@ todos los clientes de la partida → pintan
 | ------ | -------------------------- | -------------------------- | --------------------------------------- |
 | socket | `game:join`                | cliente → gateway          | entrar a la partida                     |
 | socket | `game:joined`              | gateway → cliente          | **confirmación** de que ya estás dentro |
-| socket | `game:player-input`        | cliente → gateway          | mandar la dirección de movimiento       |
+| socket | `game:player-input`        | cliente → gateway          | mandar la intención (avanzar / girar)   |
 | socket | `game:state`               | gateway → sala             | estado del juego (cada tick)            |
 | socket | `game:leave`               | cliente → gateway          | salir de la partida                     |
 | NATS   | `matchmaking.match.found`  | matchmaking → game-service | crea la partida                         |
@@ -68,20 +68,27 @@ todos los clientes de la partida → pintan
 
 ## 3. El loop autoritativo
 
-En cada tick (50 ms), por cada jugador presente:
+Control tipo **tank** (como en Just Act Natural): el jugador tiene una orientación
+(`heading`) que gira con `turn`, y avanza hacia donde mira con `forward`. En cada
+tick (50 ms), por cada jugador presente:
 
 ```
-nueva_posición = posición + dirección · velocidad · dt        (dt = 0.05 s)
-posición = recortar(nueva_posición, límites del mapa)         (clamp al borde)
-rotación = atan2(dirección.x, dirección.z)                    (mira hacia donde anda)
+heading  = heading + turn · GAME_TURN_SPEED · dt              (girar; A/D)
+paso     = forward · GAME_SPEED · dt                          (avanzar; W/S)
+nueva_x  = x + sin(heading) · paso
+nueva_z  = z + cos(heading) · paso
 ```
 
-- La **velocidad la fija el servidor** (`GAME_SPEED`), no el cliente. Por eso un
-  cliente no puede "teletransportarse": solo manda dirección.
-- La **dirección se normaliza** (`|move| ≤ 1`): mandar un vector enorme no te hace
-  ir más rápido.
-- La **rotación la calcula el servidor** a partir del movimiento; el cliente no la
-  manda.
+El movimiento se prueba **por eje** (X y Z por separado) y solo se aplica si el
+destino es transitable (ver §5). Así el jugador **desliza** a lo largo de las
+paredes en vez de quedarse clavado.
+
+- La **velocidad y la de giro las fija el servidor** (`GAME_SPEED`,
+  `GAME_TURN_SPEED`), no el cliente. Por eso un cliente no puede "teletransportarse":
+  solo manda intención (`forward`, `turn` en `[-1, 1]`).
+- Se puede **girar en el sitio** (`turn ≠ 0`, `forward = 0`) sin desplazarse.
+- La **rotación (`heading`) es estado del servidor**; el cliente no la manda, la
+  recibe en el snapshot como `rotationY`.
 - El estado resultante se emite como `game:state` a toda la partida.
 
 ---
@@ -111,13 +118,21 @@ cuando no queda ningún jugador → la partida se destruye y el loop se detiene
 
 ## 5. Colisiones — estado actual (importante)
 
-Hoy el servidor solo conoce **un límite**: el **borde del mapa**.
+Toda la física va en el servidor (`GameSession.tick`), a partir del **descriptor
+del mapa** (ver §8). El jugador es un **punto** que el servidor mueve o frena.
 
-| Tipo de colisión                           | ¿Existe hoy?  | Detalle                                                                                                         |
-| ------------------------------------------ | ------------- | --------------------------------------------------------------------------------------------------------------- |
-| Contra el **borde del mapa**               | ✅ Sí         | El jugador no puede salir del área jugable (clamp).                                                             |
-| Entre **jugadores**                        | ❌ No         | Los jugadores **se atraviesan**: pueden ocupar el mismo punto sin ningún efecto (no se empujan ni se bloquean). |
-| Contra el **escenario** (paredes, bancos…) | ❌ Todavía no | No hay obstáculos aún; el mapa es un suelo plano.                                                               |
+| Tipo de colisión                | ¿Existe hoy? | Detalle                                                                                                             |
+| ------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Contra el **borde del mapa**    | ✅ Sí        | El jugador no sale del área jugable (`bounds` del descriptor, clamp por eje).                                       |
+| Contra **edificios**            | ✅ Sí        | `obstacles` (rectángulos AABB): no se atraviesan ni se suben. Se **desliza** a lo largo de la pared.                |
+| **Altura** (rampas / escalones) | ✅ Sí        | `heightmap` + `GAME_MAX_STEP`: sube rampas suaves; frena en muros, bordillos, tejados y árboles. Sin caer al vacío. |
+| Entre **jugadores**             | ❌ No        | Los jugadores **se atraviesan**: pueden ocupar el mismo punto sin efecto (no se empujan ni se bloquean).            |
+
+**Cómo funciona la altura:** el servidor lleva la altura del suelo bajo cada
+jugador. Al intentar moverse, muestrea la altura del destino: si no hay suelo, o si
+el desnivel supera `GAME_MAX_STEP`, **bloquea** ese eje; si el desnivel es pequeño
+(rampa), avanza y actualiza la altura. Así solo se sube por las rampas, no por sus
+caras verticales.
 
 **Por qué no hay colisión entre jugadores (por ahora):** es una decisión de diseño
 aún abierta. En juegos de "mézclate en la multitud" como Just Act Natural lo
@@ -183,27 +198,33 @@ Con `gameId` navegas a `/game`; con tu `role` decides tu cámara/HUD.
 lo rechaza con `gateway:error` → `"Socket is not joined to this game"`. Espera
 siempre la confirmación.
 
-### 7.3 Mandar movimiento — solo la dirección
+### 7.3 Mandar movimiento — intención tank (avanzar / girar)
 
-El cliente lee el teclado/joystick y manda un **vector de dirección** en el plano,
-nunca la posición:
+El cliente lee el teclado/joystick y manda **dos ejes de intención**, nunca la
+posición ni la rotación:
 
 ```ts
 // socket: "game:player-input"
-{ gameId, move: { x: number, z: number } }   // |move| ≤ 1 ; {0,0} = quieto
+{
+  gameId,
+  forward: number,  // -1..1  → W = +1 (adelante), S = -1 (atrás)
+  turn: number      // -1..1  → A = +1 (girar izquierda), D = -1 (girar derecha)
+}
 ```
 
-Traducción típica de teclas a `move`:
+Traducción típica de teclas:
 
-| Tecla(s)         | `move`                                |
-| ---------------- | ------------------------------------- |
-| D (derecha)      | `{ x: 1,  z: 0 }`                     |
-| A (izquierda)    | `{ x: -1, z: 0 }`                     |
-| W (adelante)     | `{ x: 0,  z: -1 }`                    |
-| S (atrás)        | `{ x: 0,  z: 1 }`                     |
-| W + D (diagonal) | `{ x: 0.71, z: -0.71 }` (normalizado) |
-| nada pulsado     | `{ x: 0, z: 0 }`                      |
+| Tecla(s)     | `forward` | `turn` | Efecto                        |
+| ------------ | --------- | ------ | ----------------------------- |
+| W            | `1`       | `0`    | avanza hacia donde mira       |
+| S            | `-1`      | `0`    | retrocede                     |
+| **A**        | `0`       | `1`    | **gira a la izquierda**       |
+| **D**        | `0`       | `-1`   | **gira a la derecha**         |
+| W + A        | `1`       | `1`    | avanza girando a la izquierda |
+| nada pulsado | `0`       | `0`    | quieto                        |
 
+- **A y D son giros** (cambian la orientación), no desplazamientos laterales. El
+  jugador avanza/retrocede con W/S hacia donde mira.
 - Manda el input **cuando cambie** (o cápalo a ~20–30 Hz). No hace falta enviarlo
   cada frame.
 - No mandes posición, ni velocidad, ni rotación: de eso se encarga el servidor.
@@ -215,11 +236,14 @@ Traducción típica de teclas a `move`:
 {
   gameId: string,
   tick: number,
-  players: [ { userId, x, y, z, rotationY }, … ]   // y = 0 (suelo plano)
+  players: [ { userId, x, y, z, rotationY }, … ]   // y = altura del suelo (rampa)
 }
 ```
 
 Por cada jugador, coloca su modelo 3D en `(x, y, z)` mirando hacia `rotationY`.
+La **`y` la decide el servidor** (altura del suelo bajo el jugador, según el mapa):
+el cliente **no** debe recalcularla con su propio raycast, o pintaría al personaje
+subido a árboles o tejados que el servidor no permite pisar.
 **El estado es completo en cada snapshot** (no son diferencias): pinta siempre el
 último que recibas.
 
@@ -238,7 +262,7 @@ debe suavizar (es trabajo de frontend, no cambia el servidor):
 
 El diseño es robusto a pérdidas porque se manda **estado absoluto**, no comandos:
 
-- Si se pierde un `game:player-input`, el siguiente (mandas la dirección de forma
+- Si se pierde un `game:player-input`, el siguiente (mandas la intención de forma
   continua) corrige al instante. No se acumula error.
 - Si se pierde un `game:state`, el siguiente trae todas las posiciones completas.
   Solo pinta el último.
@@ -253,20 +277,46 @@ suavizado de §7.5.)
 
 En `apps/game-service/.env` (validados con joi):
 
-| Variable        | Default | Qué controla                                          |
-| --------------- | ------- | ----------------------------------------------------- |
-| `GAME_TICK_MS`  | `50`    | periodo del loop (50 ms = 20 fps)                     |
-| `GAME_SPEED`    | `5`     | velocidad del jugador (unidades/seg)                  |
-| `GAME_MAP_SIZE` | `50`    | lado del área cuadrada, centrada en 0 (límites `±25`) |
+| Variable          | Default     | Qué controla                                      |
+| ----------------- | ----------- | ------------------------------------------------- |
+| `GAME_TICK_MS`    | `50`        | periodo del loop (50 ms = 20 fps)                 |
+| `GAME_SPEED`      | `3`         | velocidad de avance del jugador (unidades/seg)    |
+| `GAME_TURN_SPEED` | `3.0`       | velocidad de giro (radianes/seg)                  |
+| `GAME_MAX_STEP`   | `0.11`      | desnivel máx por tick (rampa sí, escalón/muro no) |
+| `GAME_MAP`        | `beta-city` | qué mapa cargar → `maps/<GAME_MAP>.json`          |
 
-Estos valores se afinarán cuando exista el mapa real `.glb`.
+La **geometría del mapa ya no está en envs**: vive en un **descriptor JSON** por
+mapa (`apps/game-service/src/game/maps/<GAME_MAP>.json`), con:
+
+- `bounds`: área jugable `{minX, minZ, maxX, maxZ}` (el jugador no sale de aquí).
+- `obstacles`: rectángulos AABB de los edificios.
+- `heightmap`: rejilla de alturas del suelo (para rampas/escalones).
+
+`GAME_MAX_STEP` se afina por mapa según sus pendientes (rampa vs bordillo).
+
+### Coordenadas (acuerdo con el frontend)
+
+El descriptor está en el **mismo marco** que usa el frontend: el front carga el
+`.glb` y lo **centra** aplicando el offset de su centro (para `beta-city.glb`:
+`(-8.5, -0.3)`), y el script de extracción aplica ese mismo offset. Así lo que el
+servidor calcula cae sobre el mapa visible. El **movimiento va 100% en el
+servidor**; centrar el mapa es solo **render** — el front desplaza el mapa, nunca
+las posiciones de los jugadores.
+
+### Cambiar de mapa
+
+Se genera el descriptor JSON del nuevo `.glb` con el script de extracción, se
+apunta `GAME_MAP` a él y se afina `GAME_MAX_STEP`. **El código del servidor no se
+toca.** El paso a paso del script, sus flags y cómo probarlo están en
+[`docs/demo.md`](./demo.md).
 
 ---
 
 ## 9. Fuera de alcance (futuro)
 
 - **NPCs** (peatones erráticos server-side, el alma de "Just Act Natural").
-- **Colisión** entre jugadores y contra el escenario (zonas no pisables).
+- **Colisión entre jugadores** (hoy se atraviesan; la colisión contra el
+  escenario y la altura ya están, ver §5).
 - **Mecánica del seeker**: cámara aérea, apuntar, disparar.
 - **Detección** (suspicion meter), **diamantes**, **items** (smoke/warp).
 - **Rondas**: tiempo límite, rotación de roles, resultados, victoria.

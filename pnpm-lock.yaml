@@ -363,12 +363,24 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
     devDependencies:
+      "@gltf-transform/core":
+        specifier: ^4.4.1
+        version: 4.4.1
+      "@gltf-transform/extensions":
+        specifier: ^4.4.1
+        version: 4.4.1
       "@types/jest":
         specifier: ^30.0.0
         version: 30.0.0
+      draco3dgltf:
+        specifier: ^1.5.7
+        version: 1.5.7
       jest:
         specifier: ^30.4.2
         version: 30.4.2(@types/node@24.12.4)(ts-node@10.9.2(@types/node@24.12.4)(typescript@5.9.3))
+      three:
+        specifier: ^0.184.0
+        version: 0.184.0
       ts-jest:
         specifier: ^29.4.11
         version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(jest-util@30.4.1)(jest@30.4.2(@types/node@24.12.4)(ts-node@10.9.2(@types/node@24.12.4)(typescript@5.9.3)))(typescript@5.9.3)
@@ -1093,6 +1105,18 @@ packages:
         integrity: sha512-rZAP3aVgB9ds9KOeUSL+zZ21hPmo8dh6fnIFwRQj5EAZl9gzR7wxYbYXYysAM8CTqGmUGyp2S4kUdV17MnGuWQ==
       }
     engines: { node: ^20.19.0 || ^22.13.0 || >=24 }
+
+  "@gltf-transform/core@4.4.1":
+    resolution:
+      {
+        integrity: sha512-ygWWFOrj1HnfvBimHF1yHTY4abbeBjn3CvljijaWKoRLMRV/a8pWYQu9rfMFQhfpT5kYZTD5Mp+dizAXPbiTDQ==
+      }
+
+  "@gltf-transform/extensions@4.4.1":
+    resolution:
+      {
+        integrity: sha512-dZZ9D/NdpNeJUmQKExtISYtd3W6OxU4njk8UI3IKm6j97uVskYQ24BNi2YP40uUpdWPiREsS/DhjNhWAbGU/1A==
+      }
 
   "@hapi/hoek@9.3.0":
     resolution:
@@ -3864,6 +3888,12 @@ packages:
         integrity: sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==
       }
 
+  draco3dgltf@1.5.7:
+    resolution:
+      {
+        integrity: sha512-LeqcpmoHIyYUi0z70/H3tMkGj8QhqVxq6FJGPjlzR24BNkQ6jyMheMvFKJBI0dzGZrEOUyQEmZ8axM1xRrbRiw==
+      }
+
   dunder-proto@1.0.1:
     resolution:
       {
@@ -5275,6 +5305,12 @@ packages:
         integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==
       }
 
+  ktx-parse@1.1.0:
+    resolution:
+      {
+        integrity: sha512-mKp3y+FaYgR7mXWAbyyzpa/r1zDWeaunH+INJO4fou3hb45XuNSwar+7llrRyvpMWafxSIi99RNFJ05MHedaJQ==
+      }
+
   leven@3.1.0:
     resolution:
       {
@@ -6260,6 +6296,12 @@ packages:
     resolution:
       {
         integrity: sha512-bN+0ehEnrXfxV2ZQvU2PetO0n4gqBD4ulq3MI1WOPLgr7/Mg9yRQkX5+0v1vagr74ZTsl7XtzlaYDo2EuCeYJw==
+      }
+
+  property-graph@4.1.0:
+    resolution:
+      {
+        integrity: sha512-AvPcP7XECNWy4LGmFQ77k7un4lSKM4eS29PTvW4ck95uYeLxXPWJM7hLuBqK91FaHqCcgJvIUCuNJjjxKE7VKQ==
       }
 
   proxy-addr@2.0.7:
@@ -7974,6 +8016,15 @@ snapshots:
     dependencies:
       "@eslint/core": 1.2.1
       levn: 0.4.1
+
+  "@gltf-transform/core@4.4.1":
+    dependencies:
+      property-graph: 4.1.0
+
+  "@gltf-transform/extensions@4.4.1":
+    dependencies:
+      "@gltf-transform/core": 4.4.1
+      ktx-parse: 1.1.0
 
   "@hapi/hoek@9.3.0": {}
 
@@ -9850,6 +9901,8 @@ snapshots:
 
   draco3d@1.5.7: {}
 
+  draco3dgltf@1.5.7: {}
+
   dunder-proto@1.0.1:
     dependencies:
       call-bind-apply-helpers: 1.0.2
@@ -10999,6 +11052,8 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
+  ktx-parse@1.1.0: {}
+
   leven@3.1.0: {}
 
   levn@0.4.1:
@@ -11480,6 +11535,8 @@ snapshots:
     dependencies:
       is-promise: 2.2.2
       lie: 3.3.0
+
+  property-graph@4.1.0: {}
 
   proxy-addr@2.0.7:
     dependencies:

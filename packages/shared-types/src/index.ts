@@ -97,7 +97,8 @@ export interface GameLeavePayload {
 
 export interface PlayerInputPayload {
   gameId: string;
-  move: { x: number; z: number }; // dirección, |move| <= 1, {0,0} = quieto
+  forward: number; // -1..1  (W = +1, S = -1)
+  turn: number; // -1..1  (A = +1 izquierda, D = -1 derecha)
 }
 
 export interface GameStateSnapshotPayload {

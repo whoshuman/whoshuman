@@ -48,19 +48,19 @@ describe("GameService", () => {
     expect(snaps.at(-1)!.players.map((p) => p.userId)).toEqual(["u1"]);
   });
 
-  it("aplica el input de movimiento", async () => {
+  it("aplica el input (avanzar) del jugador", async () => {
     service.startGame({ gameId: "g1", players: members });
     service.join({ userId: "u1", gameId: "g1" });
     await jest.advanceTimersByTimeAsync(50);
-    const x0 = snapshots()
+    const z0 = snapshots()
       .at(-1)!
-      .players.find((p) => p.userId === "u1")!.x;
-    service.move({ userId: "u1", gameId: "g1", move: { x: 1, z: 0 } });
+      .players.find((p) => p.userId === "u1")!.z;
+    service.input({ userId: "u1", gameId: "g1", forward: 1, turn: 0 }); // avanza hacia +z
     await jest.advanceTimersByTimeAsync(50);
-    const x1 = snapshots()
+    const z1 = snapshots()
       .at(-1)!
-      .players.find((p) => p.userId === "u1")!.x;
-    expect(x1).toBeGreaterThan(x0);
+      .players.find((p) => p.userId === "u1")!.z;
+    expect(z1).toBeGreaterThan(z0);
   });
 
   it("para el loop y elimina la partida cuando se van todos", () => {

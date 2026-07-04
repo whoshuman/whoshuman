@@ -11,7 +11,7 @@ interface EnvVars {
 const envSchema = joi
   .object<EnvVars>({
     NATS_SERVERS: joi.array().items(joi.string().uri()).min(1).required(),
-    MATCHMAKING_MIN_PLAYERS: joi.number().integer().min(2).default(2),
+    MATCHMAKING_MIN_PLAYERS: joi.number().integer().min(1).default(2),
     MATCHMAKING_MAX_PLAYERS: joi
       .number()
       .integer()
