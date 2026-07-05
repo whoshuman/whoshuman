@@ -7,6 +7,7 @@ import type {
   GameStateSnapshotPayload,
   LobbyJoinPayload,
   LobbyLeavePayload,
+  LobbyReadyPayload,
   LobbyStatePayload,
   MatchFoundPayload,
   NotificationEnvelope,
@@ -35,6 +36,7 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   [ClientSocketEvents.lobbyJoin]: (payload?: LobbyJoinPayload) => void;
   [ClientSocketEvents.lobbyLeave]: (payload?: LobbyLeavePayload) => void;
+  [ClientSocketEvents.lobbyReady]: (payload: LobbyReadyPayload) => void;
   [ClientSocketEvents.gameJoin]: (payload: GameJoinPayload) => void;
   [ClientSocketEvents.gameLeave]: (payload?: GameLeavePayload) => void;
   [ClientSocketEvents.playerInput]: (payload: PlayerInputPayload) => void;

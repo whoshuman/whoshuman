@@ -38,6 +38,7 @@ export const GameSubjects = {
 export const MatchmakingSubjects = {
   joinQueue: "matchmaking.joinQueue",
   leaveQueue: "matchmaking.leaveQueue",
+  setReady: "matchmaking.setReady",
   matchFound: "matchmaking.match.found",
   lobbyUpdated: "matchmaking.lobby.updated",
   health: "matchmaking.health"
@@ -63,6 +64,7 @@ export const RealtimeSubjects = {
 export const ClientSocketEvents = {
   lobbyJoin: "lobby:join",
   lobbyLeave: "lobby:leave",
+  lobbyReady: "lobby:ready",
   gameJoin: "game:join",
   gameLeave: "game:leave",
   playerInput: "game:player-input"
