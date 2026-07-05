@@ -6,7 +6,6 @@ import type {
   MatchFoundPayload,
   MatchmakingJoinQueuePayload,
   MatchmakingLeaveQueuePayload,
-  MatchmakingSetReadyPayload,
   PlayerRole
 } from "@whoshuman/shared-types";
 import { MessagingService } from "../common/messaging.service";
@@ -23,6 +22,12 @@ interface Lobby {
   lobbyId: string;
   players: QueuedPlayer[];
 }
+
+type SetReadyEvent = {
+  userId: string;
+  lobbyId: string;
+  ready: boolean;
+};
 
 @Injectable()
 export class MatchmakingService {
@@ -78,23 +83,24 @@ export class MatchmakingService {
   }
 
   async setReady(payload: unknown) {
-    if (!this.isSetReadyPayload(payload)) {
+    const event = this.parseSetReadyPayload(payload);
+    if (!event) {
       this.logger.warn("Ignoring setReady with invalid payload");
       return;
     }
 
-    const lobbyId = this.normalizeId(payload.lobbyId);
+    const lobbyId = this.normalizeId(event.lobbyId);
     const lobby = this.lobbies.get(lobbyId);
-    const player = lobby?.players.find((p) => p.userId === payload.userId);
+    const player = lobby?.players.find((p) => p.userId === event.userId);
     if (!lobby || !player) {
       this.logger.debug(
-        `Ignoring setReady for non-queued player: user=${payload.userId} lobby=${lobbyId}`
+        `Ignoring setReady for non-queued player: user=${event.userId} lobby=${lobbyId}`
       );
       return;
     }
 
-    player.ready = payload.ready;
-    this.logger.log(`Player ready=${payload.ready}: user=${payload.userId} lobby=${lobbyId}`);
+    player.ready = event.ready;
+    this.logger.log(`Player ready=${event.ready}: user=${event.userId} lobby=${lobbyId}`);
     await this.evaluate(lobby);
   }
 
@@ -223,13 +229,17 @@ export class MatchmakingService {
     );
   }
 
-  private isSetReadyPayload(payload: unknown): payload is MatchmakingSetReadyPayload {
-    return (
-      this.isRecord(payload) &&
-      this.isNonEmptyString(payload.lobbyId) &&
-      this.isNonEmptyString(payload.userId) &&
-      typeof payload.ready === "boolean"
-    );
+  private parseSetReadyPayload(payload: unknown): SetReadyEvent | null {
+    if (
+      !this.isRecord(payload) ||
+      !this.isNonEmptyString(payload.lobbyId) ||
+      !this.isNonEmptyString(payload.userId) ||
+      typeof payload.ready !== "boolean"
+    ) {
+      return null;
+    }
+
+    return { lobbyId: payload.lobbyId, userId: payload.userId, ready: payload.ready };
   }
 
   private isRecord(value: unknown): value is Record<string, unknown> {
