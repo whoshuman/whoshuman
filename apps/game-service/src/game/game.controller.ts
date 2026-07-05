@@ -19,8 +19,8 @@ export class GameController {
   }
 
   @EventPattern(GameSubjects.playerMoved)
-  handleMove(@Payload() payload: unknown) {
-    this.game.move(payload);
+  handleInput(@Payload() payload: unknown) {
+    this.game.input(payload);
   }
 
   @EventPattern(GameSubjects.leave)

@@ -4,6 +4,7 @@ import type { GameStateSnapshotPayload, MatchFoundPayload } from "@whoshuman/sha
 import { MessagingService } from "../common/messaging.service";
 import { envs } from "../config";
 import { GameSession } from "./game-session";
+import { loadMap, type MapDescriptor } from "./map";
 
 interface RunningGame {
   session: GameSession;
@@ -27,9 +28,22 @@ export class GameService {
     }
     if (this.games.has(payload.gameId)) return; // idempotente
 
+    let map: MapDescriptor;
+    try {
+      map = loadMap(envs.gameMap);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Cannot load map "${envs.gameMap}": ${message}`);
+      return; // mapa mal configurado → no arranca la partida
+    }
+
     const session = new GameSession(payload.gameId, payload.players, {
-      mapSize: envs.gameMapSize,
-      speed: envs.gameSpeed
+      bounds: map.bounds,
+      speed: envs.gameSpeed,
+      turnSpeed: envs.gameTurnSpeed,
+      obstacles: map.obstacles,
+      heightmap: map.heightmap,
+      maxStep: envs.gameMaxStep
     });
     const dt = envs.gameTickMs / 1000;
     let tick = 0;
@@ -48,9 +62,9 @@ export class GameService {
     this.games.get(payload.gameId)?.session.markPresent(payload.userId);
   }
 
-  move(payload: unknown): void {
-    if (!this.isMoveRef(payload)) return;
-    this.games.get(payload.gameId)?.session.setMove(payload.userId, payload.move);
+  input(payload: unknown): void {
+    if (!this.isInputRef(payload)) return;
+    this.games.get(payload.gameId)?.session.setInput(payload.userId, payload.forward, payload.turn);
   }
 
   leave(payload: unknown): void {
@@ -87,11 +101,11 @@ export class GameService {
     return isRecord(p) && typeof p.userId === "string" && typeof p.gameId === "string";
   }
 
-  private isMoveRef(
+  private isInputRef(
     p: unknown
-  ): p is { userId: string; gameId: string; move: { x: number; z: number } } {
+  ): p is { userId: string; gameId: string; forward: number; turn: number } {
     if (!this.isPlayerRef(p)) return false;
-    const move = (p as { move?: unknown }).move;
-    return isRecord(move) && typeof move.x === "number" && typeof move.z === "number";
+    const r = p as { forward?: unknown; turn?: unknown };
+    return typeof r.forward === "number" && typeof r.turn === "number";
   }
 }

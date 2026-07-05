@@ -6,7 +6,9 @@ interface EnvVars {
   DATABASE_URL: string;
   GAME_TICK_MS: number;
   GAME_SPEED: number;
-  GAME_MAP_SIZE: number;
+  GAME_TURN_SPEED: number;
+  GAME_MAX_STEP: number;
+  GAME_MAP: string;
 }
 
 const envSchema = joi
@@ -17,8 +19,10 @@ const envSchema = joi
       .uri({ scheme: [/postgresql/] })
       .required(),
     GAME_TICK_MS: joi.number().integer().min(1).default(50),
-    GAME_SPEED: joi.number().positive().default(5),
-    GAME_MAP_SIZE: joi.number().positive().default(50)
+    GAME_SPEED: joi.number().positive().default(3),
+    GAME_TURN_SPEED: joi.number().positive().default(3.0),
+    GAME_MAX_STEP: joi.number().positive().default(0.11),
+    GAME_MAP: joi.string().default("beta-city")
   })
   .unknown(true);
 
@@ -40,5 +44,7 @@ export const envs = {
   databaseUrl: envVars.DATABASE_URL,
   gameTickMs: envVars.GAME_TICK_MS,
   gameSpeed: envVars.GAME_SPEED,
-  gameMapSize: envVars.GAME_MAP_SIZE
+  gameTurnSpeed: envVars.GAME_TURN_SPEED,
+  gameMaxStep: envVars.GAME_MAX_STEP,
+  gameMap: envVars.GAME_MAP
 };

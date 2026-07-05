@@ -57,3 +57,9 @@ AGENTS.md
 # specs/planes internos de diseño (no van al repo)
 docs/superpowers/
 
+# spike local de prueba del mapa (play.html, token, glb) — no va al repo
+entrega-mapa/
+
+# modelos 3D pesados: no caben en GitHub (>100 MB). Usar Git LFS o comprimir (Draco).
+apps/frontend/public/models/alfa-city.glb
+

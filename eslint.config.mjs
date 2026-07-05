@@ -26,7 +26,13 @@ export default tseslint.config(
   },
   {
     files: ["**/*.{js,mjs,cjs}", "*.config.ts", "*.config.mts"],
-    extends: [tseslint.configs.disableTypeChecked]
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly"
+      }
+    }
   },
   eslintConfigPrettier
 );
