@@ -144,6 +144,9 @@ importers:
       "@whoshuman/shared-types":
         specifier: workspace:*
         version: link:../../packages/shared-types
+      "@whoshuman/shared-validation":
+        specifier: workspace:*
+        version: link:../../packages/shared-validation
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
@@ -253,6 +256,9 @@ importers:
       "@whoshuman/shared-types":
         specifier: workspace:*
         version: link:../../packages/shared-types
+      "@whoshuman/shared-validation":
+        specifier: workspace:*
+        version: link:../../packages/shared-validation
       axios:
         specifier: ^1.16.1
         version: 1.16.1
@@ -553,6 +559,9 @@ importers:
       "@whoshuman/shared-utils":
         specifier: workspace:*
         version: link:../../packages/shared-utils
+      "@whoshuman/shared-validation":
+        specifier: workspace:*
+        version: link:../../packages/shared-validation
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -9063,10 +9072,10 @@ snapshots:
     dependencies:
       "@types/yargs-parser": 21.0.3
 
-  "@typescript-eslint/eslint-plugin@8.60.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)":
+  "@typescript-eslint/eslint-plugin@8.60.0(@typescript-eslint/parser@8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3))(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)":
     dependencies:
       "@eslint-community/regexpp": 4.12.2
-      "@typescript-eslint/parser": 8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
+      "@typescript-eslint/parser": 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
       "@typescript-eslint/scope-manager": 8.60.0
       "@typescript-eslint/type-utils": 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
       "@typescript-eslint/utils": 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
@@ -12158,7 +12167,7 @@ snapshots:
 
   typescript-eslint@8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3):
     dependencies:
-      "@typescript-eslint/eslint-plugin": 8.60.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
+      "@typescript-eslint/eslint-plugin": 8.60.0(@typescript-eslint/parser@8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3))(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
       "@typescript-eslint/parser": 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
       "@typescript-eslint/typescript-estree": 8.60.0(typescript@6.0.3)
       "@typescript-eslint/utils": 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)

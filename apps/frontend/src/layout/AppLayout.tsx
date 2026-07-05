@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import LanguageSelector from "../shared/LanguageSelector";
 import SceneBackground from "../features/home-3d/SceneBackground";
+import { useAuthStore } from "../shared/authStore";
 
 // Rutas que muestran el fondo 3D unificado. La home tiene su propia escena (con zoom)
 // y el juego tendra su escena de mapa, asi que ninguna de las dos lo usa.
@@ -49,6 +51,11 @@ const navChipActive =
 function AppLayout() {
   const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const restore = useAuthStore((s) => s.restore);
+
+  useEffect(() => {
+    void restore();
+  }, [restore]);
 
   // El 404 (defaultNotFoundComponent) no es una ruta del arbol: se detecta por descarte.
   const isNotFound = !KNOWN_ROUTES.has(pathname);

@@ -1,5 +1,6 @@
 import type { RegisterPayload } from "@whoshuman/shared-types";
-import { IsEmail, IsString, MinLength, MaxLength } from "class-validator";
+import { SUPPORTED_LANGUAGES } from "@whoshuman/shared-validation";
+import { IsEmail, IsIn, IsOptional, IsString, MinLength, MaxLength } from "class-validator";
 import { i18nValidationMessage } from "nestjs-i18n";
 
 /**
@@ -8,7 +9,7 @@ import { i18nValidationMessage } from "nestjs-i18n";
  * Cada decorador lleva un `message` con una clave de traducción (validation.*),
  * así el error de validación (400) sale traducido al idioma de la petición.
  */
-export class RegisterDto implements RegisterPayload {
+export class RegisterDto implements Omit<RegisterPayload, "language"> {
   @IsEmail({}, { message: i18nValidationMessage("validation.isEmail") })
   email!: string;
 
@@ -20,4 +21,8 @@ export class RegisterDto implements RegisterPayload {
   @IsString({ message: i18nValidationMessage("validation.isString") })
   @MinLength(8, { message: i18nValidationMessage("validation.minLength") })
   password!: string;
+
+  @IsOptional()
+  @IsIn(SUPPORTED_LANGUAGES)
+  language?: string;
 }

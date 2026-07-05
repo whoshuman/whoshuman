@@ -19,6 +19,7 @@ export interface PublicUser {
   username: string;
   avatar: string | null;
   bio: string | null;
+  language: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,6 +39,7 @@ export interface RegisterPayload {
   email: string;
   username: string;
   password: string;
+  language: string;
 }
 
 export interface LoginPayload {
@@ -235,6 +237,7 @@ export interface UpdateProfilePayload extends UserScopedPayload {
   username: string;
   avatar: string | null;
   bio: string | null;
+  language: string;
 }
 /** El userId es quien busca (del JWT): se usa para excluirle de sus propios resultados. */
 export interface SearchUsersPayload extends UserScopedPayload, PageQuery {

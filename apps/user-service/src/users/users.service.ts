@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { RpcException } from "@nestjs/microservices";
 import { paginate } from "@whoshuman/shared-utils";
+import { SUPPORTED_LANGUAGES } from "@whoshuman/shared-validation";
 import type {
   ActionResponse,
   Paginated,
@@ -66,7 +67,7 @@ export class UsersService {
    * El email NO se toca: es fijo y su gestión pertenece a auth-service.
    */
   async updateProfile(payload: UpdateProfilePayload): Promise<PublicUser> {
-    const { userId, username, avatar, bio } = payload;
+    const { userId, username, avatar, bio, language } = payload;
 
     // Una cuenta borrada no puede editarse: sin esto, alguien con un token aún
     // válido tras borrarse podría renombrar su tombstone y romper la anonimización.
@@ -75,11 +76,21 @@ export class UsersService {
     });
     if (!me) this.fail(404, "userNotFound");
 
+    // Si el idioma no está soportado, se conserva el actual en vez de fallar.
+    const lang = SUPPORTED_LANGUAGES.includes(language as (typeof SUPPORTED_LANGUAGES)[number])
+      ? language
+      : me.language;
+
     // No-op: si el body trae exactamente los valores actuales, no ejecutamos el
     // UPDATE. Así `updatedAt` solo cambia con ediciones REALES (Prisma lo bumpea
     // en cada update aunque los datos sean idénticos). Aprovechamos el `me` que
     // ya leímos para el check del tombstone — cero queries extra.
-    if (me.username === username && me.avatar === avatar && me.bio === bio) {
+    if (
+      me.username === username &&
+      me.avatar === avatar &&
+      me.bio === bio &&
+      me.language === lang
+    ) {
       return toPublicUser(me);
     }
 
@@ -92,7 +103,7 @@ export class UsersService {
 
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { username, avatar, bio }
+      data: { username, avatar, bio, language: lang }
     });
     return toPublicUser(user);
   }

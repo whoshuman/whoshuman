@@ -22,6 +22,7 @@ export function toPublicUser(u: User): PublicUser {
     username: u.username,
     avatar: u.avatar,
     bio: u.bio,
+    language: u.language,
     createdAt: u.createdAt.toISOString(),
     updatedAt: u.updatedAt.toISOString()
   };

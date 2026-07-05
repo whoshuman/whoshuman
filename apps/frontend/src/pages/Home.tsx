@@ -13,6 +13,7 @@ import ProfileEdit from "./ProfileEdit";
 import AboutTeam from "./AboutTeam";
 import { useMusic } from "../shared/musicStore";
 import { useHologramSound } from "../shared/useHologramSound";
+import { useAuthStore } from "../shared/authStore";
 
 // Vistas que se montan como overlay sobre la home sin cambiar de ruta.
 type HomeView = "home" | "login" | "register" | "lobby";
@@ -88,6 +89,9 @@ function Home() {
   const [carX, setCarX] = useState(0);
   const startMusic = useMusic((state) => state.start);
   const stopMusic = useMusic((state) => state.stop);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const currentUser = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
 
   // Secuencia de "sobre el proyecto": giro de 180 -> picado al coche (1700ms) -> tarjetas
   // (2900ms, cuando la camara ya se asento). Los reset se hacen al cerrar, no en el effect.
@@ -181,23 +185,41 @@ function Home() {
 
         {/* Accesos bajo el titulo: identificarse, registrar unidad o desplegar como invitado. */}
         <div className="pointer-events-auto mt-8 flex flex-col items-center gap-4 sm:mt-12">
-          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-            <button
-              type="button"
-              onClick={() => setView("login")}
-              data-sfx="silent"
-              className="border-2 border-neon-magenta bg-neon-magenta/15 px-7 py-3 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)] sm:px-9 sm:py-3.5"
-            >
-              {t("home.login")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("register")}
-              data-sfx="silent"
-              className="border border-neon-cyan/60 bg-bg/40 px-7 py-3 font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)] sm:px-9 sm:py-3.5"
-            >
-              {t("home.register")}
-            </button>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
+            {isAuthenticated ? (
+              <>
+                <span className="font-display text-sm font-bold uppercase tracking-widest text-neon-cyan [text-shadow:0_0_10px_rgb(36_245_255_/_0.5)]">
+                  {currentUser?.username}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void signOut()}
+                  data-sfx="silent"
+                  className="border-2 border-neon-magenta bg-neon-magenta/15 px-7 py-3 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)] sm:px-9 sm:py-3.5"
+                >
+                  {t("home.menu.logout")}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setView("login")}
+                  data-sfx="silent"
+                  className="border-2 border-neon-magenta bg-neon-magenta/15 px-7 py-3 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)] sm:px-9 sm:py-3.5"
+                >
+                  {t("home.login")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView("register")}
+                  data-sfx="silent"
+                  className="border border-neon-cyan/60 bg-bg/40 px-7 py-3 font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)] sm:px-9 sm:py-3.5"
+                >
+                  {t("home.register")}
+                </button>
+              </>
+            )}
           </div>
           {/* Despliegue sin identificar (invitado). */}
           <button
@@ -248,12 +270,22 @@ function Home() {
       {/* Overlays integrados: se abren sobre la home con fundido + despliegue del panel. */}
       {view === "login" && (
         <div className="animate-fade-in fixed inset-0 z-30 overflow-y-auto bg-bg/70 backdrop-blur-sm">
-          <Login embedded onClose={closeView} onSwitch={() => setView("register")} />
+          <Login
+            embedded
+            onClose={closeView}
+            onSwitch={() => setView("register")}
+            onSuccess={() => setView("lobby")}
+          />
         </div>
       )}
       {view === "register" && (
         <div className="animate-fade-in fixed inset-0 z-30 overflow-y-auto bg-bg/70 backdrop-blur-sm">
-          <Register embedded onClose={closeView} onSwitch={() => setView("login")} />
+          <Register
+            embedded
+            onClose={closeView}
+            onSwitch={() => setView("login")}
+            onSuccess={() => setView("lobby")}
+          />
         </div>
       )}
       {/* Zona de despliegue: se oculta cuando se abre la edicion de perfil. */}
