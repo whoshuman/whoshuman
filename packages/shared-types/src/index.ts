@@ -87,6 +87,10 @@ export interface LobbyLeavePayload {
   lobbyId?: string;
 }
 
+export interface LobbyReadyPayload {
+  ready: boolean;
+}
+
 export interface GameJoinPayload {
   gameId: string;
 }
@@ -115,16 +119,12 @@ export interface MatchFoundPayload {
   players: { userId: string; role: PlayerRole }[];
 }
 
-export type LobbyStatus = "waiting" | "starting";
-
 export interface LobbyStatePayload {
   lobbyId: string;
-  players: { userId: string; username: string }[]; // sin socketId (interno)
+  players: { userId: string; username: string; ready: boolean }[]; // sin socketId
   count: number;
   min: number;
   max: number;
-  status: LobbyStatus;
-  startsAt: number | null; // epoch ms en que arranca (durante "starting")
 }
 
 export interface MatchmakingJoinQueuePayload {
@@ -138,6 +138,12 @@ export interface MatchmakingLeaveQueuePayload {
   userId: string;
   lobbyId: string;
   socketId: string;
+}
+
+export interface MatchmakingSetReadyPayload {
+  userId: string;
+  lobbyId: string;
+  ready: boolean;
 }
 
 export type FriendshipStatus = "PENDING" | "ACCEPTED" | "BLOCKED";
