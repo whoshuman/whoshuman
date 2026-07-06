@@ -20,7 +20,6 @@ import type {
   GameLeavePayload,
   LobbyJoinPayload,
   LobbyLeavePayload,
-  LobbyReadyPayload,
   PlayerInputPayload
 } from "@whoshuman/shared-types";
 import { MessagingService } from "../common/messaging.service";
@@ -164,7 +163,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   @SubscribeMessage(ClientSocketEvents.lobbyReady)
   async handleLobbyReady(
     @ConnectedSocket() socket: RealtimeSocket,
-    @MessageBody() payload: LobbyReadyPayload
+    @MessageBody() payload: unknown
   ) {
     const user = this.requireUser(socket);
     const lobbyId = socket.data.lobbyId;
@@ -173,10 +172,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       return;
     }
 
-    await this.publishToNats(MatchmakingSubjects.setReady, {
+    const ready = this.isRecord(payload) && payload.ready === true;
+    await this.publishToNats("matchmaking.setReady", {
       userId: user.sub,
       lobbyId,
-      ready: payload?.ready === true
+      ready
     });
   }
 
@@ -293,6 +293,10 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     }
 
     return value.trim();
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null;
   }
 
   private async publishToNats(pattern: string, payload: unknown) {

@@ -21,6 +21,7 @@ function dbUser(overrides: Record<string, unknown> = {}) {
     username: "alice",
     avatar: null,
     bio: null,
+    language: "en",
     createdAt: new Date("2026-01-01"),
     updatedAt: new Date("2026-01-01"),
     deletedAt: null,
@@ -94,7 +95,8 @@ describe("UsersService", () => {
         userId: "alice",
         username: "alice",
         avatar: null,
-        bio: "hola"
+        bio: "hola",
+        language: "en"
       });
       expect(result.bio).toBe("hola");
       expect(prisma.user.findFirst).toHaveBeenNthCalledWith(1, {
@@ -102,7 +104,7 @@ describe("UsersService", () => {
       });
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: "alice" },
-        data: { username: "alice", avatar: null, bio: "hola" }
+        data: { username: "alice", avatar: null, bio: "hola", language: "en" }
       });
     });
     it("no-op: si los valores son idénticos, no ejecuta UPDATE (updatedAt intacto)", async () => {
@@ -111,16 +113,63 @@ describe("UsersService", () => {
         userId: "alice",
         username: "alice",
         avatar: null,
-        bio: null
+        bio: null,
+        language: "en"
       });
       expect(result.username).toBe("alice");
       expect(prisma.user.update).not.toHaveBeenCalled();
       expect(prisma.user.findFirst).toHaveBeenCalledTimes(1); // tampoco chequea colisión
     });
+    it("actualiza el language si el nuevo valor es soportado", async () => {
+      prisma.user.findFirst
+        .mockResolvedValueOnce(dbUser({ language: "en" }))
+        .mockResolvedValueOnce(null);
+      prisma.user.update.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve(dbUser({ ...data }))
+      );
+      const result = await service.updateProfile({
+        userId: "alice",
+        username: "alice",
+        avatar: null,
+        bio: null,
+        language: "es"
+      });
+      expect(result.language).toBe("es");
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: "alice" },
+        data: { username: "alice", avatar: null, bio: null, language: "es" }
+      });
+    });
+    it("conserva el language actual si el nuevo valor no es soportado", async () => {
+      prisma.user.findFirst
+        .mockResolvedValueOnce(dbUser({ language: "en" }))
+        .mockResolvedValueOnce(null);
+      prisma.user.update.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve(dbUser({ ...data }))
+      );
+      const result = await service.updateProfile({
+        userId: "alice",
+        username: "alice",
+        avatar: null,
+        bio: "cambio", // fuerza que no sea no-op
+        language: "xx"
+      });
+      expect(result.language).toBe("en");
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: "alice" },
+        data: { username: "alice", avatar: null, bio: "cambio", language: "en" }
+      });
+    });
     it("404 si la cuenta está borrada (no se puede editar el tombstone)", async () => {
       prisma.user.findFirst.mockResolvedValueOnce(null); // borrado o inexistente
       await expect(
-        service.updateProfile({ userId: "alice", username: "pepe", avatar: null, bio: null })
+        service.updateProfile({
+          userId: "alice",
+          username: "pepe",
+          avatar: null,
+          bio: null,
+          language: "en"
+        })
       ).rejects.toThrow("userNotFound");
       expect(prisma.user.update).not.toHaveBeenCalled();
     });
@@ -129,7 +178,13 @@ describe("UsersService", () => {
         .mockResolvedValueOnce(dbUser()) // yo existo
         .mockResolvedValueOnce(dbUser({ id: "carol" })); // colisión
       await expect(
-        service.updateProfile({ userId: "alice", username: "carol", avatar: null, bio: null })
+        service.updateProfile({
+          userId: "alice",
+          username: "carol",
+          avatar: null,
+          bio: null,
+          language: "en"
+        })
       ).rejects.toThrow("usernameTaken");
       expect(prisma.user.update).not.toHaveBeenCalled();
     });

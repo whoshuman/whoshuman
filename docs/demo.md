@@ -77,7 +77,8 @@ El cliente se autentica con un **JWT** que lee de `entrega-mapa/token.txt`. Hay 
 SECRET=$(docker exec whoshuman-auth-service-1 printenv JWT_SECRET)
 
 # 2) firma un JWT de 12h y escríbelo en token.txt
-node -e '
+#    (SECRET va ANTES de node, como variable de entorno)
+SECRET="$SECRET" node -e '
 const c = require("crypto");
 const secret = process.env.SECRET;
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
@@ -93,7 +94,7 @@ const data = b64({ alg: "HS256", typ: "JWT" }) + "." + b64(payload);
 const sig = c.createHmac("sha256", secret).update(data).digest("base64url");
 require("fs").writeFileSync("entrega-mapa/token.txt", data + "." + sig);
 console.log("token nuevo, exp:", new Date((now + 43200) * 1000).toLocaleString());
-' SECRET="$SECRET"
+'
 ```
 
 `sub` es el `userId`; con cualquier UUID vale (el gateway solo verifica la firma). El cliente lee `token.txt` al cargar.

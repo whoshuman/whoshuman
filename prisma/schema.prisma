@@ -31,6 +31,7 @@ model User {
   passwordHash           String       @map("password")
   avatar                 String?
   bio                    String?
+  language               String       @default("en")
   deletedAt              DateTime?
   sessions               Session[]
   scores                 Score[]

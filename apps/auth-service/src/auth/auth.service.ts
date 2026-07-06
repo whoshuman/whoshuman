@@ -11,6 +11,7 @@ import type {
   AuthVerifyResponse,
   PublicUser
 } from "@whoshuman/shared-types";
+import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from "@whoshuman/shared-validation";
 import * as bcrypt from "bcrypt";
 import ms from "ms";
 import { envs } from "../config";
@@ -60,6 +61,7 @@ export class AuthService {
       username: user.username,
       avatar: user.avatar,
       bio: user.bio,
+      language: user.language,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString()
     };
@@ -139,8 +141,14 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
 
+    const language =
+      dto.language &&
+      SUPPORTED_LANGUAGES.includes(dto.language as (typeof SUPPORTED_LANGUAGES)[number])
+        ? dto.language
+        : DEFAULT_LANGUAGE;
+
     const user = await this.prisma.user.create({
-      data: { email: dto.email, username: dto.username, passwordHash }
+      data: { email: dto.email, username: dto.username, passwordHash, language }
     });
 
     const accessToken = this.signAccessToken({

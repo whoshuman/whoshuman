@@ -20,7 +20,7 @@ ARG VITE_WS_URL
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_WS_URL=$VITE_WS_URL
 WORKDIR /app/apps/frontend
-RUN pnpm --filter @whoshuman/shared-types build && pnpm build
+RUN pnpm --filter @whoshuman/shared-types build && pnpm --filter @whoshuman/shared-validation build && pnpm build
 
 # ---- serve ----
 FROM nginx:alpine AS runner

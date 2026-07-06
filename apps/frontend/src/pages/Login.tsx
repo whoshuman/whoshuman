@@ -1,6 +1,10 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { login } from "../shared/api/auth";
+import { apiError } from "../shared/api/errors";
+import { useAuthStore } from "../shared/authStore";
 import OAuthButtons from "../shared/OAuthButtons";
 import { useHologramSound } from "../shared/useHologramSound";
 
@@ -10,12 +14,40 @@ type LoginProps = {
   embedded?: boolean;
   onClose?: () => void;
   onSwitch?: () => void;
+  // Se llama tras autenticar con éxito (p. ej. para ir al lobby). Si no se pasa, usa onClose.
+  onSuccess?: () => void;
 };
 
-function Login({ embedded = false, onClose, onSwitch }: LoginProps) {
+function Login({ embedded = false, onClose, onSwitch, onSuccess }: LoginProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   // Sonido de aparicion holografica al abrirse el panel.
   useHologramSound();
+
+  const signIn = useAuthStore((s) => s.signIn);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const session = await login(email, password);
+      signIn(session);
+      if (onSuccess || onClose) {
+        (onSuccess ?? onClose)?.();
+      } else {
+        void navigate({ to: "/lobby" });
+      }
+    } catch (err) {
+      setError(apiError(err, t("login.submit")));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <main
@@ -60,7 +92,7 @@ function Login({ embedded = false, onClose, onSwitch }: LoginProps) {
           </h1>
           <p className="mb-8 text-sm text-text-muted">{t("login.subtitle")}</p>
 
-          <div className="flex flex-col gap-5">
+          <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-5">
             <div>
               <label
                 className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted"
@@ -72,6 +104,8 @@ function Login({ embedded = false, onClose, onSwitch }: LoginProps) {
                 id="email"
                 type="email"
                 placeholder={t("login.emailPlaceholder")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="box-border w-full border border-neon-cyan/35 bg-white/5 px-4 py-3 text-text-main focus:border-neon-cyan focus:outline-none focus:ring-2 focus:ring-neon-cyan/20"
               />
             </div>
@@ -87,6 +121,8 @@ function Login({ embedded = false, onClose, onSwitch }: LoginProps) {
                 id="password"
                 type="password"
                 placeholder="••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="box-border w-full border border-neon-cyan/35 bg-white/5 px-4 py-3 text-text-main focus:border-neon-cyan focus:outline-none focus:ring-2 focus:ring-neon-cyan/20"
               />
             </div>
@@ -101,13 +137,16 @@ function Login({ embedded = false, onClose, onSwitch }: LoginProps) {
               </a>
             </div>
 
+            {error && <p className="text-sm text-neon-magenta">{error}</p>}
+
             <button
-              type="button"
-              className="mt-2 w-full border-2 border-neon-magenta bg-neon-magenta py-4 font-display text-lg font-black uppercase tracking-widest text-bg shadow-[0_0_24px_rgba(255,43,214,0.5)] transition hover:brightness-110 hover:shadow-[0_0_40px_rgba(255,43,214,0.7)] active:translate-y-px"
+              type="submit"
+              disabled={loading}
+              className="mt-2 w-full border-2 border-neon-magenta bg-neon-magenta py-4 font-display text-lg font-black uppercase tracking-widest text-bg shadow-[0_0_24px_rgba(255,43,214,0.5)] transition hover:brightness-110 hover:shadow-[0_0_40px_rgba(255,43,214,0.7)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {t("login.submit")} →
+              {loading ? "…" : t("login.submit")} →
             </button>
-          </div>
+          </form>
 
           {/* Acceso con proveedores externos (Google / 42). */}
           <OAuthButtons />

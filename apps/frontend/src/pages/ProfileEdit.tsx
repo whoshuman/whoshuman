@@ -2,6 +2,10 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 
+import { SUPPORTED_LANGUAGES } from "@whoshuman/shared-validation";
+import { apiError } from "../shared/api/errors";
+import { updateMe } from "../shared/api/users";
+import { useAuthStore } from "../shared/authStore";
 import { useHologramSound } from "../shared/useHologramSound";
 
 type ProfileEditProps = {
@@ -19,13 +23,17 @@ const scanlinesStyle: CSSProperties = {
 // Pantalla de edicion de perfil presentada como un display gigante montado en un edificio
 // de la ciudad. La camara apunta a la derecha y este panel simula la pantalla del edificio.
 function ProfileEdit({ onClose }: ProfileEditProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Sonido de aparicion holografica al abrirse la pantalla.
   useHologramSound();
-  // Estado local de formulario (mock, sin backend todavia).
-  const [callsign, setCallsign] = useState("UNIDAD_JD");
-  const [bio, setBio] = useState("");
-  const [justSaved, setJustSaved] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const updateUser = useAuthStore((s) => s.updateUser);
+  // Estado local de formulario, inicializado con los datos reales del usuario.
+  const [callsign, setCallsign] = useState(user?.username ?? "");
+  const [bio, setBio] = useState(user?.bio ?? "");
+  const [lang, setLang] = useState<string>(user?.language ?? i18n.language);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const initials =
     callsign
@@ -33,9 +41,26 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
       .slice(0, 2)
       .toUpperCase() || "JD";
 
-  function handleSave() {
-    setJustSaved(true);
-    setTimeout(() => setJustSaved(false), 1400);
+  async function handleSave() {
+    if (!user) return;
+    setError(null);
+    setSaving(true);
+    try {
+      const updated = await updateMe({
+        username: callsign,
+        bio,
+        avatar: user.avatar,
+        language: lang
+      });
+      updateUser(updated);
+      void i18n.changeLanguage(updated.language);
+      localStorage.setItem("lang", updated.language);
+      onClose();
+    } catch (err) {
+      setError(apiError(err, t("profile.save")));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -148,20 +173,35 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
               </span>
             </label>
 
+            {/* Idioma */}
+            <div className="mb-6 flex gap-2">
+              {SUPPORTED_LANGUAGES.map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => setLang(code)}
+                  className={
+                    lang === code
+                      ? "border border-neon-cyan px-3 py-1 font-display text-xs text-neon-cyan"
+                      : "border border-neon-cyan/30 px-3 py-1 font-display text-xs text-text-muted"
+                  }
+                >
+                  {code.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
+            {error && <p className="mb-4 text-sm text-neon-magenta">{error}</p>}
+
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={handleSave}
+                onClick={() => void handleSave()}
+                disabled={saving}
                 className="flex-1 border-2 border-neon-magenta bg-neon-magenta py-3 font-display font-black uppercase tracking-widest text-bg shadow-[0_0_20px_rgba(255,43,214,0.45)] transition hover:brightness-110 hover:shadow-[0_0_36px_rgba(255,43,214,0.65)] active:translate-y-px"
               >
-                {justSaved ? (
-                  `✓ ${t("profile.saved")}`
-                ) : (
-                  <>
-                    <span className="sm:hidden">{t("profile.saveShort")}</span>
-                    <span className="hidden sm:inline">{t("profile.save")}</span>
-                  </>
-                )}
+                <span className="sm:hidden">{t("profile.saveShort")}</span>
+                <span className="hidden sm:inline">{t("profile.save")}</span>
               </button>
               <button
                 type="button"

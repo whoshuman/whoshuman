@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useAuthStore } from "../shared/authStore";
 import CornerBrackets from "../shared/CornerBrackets";
 import SettingsMenu from "../shared/SettingsMenu";
 import { useHologramSound } from "../shared/useHologramSound";
@@ -58,6 +59,9 @@ function OperationCard({
 
 function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
+  const username = user?.username ?? "";
+  const initials = username.slice(0, 2).toUpperCase() || "--";
   // "menu" = las tres fichas; un modo = la pantalla expandida de esa operacion (in-place).
   const [mode, setMode] = useState<RoomModalMode | "menu">("menu");
   // Sonido holografico al aparecer el lobby (perfil + tarjetas).
@@ -80,10 +84,10 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
           <CornerBrackets color="var(--color-neon-magenta)" />
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-2xl font-black text-neon-cyan [text-shadow:0_0_12px_rgba(36,245,255,0.6)]">
-              JD
+              {initials}
             </div>
             <div className="min-w-0">
-              <p className="font-display text-lg font-black text-text-main">UNIDAD_JD</p>
+              <p className="font-display truncate text-lg font-black text-text-main">{username}</p>
               <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-neon-magenta">
                 {t("lobby.level")} 1
               </p>

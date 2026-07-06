@@ -43,6 +43,11 @@ function firstCreateArg(mock: jest.Mock): { data: { passwordHash: string } } {
   return calls[0][0];
 }
 
+function firstCreateArgFull(mock: jest.Mock): { data: Record<string, unknown> } {
+  const calls = mock.mock.calls as Array<[{ data: Record<string, unknown> }]>;
+  return calls[0][0];
+}
+
 function firstSessionCreateArg(mock: jest.Mock): { data: { expiresAt: Date } } {
   const calls = mock.mock.calls as Array<[{ data: { expiresAt: Date } }]>;
   return calls[0][0];
@@ -57,6 +62,7 @@ function buildDbUser(overrides: Partial<Record<string, unknown>> = {}) {
     passwordHash: "", // se rellena en cada test con un hash real
     avatar: null,
     bio: null,
+    language: "en",
     createdAt: new Date("2026-01-01"),
     updatedAt: new Date("2026-01-01"),
     ...overrides
@@ -158,6 +164,32 @@ describe("AuthService", () => {
       prisma.user.findFirst.mockResolvedValue(buildDbUser({ email: "otro@test.com" }));
 
       await expect(service.register(dto)).rejects.toBeInstanceOf(RpcException);
+    });
+
+    it("guarda el language recibido si es uno soportado", async () => {
+      prisma.user.findFirst.mockResolvedValue(null);
+      prisma.user.create.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve(buildDbUser(data))
+      );
+      prisma.session.create.mockResolvedValue({});
+
+      const result = await service.register({ ...dto, language: "es" });
+
+      expect(result.user.language).toBe("es");
+      const createArg = firstCreateArgFull(prisma.user.create);
+      expect(createArg.data.language).toBe("es");
+    });
+
+    it("usa DEFAULT_LANGUAGE si el language recibido no está soportado", async () => {
+      prisma.user.findFirst.mockResolvedValue(null);
+      prisma.user.create.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve(buildDbUser(data))
+      );
+      prisma.session.create.mockResolvedValue({});
+
+      const result = await service.register({ ...dto, language: "zz" });
+
+      expect(result.user.language).toBe("en");
     });
   });
 

@@ -1,6 +1,12 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from "@whoshuman/shared-validation";
+
+import { register } from "../shared/api/auth";
+import { apiError } from "../shared/api/errors";
+import { useAuthStore } from "../shared/authStore";
 import OAuthButtons from "../shared/OAuthButtons";
 import { useHologramSound } from "../shared/useHologramSound";
 
@@ -10,12 +16,50 @@ type RegisterProps = {
   embedded?: boolean;
   onClose?: () => void;
   onSwitch?: () => void;
+  // Se llama tras registrar con éxito (p. ej. para ir al lobby). Si no se pasa, usa onClose.
+  onSuccess?: () => void;
 };
 
-function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
-  const { t } = useTranslation();
+function Register({ embedded = false, onClose, onSwitch, onSuccess }: RegisterProps) {
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   // Sonido de aparicion holografica al abrirse el panel.
   useHologramSound();
+
+  const signIn = useAuthStore((s) => s.signIn);
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (password !== confirmPassword) {
+      setError(t("register.passwordMismatch"));
+      return;
+    }
+    const lang = SUPPORTED_LANGUAGES.includes(i18n.language as (typeof SUPPORTED_LANGUAGES)[number])
+      ? i18n.language
+      : DEFAULT_LANGUAGE;
+    setLoading(true);
+    try {
+      const session = await register(email, username, password, lang);
+      signIn(session);
+      if (onSuccess || onClose) {
+        (onSuccess ?? onClose)?.();
+      } else {
+        void navigate({ to: "/lobby" });
+      }
+    } catch (err) {
+      setError(apiError(err, t("register.submit")));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main
       className={
@@ -59,7 +103,7 @@ function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
           </h1>
           <p className="mb-8 text-sm text-text-muted">{t("register.subtitle")}</p>
 
-          <div className="flex flex-col gap-5">
+          <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-5">
             <div>
               <label
                 className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted"
@@ -71,6 +115,8 @@ function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
                 id="username"
                 type="text"
                 placeholder="UNIDAD_7749"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="box-border w-full border border-neon-cyan/35 bg-white/5 px-4 py-3 text-text-main focus:border-neon-cyan focus:outline-none focus:ring-2 focus:ring-neon-cyan/20"
               />
             </div>
@@ -86,6 +132,8 @@ function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
                 id="email"
                 type="email"
                 placeholder={t("register.emailPlaceholder")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="box-border w-full border border-neon-cyan/35 bg-white/5 px-4 py-3 text-text-main focus:border-neon-cyan focus:outline-none focus:ring-2 focus:ring-neon-cyan/20"
               />
             </div>
@@ -101,6 +149,8 @@ function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
                 id="password"
                 type="password"
                 placeholder="••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="box-border w-full border border-neon-cyan/35 bg-white/5 px-4 py-3 text-text-main focus:border-neon-cyan focus:outline-none focus:ring-2 focus:ring-neon-cyan/20"
               />
             </div>
@@ -116,17 +166,22 @@ function Register({ embedded = false, onClose, onSwitch }: RegisterProps) {
                 id="confirm-password"
                 type="password"
                 placeholder="••••••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="box-border w-full border border-neon-cyan/35 bg-white/5 px-4 py-3 text-text-main focus:border-neon-cyan focus:outline-none focus:ring-2 focus:ring-neon-cyan/20"
               />
             </div>
 
+            {error && <p className="text-sm text-neon-magenta">{error}</p>}
+
             <button
-              type="button"
-              className="mt-2 w-full border-2 border-neon-magenta bg-neon-magenta py-4 font-display text-lg font-black uppercase tracking-widest text-bg shadow-[0_0_24px_rgba(255,43,214,0.5)] transition hover:brightness-110 hover:shadow-[0_0_40px_rgba(255,43,214,0.7)] active:translate-y-px"
+              type="submit"
+              disabled={loading}
+              className="mt-2 w-full border-2 border-neon-magenta bg-neon-magenta py-4 font-display text-lg font-black uppercase tracking-widest text-bg shadow-[0_0_24px_rgba(255,43,214,0.5)] transition hover:brightness-110 hover:shadow-[0_0_40px_rgba(255,43,214,0.7)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {t("register.submit")} →
+              {loading ? "…" : t("register.submit")} →
             </button>
-          </div>
+          </form>
 
           {/* Acceso con proveedores externos (Google / 42). */}
           <OAuthButtons />

@@ -16,6 +16,7 @@
     "@tanstack/react-query": "^5.100.14",
     "@tanstack/react-router": "^1.170.10",
     "@whoshuman/shared-types": "workspace:*",
+    "@whoshuman/shared-validation": "workspace:*",
     "axios": "^1.16.1",
     "i18next": "^26.3.1",
     "postprocessing": "^6.39.1",

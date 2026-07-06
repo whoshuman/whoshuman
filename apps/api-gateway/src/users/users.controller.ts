@@ -24,7 +24,8 @@ export class UsersController {
       userId: user.sub,
       username: dto.username,
       avatar: dto.avatar ?? null,
-      bio: dto.bio ?? null
+      bio: dto.bio ?? null,
+      language: dto.language
     });
   }
 
