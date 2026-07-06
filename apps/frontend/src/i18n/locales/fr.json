@@ -132,7 +132,31 @@
     "statsPending": "Le système n'a encore enregistré aucune opération pour cette unité.",
     "edit": "MODIFIER",
     "logout": "DÉCONNEXION",
-    "identifying": "IDENTIFICATION DE L'UNITÉ..."
+    "identifying": "IDENTIFICATION DE L'UNITÉ...",
+    "contacts": "RÉSEAU DE CONTACTS"
+  },
+  "friends": {
+    "eyebrow": "RÉSEAU DE CONTACTS",
+    "title": "CONTACTS",
+    "subtitle": "Unités liées, demandes de liaison et localisation de nouvelles unités.",
+    "tabContacts": "CONTACTS",
+    "tabRequests": "DEMANDES",
+    "tabSearch": "RECHERCHE",
+    "emptyContacts": "AUCUN CONTACT ENREGISTRÉ — LOCALISE DES UNITÉS DANS RECHERCHE",
+    "emptyRequests": "AUCUNE DEMANDE ENTRANTE",
+    "emptySearch": "AUCUNE UNITÉ NE CORRESPOND À LA REQUÊTE",
+    "searchPlaceholder": "INDICATIF D'UNITÉ...",
+    "searchHint": "Minimum 2 caractères. Recherche par indicatif, insensible à la casse.",
+    "statusLinked": "LIÉ",
+    "accept": "ACCEPTER",
+    "decline": "REFUSER",
+    "remove": "SUPPRIMER",
+    "block": "BLOQUER",
+    "unblock": "DÉBLOQUER",
+    "sendRequest": "DEMANDER UNE LIAISON",
+    "requestSent": "DEMANDE ENVOYÉE",
+    "dossier": "FICHE D'UNITÉ",
+    "since": "Enregistré :"
   },
   "about": {
     "eyebrow": "PERSONNEL DU PROJET",

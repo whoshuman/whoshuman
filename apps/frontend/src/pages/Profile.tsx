@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Navigate, useNavigate } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -153,6 +153,12 @@ function Profile() {
             >
               {t("profilePage.edit")}
             </button>
+            <Link
+              to="/friends"
+              className="border-2 border-neon-violet px-6 py-3 text-center font-display font-black uppercase tracking-widest text-neon-violet transition hover:bg-neon-violet/10 active:translate-y-px"
+            >
+              {t("profilePage.contacts")}
+            </Link>
             <button
               type="button"
               onClick={() => void handleLogout()}

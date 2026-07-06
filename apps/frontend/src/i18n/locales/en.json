@@ -132,7 +132,31 @@
     "statsPending": "The system has not logged any operations for this unit yet.",
     "edit": "EDIT",
     "logout": "LOG OUT",
-    "identifying": "IDENTIFYING UNIT..."
+    "identifying": "IDENTIFYING UNIT...",
+    "contacts": "CONTACT NETWORK"
+  },
+  "friends": {
+    "eyebrow": "CONTACT NETWORK",
+    "title": "CONTACTS",
+    "subtitle": "Linked units, link requests and locating new units.",
+    "tabContacts": "CONTACTS",
+    "tabRequests": "REQUESTS",
+    "tabSearch": "SEARCH",
+    "emptyContacts": "NO CONTACTS ON RECORD — LOCATE UNITS IN SEARCH",
+    "emptyRequests": "NO INCOMING REQUESTS",
+    "emptySearch": "NO UNIT MATCHES THE QUERY",
+    "searchPlaceholder": "UNIT CALLSIGN...",
+    "searchHint": "Minimum 2 characters. Searches by callsign, case-insensitive.",
+    "statusLinked": "LINKED",
+    "accept": "ACCEPT",
+    "decline": "DECLINE",
+    "remove": "REMOVE",
+    "block": "BLOCK",
+    "unblock": "UNBLOCK",
+    "sendRequest": "REQUEST LINK",
+    "requestSent": "REQUEST SENT",
+    "dossier": "UNIT RECORD",
+    "since": "Enrolled:"
   },
   "about": {
     "eyebrow": "PROJECT PERSONNEL",

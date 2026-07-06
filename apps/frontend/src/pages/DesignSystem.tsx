@@ -312,6 +312,67 @@ function DesignSystem() {
           </article>
         </div>
       </section>
+
+      {/* Patrones de registro (introducidos con /friends): pestañas terminal, fila-expediente
+          y estado vacío. Para cualquier pantalla que liste entidades del sistema. */}
+      <section className="content-section">
+        <h2 className={sectionTitleClass}>Registro / listas</h2>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Pestañas terminal</h3>
+            <div className="flex border border-neon-cyan/30">
+              <button
+                type="button"
+                className="flex-1 bg-neon-cyan/15 px-2 py-2.5 font-display text-xs font-black uppercase tracking-wider text-neon-cyan [text-shadow:0_0_12px_rgba(36,245,255,0.6)]"
+              >
+                Activa
+              </button>
+              <button
+                type="button"
+                className="flex-1 px-2 py-2.5 font-display text-xs font-bold uppercase tracking-wider text-text-muted transition hover:text-neon-cyan"
+              >
+                Inactiva <span className="ml-1.5 text-neon-magenta">[3]</span>
+              </button>
+            </div>
+          </article>
+
+          <article className="bg-surface border border-neon-cyan/30 p-4">
+            <h3 className="m-0 mb-4 text-base">Estado vacío</h3>
+            <p className="border border-neon-cyan/15 bg-black/20 px-4 py-6 text-center font-display text-xs font-bold uppercase tracking-[0.25em] text-text-muted/70">
+              // SIN REGISTROS — INDICA LA ACCIÓN SIGUIENTE
+            </p>
+          </article>
+
+          <article className="bg-surface border border-neon-cyan/30 p-4 lg:col-span-2">
+            <h3 className="m-0 mb-4 text-base">Fila-expediente</h3>
+            <div className="flex flex-col gap-3 border border-neon-cyan/20 bg-white/3 px-4 py-3 transition hover:border-neon-cyan/40 hover:bg-white/5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-neon-cyan/40 bg-neon-cyan/10 font-display text-sm font-black text-neon-cyan">
+                  RV
+                </span>
+                <span className="min-w-0">
+                  <span className="font-display block truncate text-sm font-bold text-text-main">
+                    ROY-BATTY
+                  </span>
+                  <span className="block text-xs text-text-muted/80">Alta: nov 2019</span>
+                </span>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <span className="inline-flex border border-current bg-success/10 px-3 py-1 text-xs font-bold text-success">
+                  VINCULADO
+                </span>
+                <button
+                  type="button"
+                  className="border border-sun-orange/60 px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-sun-orange transition hover:bg-sun-orange/10"
+                >
+                  ELIMINAR
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
     </main>
   );
 }

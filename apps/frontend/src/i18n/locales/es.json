@@ -132,7 +132,31 @@
     "statsPending": "El sistema aún no ha registrado operaciones de esta unidad.",
     "edit": "EDITAR",
     "logout": "CERRAR SESIÓN",
-    "identifying": "IDENTIFICANDO UNIDAD..."
+    "identifying": "IDENTIFICANDO UNIDAD...",
+    "contacts": "RED DE CONTACTOS"
+  },
+  "friends": {
+    "eyebrow": "RED DE CONTACTOS",
+    "title": "CONTACTOS",
+    "subtitle": "Unidades vinculadas, solicitudes de enlace y localización de nuevas unidades.",
+    "tabContacts": "CONTACTOS",
+    "tabRequests": "SOLICITUDES",
+    "tabSearch": "BÚSQUEDA",
+    "emptyContacts": "SIN CONTACTOS REGISTRADOS — LOCALIZA UNIDADES EN BÚSQUEDA",
+    "emptyRequests": "SIN SOLICITUDES ENTRANTES",
+    "emptySearch": "NINGUNA UNIDAD COINCIDE CON LA CONSULTA",
+    "searchPlaceholder": "DISTINTIVO DE UNIDAD...",
+    "searchHint": "Mínimo 2 caracteres. Búsqueda por distintivo, sin distinguir mayúsculas.",
+    "statusLinked": "VINCULADO",
+    "accept": "ACEPTAR",
+    "decline": "RECHAZAR",
+    "remove": "ELIMINAR",
+    "block": "BLOQUEAR",
+    "unblock": "DESBLOQUEAR",
+    "sendRequest": "SOLICITAR ENLACE",
+    "requestSent": "SOLICITUD ENVIADA",
+    "dossier": "FICHA DE UNIDAD",
+    "since": "Alta:"
   },
   "about": {
     "eyebrow": "PERSONAL DEL PROYECTO",

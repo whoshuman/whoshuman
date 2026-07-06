@@ -8,6 +8,7 @@ import Register from "./pages/Register";
 import Lobby from "./pages/Lobby";
 import Game from "./pages/Game";
 import Profile from "./pages/Profile";
+import Friends from "./pages/Friends";
 import Manual from "./pages/Manual";
 import About from "./pages/About";
 import Faq from "./pages/Faq";
@@ -55,6 +56,12 @@ const profileRoute = createRoute({
   component: Profile
 });
 
+const friendsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/friends",
+  component: Friends
+});
+
 const manualRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/manual",
@@ -92,6 +99,7 @@ const routeTree = rootRoute.addChildren([
   lobbyRoute,
   gameRoute,
   profileRoute,
+  friendsRoute,
   manualRoute,
   aboutRoute,
   faqRoute,

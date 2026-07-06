@@ -1,4 +1,4 @@
-import type { PublicUser } from "@whoshuman/shared-types";
+import type { Paginated, PublicUser, UserProfile } from "@whoshuman/shared-types";
 import { httpClient } from "./httpClient";
 
 export async function getMe(): Promise<PublicUser> {
@@ -15,5 +15,23 @@ export interface UpdateMeInput {
 
 export async function updateMe(input: UpdateMeInput): Promise<PublicUser> {
   const { data } = await httpClient.put<PublicUser>("/users/me", input);
+  return data;
+}
+
+// Búsqueda por username (insensible a mayúsculas), paginada. Excluye al propio usuario.
+export async function searchUsers(
+  search: string,
+  page = 1,
+  limit = 10
+): Promise<Paginated<UserProfile>> {
+  const { data } = await httpClient.get<Paginated<UserProfile>>("/users", {
+    params: { search, page, limit }
+  });
+  return data;
+}
+
+// Ficha pública de otro jugador (sin email).
+export async function getUser(id: string): Promise<UserProfile> {
+  const { data } = await httpClient.get<UserProfile>(`/users/${id}`);
   return data;
 }
