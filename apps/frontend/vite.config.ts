@@ -17,7 +17,9 @@ export default defineConfig({
   server: {
     port: 5180,
     proxy: {
-      "/api": { target: "https://localhost", changeOrigin: true, secure: false }
+      "/api": { target: "https://localhost", changeOrigin: true, secure: false },
+      // ws:true para que el upgrade WebSocket de socket.io también pase por nginx.
+      "/socket.io": { target: "https://localhost", ws: true, changeOrigin: true, secure: false }
     }
   }
 });
