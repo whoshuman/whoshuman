@@ -23,6 +23,9 @@ interface LobbyState {
   leave: () => void;
   setReady: (ready: boolean) => void;
   clearError: () => void;
+  // Vuelta al estado inicial (logout): sin emitir nada — el gateway ya hace
+  // leaveQueue automático al desconectar el socket.
+  reset: () => void;
 }
 
 // El servidor solo procesa `lobby:join` cuando ya verificó el JWT (emite
@@ -30,12 +33,14 @@ interface LobbyState {
 // aquí y lo emitimos al recibir el ready. Flags a nivel de módulo, como
 // `restoreStarted` en authStore: sobreviven a re-renders y a StrictMode.
 let pendingLobbyId: string | undefined;
-let listenersBound = false;
+// Bind por instancia de socket: tras logout→login el singleton crea un socket
+// nuevo y los listeners deben volver a engancharse (un booleano no lo detecta).
+let boundSocket: unknown = null;
 
 function bindListeners() {
-  if (listenersBound) return;
-  listenersBound = true;
   const socket = connectSocket();
+  if (boundSocket === socket) return;
+  boundSocket = socket;
   const set = useLobbyStore.setState;
 
   socket.on(ServerSocketEvents.gatewayReady, () => {
@@ -129,5 +134,18 @@ export const useLobbyStore = create<LobbyState>((set, get) => ({
     set({ selfReady: ready });
   },
 
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
+
+  reset: () => {
+    pendingLobbyId = undefined;
+    set({
+      status: "idle",
+      lobbyId: null,
+      players: [],
+      count: 0,
+      selfReady: false,
+      match: null,
+      error: null
+    });
+  }
 }));

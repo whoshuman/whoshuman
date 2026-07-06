@@ -158,6 +158,10 @@
     "dossier": "FICHA DE UNIDAD",
     "since": "Alta:"
   },
+  "notifications": {
+    "requestReceived": "SOLICITUD DE ENLACE ENTRANTE",
+    "requestAccepted": "ENLACE ACEPTADO"
+  },
   "about": {
     "eyebrow": "PERSONAL DEL PROYECTO",
     "title": "EL EQUIPO",

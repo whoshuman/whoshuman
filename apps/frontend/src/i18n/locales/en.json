@@ -158,6 +158,10 @@
     "dossier": "UNIT RECORD",
     "since": "Enrolled:"
   },
+  "notifications": {
+    "requestReceived": "INCOMING LINK REQUEST",
+    "requestAccepted": "LINK ACCEPTED"
+  },
   "about": {
     "eyebrow": "PROJECT PERSONNEL",
     "title": "THE TEAM",

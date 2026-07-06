@@ -158,6 +158,10 @@
     "dossier": "FICHE D'UNITÉ",
     "since": "Enregistré :"
   },
+  "notifications": {
+    "requestReceived": "DEMANDE DE LIAISON ENTRANTE",
+    "requestAccepted": "LIAISON ACCEPTÉE"
+  },
   "about": {
     "eyebrow": "PERSONNEL DU PROJET",
     "title": "L'ÉQUIPE",
