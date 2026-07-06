@@ -131,6 +131,21 @@
     "cancel": "ANNULER",
     "saved": "PROFIL MIS À JOUR"
   },
+  "profilePage": {
+    "eyebrow": "FICHE D'UNITÉ",
+    "title": "PROFIL",
+    "subtitle": "Registre d'identité dans le système Chasseur.",
+    "emailLabel": "CANAL DE CONTACT",
+    "bioLabel": "BIO / NOTES",
+    "languageLabel": "LANGUE",
+    "sinceLabel": "ENREGISTREMENT SYSTÈME",
+    "statsTitle": "REGISTRE DE COMBAT",
+    "statsEmpty": "AUCUNE DONNÉE",
+    "statsPending": "Le système n'a encore enregistré aucune opération pour cette unité.",
+    "edit": "MODIFIER",
+    "logout": "DÉCONNEXION",
+    "identifying": "IDENTIFICATION DE L'UNITÉ..."
+  },
   "about": {
     "eyebrow": "PERSONNEL DU PROJET",
     "title": "L'ÉQUIPE",

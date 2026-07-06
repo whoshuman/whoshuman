@@ -131,6 +131,21 @@
     "cancel": "CANCELAR",
     "saved": "PERFIL ACTUALIZADO"
   },
+  "profilePage": {
+    "eyebrow": "FICHA DE UNIDAD",
+    "title": "PERFIL",
+    "subtitle": "Registro de identidad en el sistema Cazador.",
+    "emailLabel": "CANAL DE CONTACTO",
+    "bioLabel": "BIO / NOTAS",
+    "languageLabel": "IDIOMA",
+    "sinceLabel": "ALTA EN EL SISTEMA",
+    "statsTitle": "REGISTRO DE COMBATE",
+    "statsEmpty": "SIN DATOS",
+    "statsPending": "El sistema aún no ha registrado operaciones de esta unidad.",
+    "edit": "EDITAR",
+    "logout": "CERRAR SESIÓN",
+    "identifying": "IDENTIFICANDO UNIDAD..."
+  },
   "about": {
     "eyebrow": "PERSONAL DEL PROYECTO",
     "title": "EL EQUIPO",

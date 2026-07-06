@@ -131,6 +131,21 @@
     "cancel": "CANCEL",
     "saved": "PROFILE UPDATED"
   },
+  "profilePage": {
+    "eyebrow": "UNIT RECORD",
+    "title": "PROFILE",
+    "subtitle": "Identity record in the Hunter system.",
+    "emailLabel": "CONTACT CHANNEL",
+    "bioLabel": "BIO / NOTES",
+    "languageLabel": "LANGUAGE",
+    "sinceLabel": "SYSTEM ENROLLMENT",
+    "statsTitle": "COMBAT RECORD",
+    "statsEmpty": "NO DATA",
+    "statsPending": "The system has not logged any operations for this unit yet.",
+    "edit": "EDIT",
+    "logout": "LOG OUT",
+    "identifying": "IDENTIFYING UNIT..."
+  },
   "about": {
     "eyebrow": "PROJECT PERSONNEL",
     "title": "THE TEAM",
