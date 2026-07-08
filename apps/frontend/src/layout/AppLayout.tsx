@@ -17,6 +17,7 @@ const ROUTES_WITH_BACKGROUND = new Set([
   "/lobby",
   "/profile",
   "/friends",
+  "/status",
   "/manual",
   "/about",
   "/faq",
@@ -31,6 +32,7 @@ const KNOWN_ROUTES = new Set([
   "/game",
   "/profile",
   "/friends",
+  "/status",
   "/manual",
   "/about",
   "/faq",
@@ -149,9 +151,12 @@ function AppLayout() {
 
         {showHud && (
           <footer className="border-t border-neon-cyan/15 bg-bg/60 px-6 py-3 text-center backdrop-blur-sm">
-            <p className="font-display text-[0.65rem] font-bold uppercase tracking-[0.3em] text-text-muted/50">
+            <Link
+              to="/status"
+              className="font-display text-[0.65rem] font-bold uppercase tracking-[0.3em] text-text-muted/50 transition hover:text-neon-cyan"
+            >
               {t("footer.system")}
-            </p>
+            </Link>
           </footer>
         )}
       </div>

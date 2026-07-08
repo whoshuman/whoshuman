@@ -133,7 +133,12 @@
     "edit": "EDITAR",
     "logout": "CERRAR SESIÓN",
     "identifying": "IDENTIFICANDO UNIDAD...",
-    "contacts": "RED DE CONTACTOS"
+    "contacts": "RED DE CONTACTOS",
+    "dangerTitle": "ZONA DE PELIGRO",
+    "deleteAccount": "DAR DE BAJA UNIDAD",
+    "deleteWarning": "La baja es definitiva: tu identidad, contactos y registros se eliminan del sistema. No hay restauración.",
+    "deleteConfirm": "CONFIRMAR BAJA DEFINITIVA",
+    "deleteCancel": "CANCELAR"
   },
   "friends": {
     "eyebrow": "RED DE CONTACTOS",
@@ -156,7 +161,17 @@
     "sendRequest": "SOLICITAR ENLACE",
     "requestSent": "SOLICITUD ENVIADA",
     "dossier": "FICHA DE UNIDAD",
-    "since": "Alta:"
+    "since": "Alta:",
+    "loadMore": "CARGAR MÁS UNIDADES",
+    "loadingMore": "LOCALIZANDO..."
+  },
+  "status": {
+    "eyebrow": "ESTADO DE LA RED",
+    "online": "EN LÍNEA",
+    "serviceOnline": "OPERATIVO",
+    "serviceOffline": "SIN RESPUESTA",
+    "checking": "SONDEANDO...",
+    "hint": "Sondeo automático cada 30 segundos vía gateway → NATS."
   },
   "notifications": {
     "requestReceived": "SOLICITUD DE ENLACE ENTRANTE",

@@ -18,6 +18,12 @@ export async function updateMe(input: UpdateMeInput): Promise<PublicUser> {
   return data;
 }
 
+// Baja de cuenta (soft delete en el servidor). Tras esto los tokens dejan de valer.
+export async function deleteMe(): Promise<{ success: boolean }> {
+  const { data } = await httpClient.delete<{ success: boolean }>("/users/me");
+  return data;
+}
+
 // Búsqueda por username (insensible a mayúsculas), paginada. Excluye al propio usuario.
 export async function searchUsers(
   search: string,

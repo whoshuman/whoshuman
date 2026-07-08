@@ -133,7 +133,12 @@
     "edit": "MODIFIER",
     "logout": "DÉCONNEXION",
     "identifying": "IDENTIFICATION DE L'UNITÉ...",
-    "contacts": "RÉSEAU DE CONTACTS"
+    "contacts": "RÉSEAU DE CONTACTS",
+    "dangerTitle": "ZONE DE DANGER",
+    "deleteAccount": "DÉSACTIVER L'UNITÉ",
+    "deleteWarning": "La désactivation est définitive : ton identité, tes contacts et tes registres sont supprimés du système. Aucune restauration.",
+    "deleteConfirm": "CONFIRMER LA DÉSACTIVATION",
+    "deleteCancel": "ANNULER"
   },
   "friends": {
     "eyebrow": "RÉSEAU DE CONTACTS",
@@ -156,7 +161,17 @@
     "sendRequest": "DEMANDER UNE LIAISON",
     "requestSent": "DEMANDE ENVOYÉE",
     "dossier": "FICHE D'UNITÉ",
-    "since": "Enregistré :"
+    "since": "Enregistré :",
+    "loadMore": "CHARGER PLUS D'UNITÉS",
+    "loadingMore": "LOCALISATION..."
+  },
+  "status": {
+    "eyebrow": "ÉTAT DU RÉSEAU",
+    "online": "EN LIGNE",
+    "serviceOnline": "OPÉRATIONNEL",
+    "serviceOffline": "SANS RÉPONSE",
+    "checking": "SONDAGE...",
+    "hint": "Sonde automatique toutes les 30 secondes via gateway → NATS."
   },
   "notifications": {
     "requestReceived": "DEMANDE DE LIAISON ENTRANTE",

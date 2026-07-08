@@ -133,7 +133,12 @@
     "edit": "EDIT",
     "logout": "LOG OUT",
     "identifying": "IDENTIFYING UNIT...",
-    "contacts": "CONTACT NETWORK"
+    "contacts": "CONTACT NETWORK",
+    "dangerTitle": "DANGER ZONE",
+    "deleteAccount": "DECOMMISSION UNIT",
+    "deleteWarning": "Decommission is final: your identity, contacts and records are removed from the system. There is no restore.",
+    "deleteConfirm": "CONFIRM FINAL DECOMMISSION",
+    "deleteCancel": "CANCEL"
   },
   "friends": {
     "eyebrow": "CONTACT NETWORK",
@@ -156,7 +161,17 @@
     "sendRequest": "REQUEST LINK",
     "requestSent": "REQUEST SENT",
     "dossier": "UNIT RECORD",
-    "since": "Enrolled:"
+    "since": "Enrolled:",
+    "loadMore": "LOAD MORE UNITS",
+    "loadingMore": "LOCATING..."
+  },
+  "status": {
+    "eyebrow": "NETWORK STATUS",
+    "online": "ONLINE",
+    "serviceOnline": "OPERATIONAL",
+    "serviceOffline": "NO RESPONSE",
+    "checking": "PROBING...",
+    "hint": "Automatic probe every 30 seconds via gateway → NATS."
   },
   "notifications": {
     "requestReceived": "INCOMING LINK REQUEST",

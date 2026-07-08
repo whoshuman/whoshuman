@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -201,11 +201,17 @@ function Friends() {
     queryFn: getPendingRequests,
     enabled: isAuthenticated
   });
-  const searchQuery = useQuery({
+  // Búsqueda paginada: useInfiniteQuery encadena páginas del backend. Cada página
+  // trae meta.totalPages; getNextPageParam devuelve la siguiente o undefined (fin).
+  const searchQuery = useInfiniteQuery({
     queryKey: ["userSearch", debouncedQuery],
-    queryFn: () => searchUsers(debouncedQuery),
+    queryFn: ({ pageParam }) => searchUsers(debouncedQuery, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (last) =>
+      last.meta.page < last.meta.totalPages ? last.meta.page + 1 : undefined,
     enabled: isAuthenticated && debouncedQuery.length >= 2
   });
+  const searchResults = searchQuery.data?.pages.flatMap((page) => page.data) ?? [];
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["friends"] });
@@ -390,10 +396,10 @@ function Friends() {
               </div>
 
               <div className="flex flex-col gap-2">
-                {debouncedQuery.length >= 2 && searchQuery.data?.data.length === 0 && (
+                {debouncedQuery.length >= 2 && searchResults.length === 0 && (
                   <EmptyState text={t("friends.emptySearch")} />
                 )}
-                {searchQuery.data?.data.map((profile) => (
+                {searchResults.map((profile) => (
                   <RegistryRow
                     key={profile.id}
                     username={profile.username}
@@ -416,6 +422,18 @@ function Friends() {
                     </button>
                   </RegistryRow>
                 ))}
+                {searchQuery.hasNextPage && (
+                  <button
+                    type="button"
+                    disabled={searchQuery.isFetchingNextPage}
+                    onClick={() => void searchQuery.fetchNextPage()}
+                    className="border border-neon-cyan/40 py-2.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10 disabled:opacity-50"
+                  >
+                    {searchQuery.isFetchingNextPage
+                      ? t("friends.loadingMore")
+                      : t("friends.loadMore")}
+                  </button>
+                )}
               </div>
             </div>
           )}

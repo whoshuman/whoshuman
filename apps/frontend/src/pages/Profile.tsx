@@ -3,7 +3,8 @@ import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getMe } from "../shared/api/users";
+import { apiError } from "../shared/api/errors";
+import { deleteMe, getMe } from "../shared/api/users";
 import { useAuthStore } from "../shared/authStore";
 import ProfileEdit from "./ProfileEdit";
 
@@ -15,6 +16,9 @@ function Profile() {
   const updateUser = useAuthStore((s) => s.updateUser);
   const signOut = useAuthStore((s) => s.signOut);
   const [editOpen, setEditOpen] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Server state con React Query: el store da render instantáneo (initialData) y
   // la query revalida contra el backend en segundo plano.
@@ -65,6 +69,21 @@ function Profile() {
   async function handleLogout() {
     await signOut();
     void navigate({ to: "/" });
+  }
+
+  async function handleDelete() {
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await deleteMe();
+      // Cuenta ya borrada en el servidor: signOut limpia lo local (su llamada de
+      // logout puede fallar con tokens ya inválidos — la ignora por diseño).
+      await signOut();
+      void navigate({ to: "/" });
+    } catch (err) {
+      setDeleteError(apiError(err, t("profilePage.deleteAccount")));
+      setDeleting(false);
+    }
   }
 
   return (
@@ -166,6 +185,46 @@ function Profile() {
             >
               {t("profilePage.logout")}
             </button>
+          </div>
+
+          {/* Zona de peligro: baja definitiva de la unidad (DELETE /users/me). */}
+          <div className="mt-8 border border-error/40 bg-error/5 px-5 py-4">
+            <p className="font-display mb-2 text-xs font-bold uppercase tracking-[0.25em] text-error">
+              // {t("profilePage.dangerTitle")}
+            </p>
+            {!confirmingDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="border border-error/60 px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-error transition hover:bg-error/10"
+              >
+                {t("profilePage.deleteAccount")}
+              </button>
+            ) : (
+              <div>
+                <p className="mb-3 text-sm text-text-muted">{t("profilePage.deleteWarning")}</p>
+                {deleteError && (
+                  <p className="mb-3 text-sm font-bold text-error">// {deleteError}</p>
+                )}
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={() => void handleDelete()}
+                    className="border-2 border-error bg-error px-4 py-2 font-display text-xs font-black uppercase tracking-wider text-bg transition hover:brightness-110 disabled:opacity-50"
+                  >
+                    {t("profilePage.deleteConfirm")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(false)}
+                    className="border border-neon-cyan/50 px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
+                  >
+                    {t("profilePage.deleteCancel")}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
