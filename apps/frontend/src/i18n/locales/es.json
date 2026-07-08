@@ -65,6 +65,7 @@
     "emailPlaceholder": "unidad@dominio.com",
     "passwordLabel": "Clave de acceso",
     "confirmLabel": "Confirmar clave",
+    "passwordMismatch": "Las claves de acceso no coinciden.",
     "submit": "CREAR UNIDAD",
     "haveAccount": "¿Unidad ya registrada?",
     "access": "ACCEDER"

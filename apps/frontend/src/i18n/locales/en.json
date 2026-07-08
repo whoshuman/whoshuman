@@ -65,6 +65,7 @@
     "emailPlaceholder": "unit@domain.com",
     "passwordLabel": "Access key",
     "confirmLabel": "Confirm key",
+    "passwordMismatch": "Access keys do not match.",
     "submit": "CREATE UNIT",
     "haveAccount": "Unit already registered?",
     "access": "ACCESS"
