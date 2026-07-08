@@ -170,16 +170,13 @@
     "story": "Who's Human was born at 42 as the final ft_transcendence project. Five units joined forces to build a real-time multiplayer game inspired by Just Act Natural: cyborgs hiding among humans while a Hunter tries to expose them. What started as an academic challenge —microservices, WebSockets and in-browser 3D— turned into a cyberpunk world of its own."
   },
   "game": {
-    "scene": "3D Scene — Three.js",
-    "time": "Time",
-    "round": "Round",
-    "points": "Points",
     "role": "Role",
-    "roleHidden": "Hidden",
-    "item": "Item",
-    "itemSmoke": "Smoke bomb",
-    "use": "Use [E]",
-    "suspicion": "Suspicion"
+    "roleSeeker": "HUNTER",
+    "roleHider": "CYBORG",
+    "units": "Units",
+    "leave": "ABANDON",
+    "connecting": "LINKING TO OPERATION...",
+    "controls": "W/S move · A/D turn"
   },
   "notFound": {
     "protocol": "SYSTEM ERROR — UNIT NOT LOCATED",

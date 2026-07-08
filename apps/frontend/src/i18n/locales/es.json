@@ -170,16 +170,13 @@
     "story": "Who's Human nace en la 42 como proyecto final ft_transcendence. Cinco unidades unieron fuerzas para construir un juego multijugador en tiempo real inspirado en Just Act Natural: cyborgs que se esconden entre humanos mientras un Cazador intenta desenmascararlos. Lo que empezó como un reto académico —microservicios, WebSockets y 3D en el navegador— acabó convirtiéndose en un mundo cyberpunk propio."
   },
   "game": {
-    "scene": "Escena 3D — Three.js",
-    "time": "Tiempo",
-    "round": "Ronda",
-    "points": "Puntos",
     "role": "Rol",
-    "roleHidden": "Escondido",
-    "item": "Ítem",
-    "itemSmoke": "Bomba de humo",
-    "use": "Usar [E]",
-    "suspicion": "Sospecha"
+    "roleSeeker": "CAZADOR",
+    "roleHider": "CYBORG",
+    "units": "Unidades",
+    "leave": "ABANDONAR",
+    "connecting": "ENLAZANDO CON LA OPERACIÓN...",
+    "controls": "W/S avanzar · A/D girar"
   },
   "notFound": {
     "protocol": "ERROR DE SISTEMA — UNIDAD NO LOCALIZADA",
