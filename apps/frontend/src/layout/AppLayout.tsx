@@ -3,7 +3,11 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import LanguageSelector from "../shared/LanguageSelector";
 import SceneBackground from "../features/home-3d/SceneBackground";
+import { connectSocket, disconnectSocket } from "../game/network/socket";
+import { useLobbyStore } from "../game/store/lobbyStore";
 import { useAuthStore } from "../shared/authStore";
+import { initNotifications } from "../shared/notifications";
+import NotificationToasts from "../shared/NotificationToasts";
 
 // Rutas que muestran el fondo 3D unificado. La home tiene su propia escena (con zoom)
 // y el juego tendra su escena de mapa, asi que ninguna de las dos lo usa.
@@ -12,6 +16,8 @@ const ROUTES_WITH_BACKGROUND = new Set([
   "/register",
   "/lobby",
   "/profile",
+  "/friends",
+  "/status",
   "/manual",
   "/about",
   "/faq",
@@ -25,6 +31,8 @@ const KNOWN_ROUTES = new Set([
   "/lobby",
   "/game",
   "/profile",
+  "/friends",
+  "/status",
   "/manual",
   "/about",
   "/faq",
@@ -52,10 +60,23 @@ function AppLayout() {
   const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const restore = useAuthStore((s) => s.restore);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
     void restore();
   }, [restore]);
+
+  // El socket vive ligado a la sesión, no al lobby: el room personal user:<id>
+  // (donde llegan las notificaciones) se une al conectar. Logout → desconexión.
+  useEffect(() => {
+    if (isAuthenticated) {
+      connectSocket();
+      initNotifications();
+    } else {
+      disconnectSocket();
+      useLobbyStore.getState().reset();
+    }
+  }, [isAuthenticated]);
 
   // El 404 (defaultNotFoundComponent) no es una ruta del arbol: se detecta por descarte.
   const isNotFound = !KNOWN_ROUTES.has(pathname);
@@ -67,6 +88,7 @@ function AppLayout() {
   return (
     <div>
       {showBackground && <SceneBackground />}
+      <NotificationToasts />
 
       <div className="relative z-10 flex min-h-screen flex-col">
         {showHud && (
@@ -129,9 +151,12 @@ function AppLayout() {
 
         {showHud && (
           <footer className="border-t border-neon-cyan/15 bg-bg/60 px-6 py-3 text-center backdrop-blur-sm">
-            <p className="font-display text-[0.65rem] font-bold uppercase tracking-[0.3em] text-text-muted/50">
+            <Link
+              to="/status"
+              className="font-display text-[0.65rem] font-bold uppercase tracking-[0.3em] text-text-muted/50 transition hover:text-neon-cyan"
+            >
               {t("footer.system")}
-            </p>
+            </Link>
           </footer>
         )}
       </div>

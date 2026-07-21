@@ -1,88 +1,111 @@
+import { Navigate, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useKeyboardInput } from "../game/hooks/useKeyboardInput";
+import GameScene from "../game/scenes/GameScene";
+import { useGameStore } from "../game/store/gameStore";
+import { useLobbyStore } from "../game/store/lobbyStore";
+import { useAuthStore } from "../shared/authStore";
+
+// Pantalla de partida. Renderiza EXACTAMENTE lo que el servidor simula hoy:
+// jugadores moviéndose por el mapa lógico con colisiones. Sin tiempo, rondas,
+// puntos ni ítems: ese HUD volverá cuando el backend los implemente.
 function Game() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const selfId = useAuthStore((s) => s.user?.id);
+  const match = useLobbyStore((s) => s.match);
+  const phase = useGameStore((s) => s.phase);
+  const presentCount = useGameStore((s) => s.presentCount);
+  const roles = useGameStore((s) => s.roles);
+  const error = useGameStore((s) => s.error);
+  const join = useGameStore((s) => s.join);
+  const leave = useGameStore((s) => s.leave);
+
+  const playing = phase === "playing";
+  useKeyboardInput(playing);
+
+  // Entra a la partida del match al montar; al desmontar (navegar fuera) sale.
+  useEffect(() => {
+    if (!match) return;
+    join(match.gameId);
+    return () => useGameStore.getState().leave();
+  }, [match, join]);
+
+  // Sin match no hay partida que unirse: de vuelta al lobby.
+  if (!match) return <Navigate to="/lobby" />;
+
+  const selfRole = selfId ? roles[selfId] : undefined;
+
+  function handleLeave() {
+    leave();
+    void navigate({ to: "/lobby" });
+  }
+
   return (
-    <div className="relative flex h-screen w-full flex-col overflow-hidden bg-bg pt-16">
-      {/* Canvas placeholder — Three.js irá aquí */}
-      <div className="relative flex-1 border border-neon-cyan/20">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <p className="font-display text-lg font-bold uppercase tracking-wider text-neon-cyan/30">
-            {t("game.scene")}
-          </p>
-        </div>
+    <div className="relative h-screen w-full bg-bg">
+      <div className="absolute inset-0">
+        <GameScene />
       </div>
 
-      {/* HUD superior */}
-      <div className="pointer-events-none absolute left-0 right-0 top-16 z-10 flex items-start justify-between gap-2 px-3 pt-4 sm:px-6">
-        {/* Tiempo restante */}
-        <div className="border border-neon-cyan/30 bg-bg/80 px-3 py-2 backdrop-blur-sm sm:px-5 sm:py-3">
-          <p className="font-display text-[0.6rem] font-bold uppercase tracking-wider text-text-muted sm:text-xs">
-            {t("game.time")}
-          </p>
-          <p className="font-display text-xl font-black text-neon-cyan [text-shadow:0_0_14px_rgb(36_245_255_/_0.5)] sm:text-3xl">
-            2:47
-          </p>
-        </div>
-
-        {/* Ronda */}
-        <div className="border border-neon-magenta/30 bg-bg/80 px-3 py-2 text-center backdrop-blur-sm sm:px-6 sm:py-3">
-          <p className="font-display text-[0.6rem] font-bold uppercase tracking-wider text-text-muted sm:text-xs">
-            {t("game.round")}
-          </p>
-          <p className="font-display text-xl font-black text-neon-magenta [text-shadow:0_0_14px_rgba(255,43,214,0.5)] sm:text-3xl">
-            1 / 3
-          </p>
-        </div>
-
-        {/* Puntuación */}
-        <div className="border border-neon-cyan/30 bg-bg/80 px-3 py-2 backdrop-blur-sm sm:px-5 sm:py-3">
-          <p className="font-display text-[0.6rem] font-bold uppercase tracking-wider text-text-muted sm:text-xs">
-            {t("game.points")}
-          </p>
-          <p className="font-display text-xl font-black text-success [text-shadow:0_0_14px_rgb(57_255_136_/_0.5)] sm:text-3xl">
-            0
-          </p>
-        </div>
-      </div>
-
-      {/* HUD inferior — rol e item */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 flex items-end justify-between gap-2 px-3 pb-4 sm:px-6 sm:pb-6">
-        {/* Rol del jugador */}
-        <div className="border border-neon-magenta/40 bg-bg/80 px-3 py-2 backdrop-blur-sm sm:px-5 sm:py-3">
-          <p className="font-display text-[0.6rem] font-bold uppercase tracking-wider text-text-muted sm:text-xs">
+      {/* HUD superior: solo datos reales — rol asignado y unidades presentes. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between p-4">
+        <div className="border border-neon-cyan/40 bg-bg/70 px-4 py-2 backdrop-blur-sm">
+          <p className="font-display text-[0.6rem] font-bold uppercase tracking-[0.25em] text-text-muted">
             {t("game.role")}
           </p>
-          <p className="font-display text-base font-black text-neon-magenta sm:text-xl">
-            {t("game.roleHidden")}
+          <p
+            className={
+              selfRole === "seeker"
+                ? "font-display text-sm font-black uppercase text-sun-orange [text-shadow:0_0_12px_rgba(255,159,28,0.6)]"
+                : "font-display text-sm font-black uppercase text-neon-magenta [text-shadow:0_0_12px_rgba(255,43,214,0.6)]"
+            }
+          >
+            {selfRole === "seeker" ? t("game.roleSeeker") : t("game.roleHider")}
           </p>
         </div>
 
-        {/* Ítem equipado */}
-        <div className="border border-neon-cyan/30 bg-bg/80 px-3 py-2 text-center backdrop-blur-sm sm:px-5 sm:py-3">
-          <p className="font-display text-[0.6rem] font-bold uppercase tracking-wider text-text-muted sm:text-xs">
-            {t("game.item")}
-          </p>
-          <p className="font-display text-base font-black text-neon-cyan sm:text-xl">
-            {t("game.itemSmoke")}
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="border border-neon-cyan/40 bg-bg/70 px-4 py-2 backdrop-blur-sm">
+            <p className="font-display text-[0.6rem] font-bold uppercase tracking-[0.25em] text-text-muted">
+              {t("game.units")}
+            </p>
+            <p className="font-display text-center text-sm font-black text-neon-cyan">
+              {presentCount}
+            </p>
+          </div>
           <button
             type="button"
-            className="pointer-events-auto mt-2 border border-neon-cyan px-4 py-1 text-xs font-bold text-neon-cyan hover:brightness-125"
+            onClick={handleLeave}
+            className="pointer-events-auto border border-sun-orange/60 bg-bg/70 px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-sun-orange backdrop-blur-sm transition hover:bg-sun-orange/10"
           >
-            {t("game.use")}
+            {t("game.leave")}
           </button>
         </div>
+      </div>
 
-        {/* Medidor de sospecha */}
-        <div className="w-28 border border-sun-orange/30 bg-bg/80 px-3 py-2 backdrop-blur-sm sm:w-48 sm:px-5 sm:py-3">
-          <p className="font-display mb-2 text-[0.6rem] font-bold uppercase tracking-wider text-text-muted sm:text-xs">
-            {t("game.suspicion")}
+      {/* Estado de conexión / errores del gateway. */}
+      {!playing && !error && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <p className="font-display animate-pulse border border-neon-cyan/40 bg-bg/80 px-6 py-3 text-sm font-bold uppercase tracking-[0.3em] text-neon-cyan">
+            // {t("game.connecting")}
           </p>
-          <div className="h-2 w-full bg-white/10">
-            <div className="h-2 w-1/3 bg-sun-orange shadow-[0_0_8px_rgba(255,159,28,0.7)]" />
-          </div>
         </div>
+      )}
+      {error && (
+        <div className="absolute inset-x-0 top-20 z-10 flex justify-center">
+          <p className="border border-error bg-error/10 px-4 py-2 text-sm font-bold text-error">
+            // {error}
+          </p>
+        </div>
+      )}
+
+      {/* Controles. */}
+      <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
+        <p className="border border-neon-cyan/25 bg-bg/70 px-4 py-1.5 font-display text-[0.65rem] font-bold uppercase tracking-[0.2em] text-text-muted backdrop-blur-sm">
+          {t("game.controls")}
+        </p>
       </div>
     </div>
   );
