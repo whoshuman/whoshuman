@@ -125,7 +125,7 @@ Aquí se define la columna vertebral del juego. El authoritative server model es
 - [ ] WebSocket con Socket.IO
 - [ ] Sistema de rooms por partida
 - [ ] Autenticación de conexiones WebSocket con JWT
-- [ ] Manejo de desconexión y reconexión
+- [x] Manejo de desconexión y reconexión MVP (gracia en memoria de 45 s)
 - [ ] Broadcasting de estado a todos los clientes de una room
 
 #### NATS — comunicación entre servicios
