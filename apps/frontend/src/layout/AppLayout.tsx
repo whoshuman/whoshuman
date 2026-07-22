@@ -60,6 +60,7 @@ function AppLayout() {
   const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const restore = useAuthStore((s) => s.restore);
+  const authRestored = useAuthStore((s) => s.restored);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
@@ -69,6 +70,7 @@ function AppLayout() {
   // El socket vive ligado a la sesión, no al lobby: el room personal user:<id>
   // (donde llegan las notificaciones) se une al conectar. Logout → desconexión.
   useEffect(() => {
+    if (!authRestored) return;
     if (isAuthenticated) {
       connectSocket();
       initNotifications();
@@ -76,7 +78,7 @@ function AppLayout() {
       disconnectSocket();
       useLobbyStore.getState().reset();
     }
-  }, [isAuthenticated]);
+  }, [authRestored, isAuthenticated]);
 
   // El 404 (defaultNotFoundComponent) no es una ruta del arbol: se detecta por descarte.
   const isNotFound = !KNOWN_ROUTES.has(pathname);
@@ -145,9 +147,7 @@ function AppLayout() {
           </header>
         )}
 
-        <div className="flex-1">
-          <Outlet />
-        </div>
+        <div className="flex-1">{authRestored && <Outlet />}</div>
 
         {showHud && (
           <footer className="border-t border-neon-cyan/15 bg-bg/60 px-6 py-3 text-center backdrop-blur-sm">
