@@ -1,5 +1,9 @@
 import { ClientSocketEvents, ServerSocketEvents } from "@whoshuman/shared-events";
-import type { GameStateSnapshotPayload, PlayerRole } from "@whoshuman/shared-types";
+import type {
+  GameJoinResponse,
+  GameStateSnapshotPayload,
+  PlayerRole
+} from "@whoshuman/shared-types";
 import type { Socket } from "socket.io-client";
 import { create } from "zustand";
 
@@ -15,18 +19,26 @@ type GamePhase = "idle" | "joining" | "playing";
 interface GameState {
   phase: GamePhase;
   gameId: string | null;
-  // Rol de cada jugador según matchmaking (dato real del match-found).
-  roles: Record<string, PlayerRole>;
+  selfEntityId: string | null;
+  selfRole: PlayerRole | null;
+  aiming: boolean;
   // Nº de unidades presentes según el último snapshot (baja frecuencia de cambio:
   // solo se escribe cuando cambia, no por tick).
   presentCount: number;
   error: string | null;
   join: (gameId: string) => void;
   leave: () => void;
+  setAiming: (aiming: boolean) => void;
+  shoot: (targetEntityId: string) => void;
   sendInput: (forward: number, turn: number) => void;
 }
 
 let boundSocket: Socket | null = null;
+const ACTIVE_GAME_KEY = "activeGameId";
+
+function forgetActiveGame() {
+  sessionStorage.removeItem(ACTIVE_GAME_KEY);
+}
 
 function bindListeners() {
   const socket = connectSocket();
@@ -34,61 +46,144 @@ function bindListeners() {
   boundSocket = socket;
   const set = useGameStore.setState;
 
-  socket.on(ServerSocketEvents.gameJoined, (payload: { gameId: string }) => {
-    set({ phase: "playing", gameId: payload.gameId, error: null });
+  socket.on(ServerSocketEvents.gatewayReady, () => {
+    const { gameId } = useGameStore.getState();
+    if (!gameId) return;
+    set({ phase: "joining", error: null });
+    socket.emit(ClientSocketEvents.gameJoin, { gameId });
+  });
+
+  socket.on(ServerSocketEvents.gameJoined, (payload: GameJoinResponse) => {
+    sessionStorage.setItem(ACTIVE_GAME_KEY, payload.gameId);
+    set({
+      phase: "playing",
+      gameId: payload.gameId,
+      selfEntityId: payload.selfEntityId,
+      selfRole: payload.role,
+      aiming: false,
+      error: null
+    });
   });
 
   socket.on(ServerSocketEvents.gameLeft, () => {
+    forgetActiveGame();
     clearSnapshots();
-    set({ phase: "idle", gameId: null, presentCount: 0 });
+    set({
+      phase: "idle",
+      gameId: null,
+      selfEntityId: null,
+      selfRole: null,
+      aiming: false,
+      presentCount: 0
+    });
   });
 
   socket.on(ServerSocketEvents.gameState, (payload: GameStateSnapshotPayload) => {
     if (payload.gameId !== useGameStore.getState().gameId) return;
     pushSnapshot(payload);
     // Solo tocar React state cuando el recuento cambia de verdad.
-    if (payload.players.length !== useGameStore.getState().presentCount) {
-      set({ presentCount: payload.players.length });
+    const presentCount = payload.entities.length;
+    if (presentCount !== useGameStore.getState().presentCount) {
+      set({ presentCount });
     }
   });
 
   socket.on(ServerSocketEvents.gatewayError, (payload: { message: string }) => {
+    if (payload.message === "Unable to join game" && useGameStore.getState().gameId) {
+      forgetActiveGame();
+      clearSnapshots();
+      useLobbyStore.setState({ match: null });
+      set({
+        phase: "idle",
+        gameId: null,
+        selfEntityId: null,
+        selfRole: null,
+        aiming: false,
+        presentCount: 0,
+        error: payload.message
+      });
+      return;
+    }
     set({ error: payload.message });
+  });
+
+  socket.on("disconnect", () => {
+    if (!useGameStore.getState().gameId) return;
+    clearSnapshots();
+    set({
+      phase: "joining",
+      selfEntityId: null,
+      selfRole: null,
+      aiming: false,
+      presentCount: 0
+    });
   });
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
   phase: "idle",
-  gameId: null,
-  roles: {},
+  gameId: sessionStorage.getItem(ACTIVE_GAME_KEY),
+  selfEntityId: null,
+  selfRole: null,
+  aiming: false,
   presentCount: 0,
   error: null,
 
   join: (gameId) => {
+    const current = get();
+    if (current.gameId === gameId && current.phase !== "idle") return;
     bindListeners();
     const socket = connectSocket();
+    sessionStorage.setItem(ACTIVE_GAME_KEY, gameId);
     clearSnapshots();
-    // Roles del match-found que guardó el lobby: única fuente del rol de cada uno.
-    const match = useLobbyStore.getState().match;
-    const roles: Record<string, PlayerRole> = {};
-    for (const player of match?.players ?? []) roles[player.userId] = player.role;
-    set({ phase: "joining", gameId, roles, error: null });
-    socket.emit(ClientSocketEvents.gameJoin, { gameId });
+    set({
+      phase: "joining",
+      gameId,
+      selfEntityId: null,
+      selfRole: null,
+      aiming: false,
+      error: null
+    });
+    if (socket.connected) socket.emit(ClientSocketEvents.gameJoin, { gameId });
   },
 
   leave: () => {
+    forgetActiveGame();
     const socket = connectSocket();
     const { gameId } = get();
     if (gameId) socket.emit(ClientSocketEvents.gameLeave, { gameId });
     clearSnapshots();
     // Limpia también el match del lobby: si no, /game re-entraría en bucle.
     useLobbyStore.setState({ match: null });
-    set({ phase: "idle", gameId: null, roles: {}, presentCount: 0, error: null });
+    set({
+      phase: "idle",
+      gameId: null,
+      selfEntityId: null,
+      selfRole: null,
+      aiming: false,
+      presentCount: 0,
+      error: null
+    });
+  },
+
+  setAiming: (aiming) => {
+    const state = get();
+    if (state.selfRole !== "seeker" || state.aiming === aiming) return;
+    set({ aiming });
+    if (state.phase === "playing" && state.gameId) {
+      connectSocket().emit(ClientSocketEvents.gameAim, { gameId: state.gameId, aiming });
+    }
+  },
+
+  shoot: (targetEntityId) => {
+    const { gameId, phase, selfRole, aiming } = get();
+    if (phase !== "playing" || !gameId || selfRole !== "seeker" || !aiming) return;
+    connectSocket().emit(ClientSocketEvents.gameShoot, { gameId, targetEntityId });
   },
 
   sendInput: (forward, turn) => {
-    const { gameId, phase } = get();
-    if (phase !== "playing" || !gameId) return;
+    const { gameId, phase, selfRole } = get();
+    if (phase !== "playing" || !gameId || selfRole === "seeker") return;
     connectSocket().emit(ClientSocketEvents.playerInput, { gameId, forward, turn });
   }
 }));

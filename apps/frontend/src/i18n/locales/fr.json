@@ -192,7 +192,8 @@
     "units": "Unités",
     "leave": "ABANDONNER",
     "connecting": "LIAISON À L'OPÉRATION...",
-    "controls": "W/S avancer · A/D tourner"
+    "controls": "W/S avancer · A/D tourner",
+    "controlsSeeker": "A/D ou flèches pour orbiter · maintenir clic droit ou appuyer sur F pour viser · clic gauche pour tirer"
   },
   "notFound": {
     "protocol": "ERREUR SYSTÈME — UNITÉ NON LOCALISÉE",
