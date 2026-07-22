@@ -26,7 +26,10 @@ export const UserSubjects = {
 export const GameSubjects = {
   create: "game.create",
   join: "game.join",
+  disconnected: "game.disconnected",
   leave: "game.leave",
+  aim: "game.aim",
+  shoot: "game.shoot",
   playerMoved: "game.player.moved",
   playerEliminated: "game.player.eliminated",
   diamondCollected: "game.diamond.collected",
@@ -67,6 +70,8 @@ export const ClientSocketEvents = {
   lobbyReady: "lobby:ready",
   gameJoin: "game:join",
   gameLeave: "game:leave",
+  gameAim: "game:aim",
+  gameShoot: "game:shoot",
   playerInput: "game:player-input"
 } as const;
 
