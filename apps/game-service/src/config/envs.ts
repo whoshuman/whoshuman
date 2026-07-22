@@ -9,6 +9,8 @@ interface EnvVars {
   GAME_TURN_SPEED: number;
   GAME_MAX_STEP: number;
   GAME_MAP: string;
+  GAME_NPC_COUNT: number;
+  GAME_NPC_SPEED: number;
 }
 
 const envSchema = joi
@@ -22,7 +24,9 @@ const envSchema = joi
     GAME_SPEED: joi.number().positive().default(3),
     GAME_TURN_SPEED: joi.number().positive().default(3.0),
     GAME_MAX_STEP: joi.number().positive().default(0.11),
-    GAME_MAP: joi.string().default("beta-city")
+    GAME_MAP: joi.string().default("beta-city"),
+    GAME_NPC_COUNT: joi.number().integer().min(0).max(64).default(32),
+    GAME_NPC_SPEED: joi.number().positive().max(3).default(1.2)
   })
   .unknown(true);
 
@@ -46,5 +50,7 @@ export const envs = {
   gameSpeed: envVars.GAME_SPEED,
   gameTurnSpeed: envVars.GAME_TURN_SPEED,
   gameMaxStep: envVars.GAME_MAX_STEP,
-  gameMap: envVars.GAME_MAP
+  gameMap: envVars.GAME_MAP,
+  gameNpcCount: envVars.GAME_NPC_COUNT,
+  gameNpcSpeed: envVars.GAME_NPC_SPEED
 };

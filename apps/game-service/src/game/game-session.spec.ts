@@ -1,5 +1,5 @@
 import { GameSession } from "./game-session";
-import type { Heightmap } from "./map";
+import { loadMap, type Heightmap } from "./map";
 
 // construye un heightmap sobre [minX,maxX]×[minZ,maxZ] con altura dada por f(x,z)
 const makeHM = (
@@ -25,13 +25,15 @@ const config = {
   turnSpeed: 2,
   obstacles: [],
   heightmap: flatHM,
-  maxStep: 1
+  maxStep: 1,
+  npcCount: 0,
+  npcSpeed: 1.2
 };
 const members = [
-  { userId: "u1", role: "seeker" as const },
-  { userId: "u2", role: "hider" as const }
+  { userId: "u1", role: "hider" as const },
+  { userId: "u2", role: "seeker" as const }
 ];
-const find = (s: GameSession, id: string) => s.snapshot().find((p) => p.userId === id)!;
+const find = (s: GameSession, id: string) => s.playerSnapshot().find((p) => p.userId === id)!;
 
 describe("GameSession", () => {
   it("avanza hacia donde mira (heading 0 → +z)", () => {
@@ -88,7 +90,52 @@ describe("GameSession", () => {
   it("solo incluye en el snapshot a jugadores presentes", () => {
     const s = new GameSession("g1", members, config);
     s.markPresent("u1");
-    expect(s.snapshot().map((p) => p.userId)).toEqual(["u1"]);
+    expect(s.playerSnapshot().map((p) => p.userId)).toEqual(["u1"]);
+  });
+
+  it("detiene al desconectado y conserva su entidad al volver", () => {
+    const s = new GameSession("g1", members, config);
+    const firstJoin = s.markPresent("u1")!;
+    const before = find(s, "u1");
+    s.setInput("u1", 1, 1);
+
+    expect(s.markDisconnected("u1")).toBe(true);
+    s.tick(1);
+    const resumed = s.markPresent("u1")!;
+    const after = find(s, "u1");
+
+    expect(resumed).toEqual(firstJoin);
+    expect(after.x).toBe(before.x);
+    expect(after.z).toBe(before.z);
+    expect(after.rotationY).toBe(before.rotationY);
+  });
+
+  it("el seeker no camina ni aparece entre la multitud", () => {
+    const s = new GameSession("g1", members, config);
+    const seeker = s.markPresent("u2")!;
+    const before = find(s, "u2");
+    s.setInput("u2", 1, 1);
+    s.tick(0.05);
+    expect(find(s, "u2")).toEqual(before);
+    expect(s.snapshot().some((entity) => entity.entityId === seeker.entityId)).toBe(false);
+  });
+
+  it("solo el seeker presente puede eliminar por entityId", () => {
+    const s = new GameSession("g1", members, { ...config, npcCount: 1 });
+    const hider = s.markPresent("u1")!;
+    s.markPresent("u2");
+    const npcId = s.npcSnapshot()[0].entityId;
+
+    expect(s.shoot("u1", npcId)).toBe(false);
+    expect(s.shoot("u2", npcId)).toBe(false);
+    expect(s.setAiming("u1", true)).toBe(false);
+    expect(s.setAiming("u2", true)).toBe(true);
+    expect(s.shoot("u2", npcId)).toBe(true);
+    s.setAiming("u2", false);
+    expect(s.shoot("u2", hider.entityId)).toBe(false);
+    s.setAiming("u2", true);
+    expect(s.shoot("u2", hider.entityId)).toBe(true);
+    expect(s.snapshot()).toHaveLength(0);
   });
 
   it("queda vacío cuando se van todos", () => {
@@ -105,7 +152,9 @@ describe("GameSession", () => {
       turnSpeed: 2,
       obstacles,
       heightmap: flatHM,
-      maxStep: 1
+      maxStep: 1,
+      npcCount: 0,
+      npcSpeed: 1.2
     });
 
     it("un obstáculo delante bloquea el avance en z", () => {
@@ -118,7 +167,7 @@ describe("GameSession", () => {
       s.markPresent("u");
       s.setInput("u", 1, 0); // avanzar hacia +z
       for (let i = 0; i < 20; i++) s.tick(0.05); // 1s de avance
-      const p = s.snapshot()[0];
+      const p = s.playerSnapshot()[0];
       expect(p.z).toBeLessThan(1); // no ha entrado en el muro
     });
 
@@ -133,9 +182,9 @@ describe("GameSession", () => {
       s.setInput("u", 0, 1); // gira (heading hacia +x)
       for (let i = 0; i < 8; i++) s.tick(0.05);
       s.setInput("u", 1, 0); // avanza en diagonal
-      const z0 = s.snapshot()[0].z;
+      const z0 = s.playerSnapshot()[0].z;
       for (let i = 0; i < 10; i++) s.tick(0.05);
-      const p = s.snapshot()[0];
+      const p = s.playerSnapshot()[0];
       expect(p.x).toBeLessThanOrEqual(3.06); // x bloqueado por la pared
       expect(p.z).toBeGreaterThan(z0); // pero deslizó en z
     });
@@ -145,7 +194,7 @@ describe("GameSession", () => {
       s.markPresent("u");
       s.setInput("u", 1, 0);
       s.tick(0.05);
-      expect(s.snapshot()[0].z).toBeGreaterThan(0);
+      expect(s.playerSnapshot()[0].z).toBeGreaterThan(0);
     });
 
     it("ningún jugador nace dentro de un edificio", () => {
@@ -156,7 +205,7 @@ describe("GameSession", () => {
         cfgWithWall([{ minX: 2, minZ: -1, maxX: 4, maxZ: 1 }])
       );
       s.markPresent("u");
-      const { x, z } = s.snapshot()[0];
+      const { x, z } = s.playerSnapshot()[0];
       const dentro = x >= 2 && x <= 4 && z >= -1 && z <= 1;
       expect(dentro).toBe(false);
     });
@@ -170,14 +219,16 @@ describe("GameSession", () => {
       turnSpeed: 2,
       obstacles: [],
       heightmap: makeHM(-4, -4, 4, 4, 1, f),
-      maxStep
+      maxStep,
+      npcCount: 0,
+      npcSpeed: 1.2
     });
     const walk = (f: (x: number, z: number) => number | null, maxStep: number) => {
       const s = new GameSession("g", [{ userId: "u", role: "hider" }], cfgH(f, maxStep));
       s.markPresent("u");
       s.setInput("u", 1, 0);
       for (let i = 0; i < 40; i++) s.tick(0.05);
-      return s.snapshot()[0];
+      return s.playerSnapshot()[0];
     };
 
     it("un escalón grande bloquea el avance", () => {
@@ -199,6 +250,65 @@ describe("GameSession", () => {
     it("suelo plano no estorba (regresión)", () => {
       const p = walk(() => 0, 0.35);
       expect(p.z).toBeGreaterThan(1);
+    });
+  });
+
+  describe("NPCs", () => {
+    it("pasean durante 60 segundos sin salir del mapa ni atravesar edificios", () => {
+      const map = loadMap("beta-city");
+      const session = new GameSession("npc-test", members, {
+        bounds: map.bounds,
+        speed: 3,
+        turnSpeed: 3,
+        obstacles: map.obstacles,
+        heightmap: map.heightmap,
+        maxStep: 0.11,
+        npcCount: 8,
+        npcSpeed: 1.2
+      });
+      const initial = session.npcSnapshot();
+      const previous = new Map(initial.map((npc) => [npc.entityId, npc]));
+      const modes = new Set(initial.map((npc) => npc.mode));
+
+      for (let tick = 0; tick < 1200; tick += 1) {
+        session.tick(0.05);
+        const frame = session.npcSnapshot();
+        for (const npc of frame) {
+          modes.add(npc.mode);
+          const before = previous.get(npc.entityId)!;
+          expect(Math.hypot(npc.x - before.x, npc.z - before.z)).toBeLessThanOrEqual(
+            1.2 * 0.05 + 1e-9
+          );
+          previous.set(npc.entityId, npc);
+          expect(Number.isFinite(npc.x) && Number.isFinite(npc.y) && Number.isFinite(npc.z)).toBe(
+            true
+          );
+          expect(npc.x).toBeGreaterThanOrEqual(map.bounds.minX);
+          expect(npc.x).toBeLessThanOrEqual(map.bounds.maxX);
+          expect(npc.z).toBeGreaterThanOrEqual(map.bounds.minZ);
+          expect(npc.z).toBeLessThanOrEqual(map.bounds.maxZ);
+          expect(
+            map.obstacles.some(
+              (wall) =>
+                npc.x >= wall.minX && npc.x <= wall.maxX && npc.z >= wall.minZ && npc.z <= wall.maxZ
+            )
+          ).toBe(false);
+        }
+        for (let i = 0; i < frame.length; i += 1) {
+          for (let j = i + 1; j < frame.length; j += 1) {
+            expect(
+              Math.hypot(frame[i].x - frame[j].x, frame[i].z - frame[j].z)
+            ).toBeGreaterThanOrEqual(0.28);
+          }
+        }
+      }
+
+      const final = session.npcSnapshot();
+      expect(final).toHaveLength(8);
+      expect(
+        final.some((npc, index) => npc.x !== initial[index].x || npc.z !== initial[index].z)
+      ).toBe(true);
+      expect(modes).toEqual(new Set(["idle", "turning", "walking"]));
     });
   });
 });
