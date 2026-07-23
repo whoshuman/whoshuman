@@ -172,6 +172,7 @@ function Units() {
       const meshes = [otherBodies.current, otherNoses.current].filter(
         (mesh): mesh is THREE.InstancedMesh => mesh !== null
       );
+      for (const mesh of meshes) mesh.computeBoundingSphere();
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
       const hit = raycaster.intersectObjects(meshes)[0];
       if (hit?.instanceId === undefined) return;
