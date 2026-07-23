@@ -330,7 +330,13 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   ) {
     const user = this.requireUser(socket);
     const gameId = this.requireId(socket, payload?.gameId, "gameId");
-    if (socket.data.gameId !== gameId || typeof payload?.aiming !== "boolean") {
+    if (socket.data.gameId !== gameId) {
+      socket.emit(ServerSocketEvents.gatewayError, {
+        message: "Socket is not joined to this game"
+      });
+      return;
+    }
+    if (typeof payload?.aiming !== "boolean") {
       socket.emit(ServerSocketEvents.gatewayError, { message: "Invalid aiming state" });
       return;
     }
