@@ -1,5 +1,6 @@
 # Comprueba que package.json y pnpm-lock.yaml estan sincronizados.
 CI=true pnpm install --frozen-lockfile
+pnpm --filter "./packages/*" --if-present build
 
 # Ejecuta formato/lint y tests antes de subir la rama.
 pnpm run check
