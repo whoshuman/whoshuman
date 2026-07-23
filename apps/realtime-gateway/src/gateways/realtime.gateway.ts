@@ -16,8 +16,11 @@ import {
   ServerSocketEvents
 } from "@whoshuman/shared-events";
 import type {
+  GameAimPayload,
   GameJoinPayload,
+  GameJoinResponse,
   GameLeavePayload,
+  GameShootPayload,
   LobbyJoinPayload,
   LobbyLeavePayload,
   PlayerInputPayload
@@ -77,7 +80,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     }
 
     if (user && gameId) {
-      await this.publishToNats(GameSubjects.leave, {
+      await this.publishToNats(GameSubjects.disconnected, {
         userId: user.sub,
         gameId,
         socketId: socket.id
@@ -189,8 +192,12 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     const gameId = this.requireId(socket, payload?.gameId, "gameId");
     const currentGameId = socket.data.gameId;
 
-    if (currentGameId === gameId) {
-      socket.emit(ServerSocketEvents.gameJoined, { gameId });
+    if (currentGameId === gameId && socket.data.selfEntityId && socket.data.selfRole) {
+      socket.emit(ServerSocketEvents.gameJoined, {
+        gameId,
+        selfEntityId: socket.data.selfEntityId,
+        role: socket.data.selfRole
+      });
       return;
     }
 
@@ -210,6 +217,8 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
       await socket.leave(this.rooms.gameRoom(currentGameId));
       socket.data.gameId = undefined;
+      socket.data.selfEntityId = undefined;
+      socket.data.selfRole = undefined;
     }
 
     const room = this.rooms.gameRoom(gameId);
@@ -217,21 +226,31 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     await socket.join(room);
     socket.data.gameId = gameId;
 
-    const published = await this.publishToNats(GameSubjects.join, {
-      userId: user.sub,
-      username: user.username,
-      gameId,
-      socketId: socket.id
-    });
+    let joined: GameJoinResponse | null = null;
+    try {
+      joined = await this.messaging.request<GameJoinResponse | null>(GameSubjects.join, {
+        userId: user.sub,
+        username: user.username,
+        gameId,
+        socketId: socket.id
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Failed to request ${GameSubjects.join}: ${message}`);
+    }
 
-    if (!published) {
+    if (!joined) {
       await socket.leave(room);
       socket.data.gameId = undefined;
+      socket.data.selfEntityId = undefined;
+      socket.data.selfRole = undefined;
       socket.emit(ServerSocketEvents.gatewayError, { message: "Unable to join game" });
       return;
     }
 
-    socket.emit(ServerSocketEvents.gameJoined, { gameId });
+    socket.data.selfEntityId = joined.selfEntityId;
+    socket.data.selfRole = joined.role;
+    socket.emit(ServerSocketEvents.gameJoined, joined);
   }
 
   @SubscribeMessage(ClientSocketEvents.gameLeave)
@@ -244,6 +263,8 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
     await socket.leave(this.rooms.gameRoom(gameId));
     socket.data.gameId = undefined;
+    socket.data.selfEntityId = undefined;
+    socket.data.selfRole = undefined;
 
     await this.publishToNats(GameSubjects.leave, {
       userId: user.sub,
@@ -274,6 +295,56 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       gameId,
       forward: payload.forward,
       turn: payload.turn,
+      socketId: socket.id
+    });
+  }
+
+  @SubscribeMessage(ClientSocketEvents.gameShoot)
+  async handleGameShoot(
+    @ConnectedSocket() socket: RealtimeSocket,
+    @MessageBody() payload: GameShootPayload
+  ) {
+    const user = this.requireUser(socket);
+    const gameId = this.requireId(socket, payload?.gameId, "gameId");
+    const targetEntityId = this.requireId(socket, payload?.targetEntityId, "targetEntityId");
+
+    if (socket.data.gameId !== gameId) {
+      socket.emit(ServerSocketEvents.gatewayError, {
+        message: "Socket is not joined to this game"
+      });
+      return;
+    }
+
+    await this.publishToNats(GameSubjects.shoot, {
+      userId: user.sub,
+      gameId,
+      targetEntityId,
+      socketId: socket.id
+    });
+  }
+
+  @SubscribeMessage(ClientSocketEvents.gameAim)
+  async handleGameAim(
+    @ConnectedSocket() socket: RealtimeSocket,
+    @MessageBody() payload: GameAimPayload
+  ) {
+    const user = this.requireUser(socket);
+    const gameId = this.requireId(socket, payload?.gameId, "gameId");
+    if (socket.data.gameId !== gameId) {
+      socket.emit(ServerSocketEvents.gatewayError, {
+        message: "Socket is not joined to this game"
+      });
+      return;
+    }
+    if (typeof payload?.aiming !== "boolean") {
+      socket.emit(ServerSocketEvents.gatewayError, { message: "Invalid aiming state" });
+      return;
+    }
+
+    await this.publishToNats(GameSubjects.aim, {
+      userId: user.sub,
+      gameId,
+      aiming: payload.aiming,
       socketId: socket.id
     });
   }

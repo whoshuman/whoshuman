@@ -1,0 +1,67 @@
+name: Deploy staging
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.STAGING_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/staging
+          chmod 600 ~/.ssh/staging
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Upload application
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+        run: |
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='.env' \
+            --exclude='**/.env' \
+            --exclude='infrastructure/nginx/certs/' \
+            -e 'ssh -i ~/.ssh/staging -o IdentitiesOnly=yes' \
+            ./ "$STAGING_USER@$STAGING_HOST:/opt/whoshuman/"
+
+      - name: Deploy
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+        run: |
+          ssh -i ~/.ssh/staging -o IdentitiesOnly=yes "$STAGING_USER@$STAGING_HOST" <<'EOF'
+            set -eu
+            cd /opt/whoshuman
+            for example in infrastructure/postgres/.env.example apps/*/.env.example; do
+              file="${example%.example}"
+              test -f "$file" || { echo "Missing required file: $file"; exit 1; }
+            done
+            for file in infrastructure/nginx/certs/cert.pem infrastructure/nginx/certs/key.pem; do
+              test -f "$file" || { echo "Missing required file: $file"; exit 1; }
+            done
+            COMPOSE_PARALLEL_LIMIT=2 docker compose up -d --build --remove-orphans --wait --wait-timeout 300
+            docker compose exec -T auth-service sh -lc 'cd /app && pnpm exec prisma migrate deploy'
+            docker builder prune -f
+          EOF

@@ -73,12 +73,18 @@ export interface AuthVerifyResponse {
   payload?: AuthTokenPayload;
 }
 
-export interface GamePlayerState {
-  userId: string;
+export interface GameEntityState {
+  entityId: string;
   x: number;
   y: number;
   z: number;
   rotationY: number;
+}
+
+export interface GameJoinResponse {
+  gameId: string;
+  selfEntityId: string;
+  role: PlayerRole;
 }
 
 export interface LobbyJoinPayload {
@@ -107,10 +113,20 @@ export interface PlayerInputPayload {
   turn: number; // -1..1  (A = +1 izquierda, D = -1 derecha)
 }
 
+export interface GameShootPayload {
+  gameId: string;
+  targetEntityId: string;
+}
+
+export interface GameAimPayload {
+  gameId: string;
+  aiming: boolean;
+}
+
 export interface GameStateSnapshotPayload {
   gameId: string;
   tick: number;
-  players: GamePlayerState[];
+  entities: GameEntityState[];
 }
 
 export type PlayerRole = "hider" | "seeker";

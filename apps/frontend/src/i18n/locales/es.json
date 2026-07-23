@@ -192,7 +192,8 @@
     "units": "Unidades",
     "leave": "ABANDONAR",
     "connecting": "ENLAZANDO CON LA OPERACIÓN...",
-    "controls": "W/S avanzar · A/D girar"
+    "controls": "W/S avanzar · A/D girar",
+    "controlsSeeker": "A/D o flechas para orbitar · mantén clic derecho o pulsa F para apuntar · clic izquierdo para disparar"
   },
   "notFound": {
     "protocol": "ERROR DE SISTEMA — UNIDAD NO LOCALIZADA",

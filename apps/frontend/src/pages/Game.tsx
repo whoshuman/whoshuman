@@ -6,7 +6,6 @@ import { useKeyboardInput } from "../game/hooks/useKeyboardInput";
 import GameScene from "../game/scenes/GameScene";
 import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
-import { useAuthStore } from "../shared/authStore";
 
 // Pantalla de partida. Renderiza EXACTAMENTE lo que el servidor simula hoy:
 // jugadores moviéndose por el mapa lógico con colisiones. Sin tiempo, rondas,
@@ -14,29 +13,27 @@ import { useAuthStore } from "../shared/authStore";
 function Game() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const selfId = useAuthStore((s) => s.user?.id);
   const match = useLobbyStore((s) => s.match);
+  const gameId = useGameStore((s) => s.gameId);
   const phase = useGameStore((s) => s.phase);
   const presentCount = useGameStore((s) => s.presentCount);
-  const roles = useGameStore((s) => s.roles);
+  const selfRole = useGameStore((s) => s.selfRole);
   const error = useGameStore((s) => s.error);
   const join = useGameStore((s) => s.join);
   const leave = useGameStore((s) => s.leave);
 
   const playing = phase === "playing";
-  useKeyboardInput(playing);
+  const targetGameId = match?.gameId ?? gameId;
+  useKeyboardInput(playing && selfRole !== "seeker");
 
-  // Entra a la partida del match al montar; al desmontar (navegar fuera) sale.
+  // El match cubre la entrada normal; gameId persiste en sessionStorage y cubre
+  // refresh/reconexión. Salir de la ruta no equivale a abandonar la partida.
   useEffect(() => {
-    if (!match) return;
-    join(match.gameId);
-    return () => useGameStore.getState().leave();
-  }, [match, join]);
+    if (targetGameId) join(targetGameId);
+  }, [targetGameId, join]);
 
-  // Sin match no hay partida que unirse: de vuelta al lobby.
-  if (!match) return <Navigate to="/lobby" />;
-
-  const selfRole = selfId ? roles[selfId] : undefined;
+  // Sin match nuevo ni partida recordada no hay nada que recuperar.
+  if (!targetGameId) return <Navigate to="/lobby" />;
 
   function handleLeave() {
     leave();
@@ -104,7 +101,7 @@ function Game() {
       {/* Controles. */}
       <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
         <p className="border border-neon-cyan/25 bg-bg/70 px-4 py-1.5 font-display text-[0.65rem] font-bold uppercase tracking-[0.2em] text-text-muted backdrop-blur-sm">
-          {t("game.controls")}
+          {t(selfRole === "seeker" ? "game.controlsSeeker" : "game.controls")}
         </p>
       </div>
     </div>

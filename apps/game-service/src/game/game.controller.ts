@@ -1,5 +1,5 @@
 import { Controller } from "@nestjs/common";
-import { EventPattern, Payload } from "@nestjs/microservices";
+import { EventPattern, MessagePattern, Payload } from "@nestjs/microservices";
 import { GameSubjects, MatchmakingSubjects } from "@whoshuman/shared-events";
 import { GameService } from "./game.service";
 
@@ -13,9 +13,9 @@ export class GameController {
     this.game.startGame(payload);
   }
 
-  @EventPattern(GameSubjects.join)
+  @MessagePattern(GameSubjects.join)
   handleJoin(@Payload() payload: unknown) {
-    this.game.join(payload);
+    return this.game.join(payload);
   }
 
   @EventPattern(GameSubjects.playerMoved)
@@ -23,8 +23,23 @@ export class GameController {
     this.game.input(payload);
   }
 
+  @EventPattern(GameSubjects.shoot)
+  handleShoot(@Payload() payload: unknown) {
+    this.game.shoot(payload);
+  }
+
+  @EventPattern(GameSubjects.aim)
+  handleAim(@Payload() payload: unknown) {
+    this.game.aim(payload);
+  }
+
   @EventPattern(GameSubjects.leave)
   handleLeave(@Payload() payload: unknown) {
     this.game.leave(payload);
+  }
+
+  @EventPattern(GameSubjects.disconnected)
+  handleDisconnect(@Payload() payload: unknown) {
+    this.game.disconnect(payload);
   }
 }

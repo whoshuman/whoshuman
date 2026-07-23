@@ -1,4 +1,4 @@
-import type { GamePlayerState, GameStateSnapshotPayload } from "@whoshuman/shared-types";
+import type { GameEntityState, GameStateSnapshotPayload } from "@whoshuman/shared-types";
 
 // El servidor emite snapshots a 20 Hz (cada 50 ms). Renderizar el último tal cual
 // daría movimiento a saltos; en su lugar renderizamos ~100 ms EN EL PASADO,
@@ -10,7 +10,7 @@ const MAX_BUFFER = 10;
 
 interface TimedSnapshot {
   receivedAt: number;
-  players: GamePlayerState[];
+  entities: GameEntityState[];
 }
 
 // Buffer a nivel de módulo, FUERA de React y de Zustand: llega a 20 Hz y
@@ -19,7 +19,7 @@ interface TimedSnapshot {
 let buffer: TimedSnapshot[] = [];
 
 export function pushSnapshot(snapshot: GameStateSnapshotPayload): void {
-  buffer.push({ receivedAt: performance.now(), players: snapshot.players });
+  buffer.push({ receivedAt: performance.now(), entities: snapshot.entities });
   if (buffer.length > MAX_BUFFER) buffer = buffer.slice(-MAX_BUFFER);
 }
 
@@ -40,8 +40,25 @@ function lerpAngle(a: number, b: number, t: number): number {
   return a + diff * t;
 }
 
-// Estado interpolado de todos los jugadores en el instante de render.
-export function samplePlayers(): GamePlayerState[] {
+function interpolateEntities(
+  previous: GameEntityState[],
+  next: GameEntityState[],
+  t: number
+): GameEntityState[] {
+  return next.map((target) => {
+    const source = previous.find((state) => state.entityId === target.entityId);
+    if (!source) return target;
+    return {
+      ...target,
+      x: lerp(source.x, target.x, t),
+      y: lerp(source.y, target.y, t),
+      z: lerp(source.z, target.z, t),
+      rotationY: lerpAngle(source.rotationY, target.rotationY, t)
+    };
+  });
+}
+
+export function sampleWorld(): GameEntityState[] {
   if (buffer.length === 0) return [];
   const renderTime = performance.now() - RENDER_DELAY_MS;
 
@@ -58,19 +75,10 @@ export function samplePlayers(): GamePlayerState[] {
   }
 
   // Sin snapshot posterior (red parada o retardo aún no cumplido): último conocido.
-  if (!next || next.receivedAt === prev.receivedAt) return prev.players;
+  if (!next || next.receivedAt === prev.receivedAt) {
+    return prev.entities;
+  }
 
   const t = (renderTime - prev.receivedAt) / (next.receivedAt - prev.receivedAt);
-  return next.players.map((target) => {
-    const source = prev.players.find((p) => p.userId === target.userId);
-    // Jugador recién aparecido: sin estado previo que interpolar.
-    if (!source) return target;
-    return {
-      userId: target.userId,
-      x: lerp(source.x, target.x, t),
-      y: lerp(source.y, target.y, t),
-      z: lerp(source.z, target.z, t),
-      rotationY: lerpAngle(source.rotationY, target.rotationY, t)
-    };
-  });
+  return interpolateEntities(prev.entities, next.entities, t);
 }

@@ -8,6 +8,7 @@ const REFRESH_KEY = "refreshToken";
 const USER_KEY = "authUser";
 
 interface AuthState {
+  restored: boolean;
   isAuthenticated: boolean;
   user: PublicUser | null;
   signIn: (session: AuthSessionResponse) => void;
@@ -33,6 +34,7 @@ function clearStorage() {
 let restoreStarted = false;
 
 export const useAuthStore = create<AuthState>((set) => ({
+  restored: false,
   isAuthenticated: false,
   user: null,
 
@@ -40,7 +42,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     persist(user, tokens.accessToken, tokens.refreshToken);
     void i18n.changeLanguage(user.language);
     localStorage.setItem("lang", user.language);
-    set({ user, isAuthenticated: true });
+    set({ user, isAuthenticated: true, restored: true });
   },
 
   updateUser: (user) => {
@@ -68,15 +70,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     restoreStarted = true;
     const rt = localStorage.getItem(REFRESH_KEY);
     const rawUser = localStorage.getItem(USER_KEY);
-    if (!rt || !rawUser) return;
+    if (!rt || !rawUser) {
+      set({ restored: true });
+      return;
+    }
     try {
       const { tokens } = await apiRefresh(rt);
       const user = JSON.parse(rawUser) as PublicUser;
       persist(user, tokens.accessToken, tokens.refreshToken);
       void i18n.changeLanguage(user.language);
-      set({ user, isAuthenticated: true });
+      set({ user, isAuthenticated: true, restored: true });
     } catch {
       clearStorage();
+      set({ restored: true });
     }
   }
 }));

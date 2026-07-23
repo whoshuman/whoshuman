@@ -42,7 +42,7 @@ realtime-gateway
 game-service
    │  guarda la "última intención" del jugador
    │  cada 50 ms (tick): mueve a todos y emite el estado
-   │  publish game.state.snapshot { gameId, tick, players:[…] }
+   │  publish game.state.snapshot { gameId, tick, entities:[…] }
    ▼  NATS
 realtime-gateway
    │  emit "game:state" a la room game:<gameId>
@@ -52,17 +52,23 @@ todos los clientes de la partida → pintan
 
 ### Subjects NATS y eventos de socket
 
-| Capa   | Nombre                     | Dirección                  | Para qué                                |
-| ------ | -------------------------- | -------------------------- | --------------------------------------- |
-| socket | `game:join`                | cliente → gateway          | entrar a la partida                     |
-| socket | `game:joined`              | gateway → cliente          | **confirmación** de que ya estás dentro |
-| socket | `game:player-input`        | cliente → gateway          | mandar la intención (avanzar / girar)   |
-| socket | `game:state`               | gateway → sala             | estado del juego (cada tick)            |
-| socket | `game:leave`               | cliente → gateway          | salir de la partida                     |
-| NATS   | `matchmaking.match.found`  | matchmaking → game-service | crea la partida                         |
-| NATS   | `game.join` / `game.leave` | gateway → game-service     | entra / sale un jugador                 |
-| NATS   | `game.player.moved`        | gateway → game-service     | la intención de movimiento              |
-| NATS   | `game.state.snapshot`      | game-service → gateway     | el estado a difundir                    |
+| Capa   | Nombre                    | Dirección                  | Para qué                                |
+| ------ | ------------------------- | -------------------------- | --------------------------------------- |
+| socket | `game:join`               | cliente → gateway          | entrar a la partida                     |
+| socket | `game:joined`             | gateway → cliente          | **confirmación** de que ya estás dentro |
+| socket | `game:player-input`       | cliente → gateway          | mandar la intención (avanzar / girar)   |
+| socket | `game:aim`                | cliente → gateway          | activar o soltar la mira                |
+| socket | `game:shoot`              | cliente → gateway          | disparar a una entidad opaca            |
+| socket | `game:state`              | gateway → sala             | estado del juego (cada tick)            |
+| socket | `game:leave`              | cliente → gateway          | salir de la partida                     |
+| NATS   | `matchmaking.match.found` | matchmaking → game-service | crea la partida                         |
+| NATS   | `game.join`               | gateway ↔ game-service     | entra y devuelve `selfEntityId` privado |
+| NATS   | `game.disconnected`       | gateway → game-service     | inicia una gracia de reconexión         |
+| NATS   | `game.leave`              | gateway → game-service     | sale un jugador                         |
+| NATS   | `game.player.moved`       | gateway → game-service     | la intención de movimiento              |
+| NATS   | `game.aim`                | gateway → game-service     | estado autoritativo de la mira          |
+| NATS   | `game.shoot`              | gateway → game-service     | valida y aplica el disparo              |
+| NATS   | `game.state.snapshot`     | game-service → gateway     | el estado a difundir                    |
 
 ---
 
@@ -110,9 +116,9 @@ cuando no queda ningún jugador → la partida se destruye y el loop se detiene
 ```
 
 - Los **spawns** (posiciones de salida) se reparten en círculo al crear la partida.
-- Un jugador solo aparece en el `game:state` cuando ha hecho `game:join` (está
-  realmente dentro). Si se desconecta, **desaparece del estado** — es lo correcto:
-  un jugador caído no debe quedar como un fantasma en el mapa.
+- El snapshot incluye desde el inicio todas las entidades de la partida para que
+  la llegada o salida de un jugador no revele cuál es humano. Durante la gracia
+  de reconexión su entidad permanece quieta en la última posición.
 
 ---
 
@@ -154,16 +160,14 @@ se añadirá en el mismo punto del loop (sin tocar el contrato con el frontend).
 
 - El rol (1 `seeker` + el resto `hiders`) lo asigna el **matchmaking** y viaja en
   el `match.found`.
-- El `game-service` **aún no trata distinto al seeker**: en este loop todos los
-  jugadores se mueven igual. La mecánica del seeker (cámara aérea, apuntar,
-  disparar — Fase 3/4) llegará después.
+- El `seeker` no camina ni aparece como peatón. Su cliente usa una cámara orbital
+  exterior y puede pulsar una entidad para disparar.
+- El servidor acepta el disparo solo si quien lo envía es el `seeker` presente,
+  mantiene la mira activa y el `targetEntityId` pertenece a una entidad viva; al
+  acertar, la elimina.
 - El `game:state` **no incluye el rol** a propósito: los hiders no deben distinguir
   quién es el seeker ni quién es humano. **Cada cliente conoce solo su propio rol**,
-  que recibió en el `match.found`.
-
-> Nota de futuro: en Just Act Natural el seeker no camina como peatón; tiene vista
-> aérea. Cuando se implemente su mecánica, dejará de emitir su posición de peatón
-> pero seguirá recibiendo la del resto.
+  recibido privadamente en `game:joined`.
 
 ---
 
@@ -190,7 +194,7 @@ Con `gameId` navegas a `/game`; con tu `role` decides tu cámara/HUD.
 
 ```
 1. emit  "game:join"  { gameId }
-2. espera "game:joined" { gameId }       ← confirmación del servidor
+2. espera "game:joined" { gameId, selfEntityId, role }  ← identidad y rol privados
 3. SOLO ENTONCES empieza a mandar "game:player-input"
 ```
 
@@ -236,11 +240,18 @@ Traducción típica de teclas:
 {
   gameId: string,
   tick: number,
-  players: [ { userId, x, y, z, rotationY }, … ]   // y = altura del suelo (rampa)
+  entities: [ { entityId, x, y, z, rotationY }, … ] // humanos y NPC son indistinguibles
 }
 ```
 
-Por cada jugador, coloca su modelo 3D en `(x, y, z)` mirando hacia `rotationY`.
+El snapshot nunca contiene `userId`, rol, tipo de entidad ni modo del NPC. Solo
+`selfEntityId`, recibido privadamente en `game:joined`, permite reconocer la
+entidad controlada por ese cliente.
+
+El `seeker` dispara con `game:shoot { gameId, targetEntityId }`. El cliente solo
+elige una entidad visible; el servidor valida el rol y decide si la elimina.
+
+Por cada entidad, coloca su modelo 3D en `(x, y, z)` mirando hacia `rotationY`.
 La **`y` la decide el servidor** (altura del suelo bajo el jugador, según el mapa):
 el cliente **no** debe recalcularla con su propio raycast, o pintaría al personaje
 subido a árboles o tejados que el servidor no permite pisar.
@@ -271,6 +282,23 @@ No necesitas ack ni reintentos de inputs. (WebSocket va sobre TCP, así que en l
 práctica no se pierden en silencio; el reto real es el lag, que se cubre con el
 suavizado de §7.5.)
 
+### 7.7 Refresh y reconexión MVP
+
+El cliente guarda el `gameId` activo en `sessionStorage`. Al refrescar la ruta
+`/game` o recuperar la conexión, espera `gateway:ready` y vuelve a emitir
+`game:join`. El game-service mantiene durante **45 segundos** la misma entidad,
+rol y posición, deteniendo antes su input para que no siga caminando solo.
+
+`game:leave` sigue siendo una salida inmediata y solo se envía al pulsar
+**Abandonar**. Una caída del socket publica `game.disconnected`; además, el
+`socketId` activo evita que una desconexión tardía del socket anterior invalide
+una reconexión ya completada.
+
+Esta recuperación es deliberadamente local al MVP: sobrevive a refresh y cortes
+breves, pero no a reiniciar el contenedor de game-service. Redis o persistencia
+distribuida se añadirá cuando haya varias instancias o se necesite tolerar esos
+reinicios.
+
 ---
 
 ## 8. Parámetros (config / envs)
@@ -284,6 +312,8 @@ En `apps/game-service/.env` (validados con joi):
 | `GAME_TURN_SPEED` | `3.0`       | velocidad de giro (radianes/seg)                  |
 | `GAME_MAX_STEP`   | `0.11`      | desnivel máx por tick (rampa sí, escalón/muro no) |
 | `GAME_MAP`        | `beta-city` | qué mapa cargar → `maps/<GAME_MAP>.json`          |
+| `GAME_NPC_COUNT`  | `32`        | peatones autoritativos de la partida              |
+| `GAME_NPC_SPEED`  | `1.2`       | velocidad de paseo de los NPC                     |
 
 La **geometría del mapa ya no está en envs**: vive en un **descriptor JSON** por
 mapa (`apps/game-service/src/game/maps/<GAME_MAP>.json`), con:
@@ -314,10 +344,11 @@ toca.** El paso a paso del script, sus flags y cómo probarlo están en
 
 ## 9. Fuera de alcance (futuro)
 
-- **NPCs** (peatones erráticos server-side, el alma de "Just Act Natural").
+- **Modelos y animaciones de NPCs** (el movimiento errático server-side ya funciona).
 - **Colisión entre jugadores** (hoy se atraviesan; la colisión contra el
   escenario y la altura ya están, ver §5).
-- **Mecánica del seeker**: cámara aérea, apuntar, disparar.
+- **Reglas avanzadas del seeker**: munición, enfriamiento y validación geométrica
+  de línea de visión.
 - **Detección** (suspicion meter), **diamantes**, **items** (smoke/warp).
 - **Rondas**: tiempo límite, rotación de roles, resultados, victoria.
 - **Persistencia** de la partida (`Game`/`Score` en BD).

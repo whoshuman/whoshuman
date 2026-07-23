@@ -1,5 +1,6 @@
 import { GameSubjects } from "@whoshuman/shared-events";
 import type { GameStateSnapshotPayload } from "@whoshuman/shared-types";
+import { envs } from "../config";
 import { GameService } from "./game.service";
 
 describe("GameService", () => {
@@ -38,29 +39,91 @@ describe("GameService", () => {
     expect(service.getGameCount()).toBe(1);
   });
 
-  it("publica game.state.snapshot por tick con los jugadores presentes", async () => {
+  it("publica un snapshot anónimo sin distinguir jugadores de NPC", async () => {
     service.startGame({ gameId: "g1", players: members });
-    service.join({ userId: "u1", gameId: "g1" }); // u2 no hace join
+    const joined = service.join({ userId: "u1", gameId: "g1" });
     await jest.advanceTimersByTimeAsync(50); // GAME_TICK_MS default
     const snaps = snapshots();
     expect(snaps.length).toBeGreaterThanOrEqual(1);
     expect(snaps[0].gameId).toBe("g1");
-    expect(snaps.at(-1)!.players.map((p) => p.userId)).toEqual(["u1"]);
+    expect(joined?.role).toBe("seeker");
+    expect(snaps.at(-1)!.entities).toHaveLength(envs.gameNpcCount + 1);
+    expect(snaps.at(-1)!.entities.some((entity) => entity.entityId === joined?.selfEntityId)).toBe(
+      false
+    );
+    for (const entity of snaps.at(-1)!.entities) {
+      expect(entity).not.toHaveProperty("userId");
+      expect(entity).not.toHaveProperty("npcId");
+      expect(entity).not.toHaveProperty("mode");
+    }
   });
 
   it("aplica el input (avanzar) del jugador", async () => {
     service.startGame({ gameId: "g1", players: members });
-    service.join({ userId: "u1", gameId: "g1" });
+    const joined = service.join({ userId: "u2", gameId: "g1" })!;
     await jest.advanceTimersByTimeAsync(50);
     const z0 = snapshots()
       .at(-1)!
-      .players.find((p) => p.userId === "u1")!.z;
-    service.input({ userId: "u1", gameId: "g1", forward: 1, turn: 0 }); // avanza hacia +z
+      .entities.find((p) => p.entityId === joined.selfEntityId)!.z;
+    service.input({ userId: "u2", gameId: "g1", forward: 1, turn: 0 }); // avanza hacia +z
     await jest.advanceTimersByTimeAsync(50);
     const z1 = snapshots()
       .at(-1)!
-      .players.find((p) => p.userId === "u1")!.z;
+      .entities.find((p) => p.entityId === joined.selfEntityId)!.z;
     expect(z1).toBeGreaterThan(z0);
+  });
+
+  it("solo permite disparar al seeker de la partida", async () => {
+    service.startGame({ gameId: "g1", players: members });
+    service.join({ userId: "u1", gameId: "g1" });
+    const hider = service.join({ userId: "u2", gameId: "g1" })!;
+
+    expect(service.shoot({ userId: "u2", gameId: "g1", targetEntityId: hider.selfEntityId })).toBe(
+      false
+    );
+    expect(service.shoot({ userId: "u1", gameId: "g1", targetEntityId: hider.selfEntityId })).toBe(
+      false
+    );
+    expect(service.aim({ userId: "u1", gameId: "g1", aiming: true })).toBe(true);
+    expect(service.shoot({ userId: "u1", gameId: "g1", targetEntityId: hider.selfEntityId })).toBe(
+      true
+    );
+    await jest.advanceTimersByTimeAsync(50);
+    expect(
+      snapshots()
+        .at(-1)!
+        .entities.some((entity) => entity.entityId === hider.selfEntityId)
+    ).toBe(false);
+  });
+
+  it("rechaza el join de un usuario que no pertenece a la partida", () => {
+    service.startGame({ gameId: "g1", players: members });
+    expect(service.join({ userId: "intruder", gameId: "g1" })).toBeNull();
+  });
+
+  it("reconecta durante 45 segundos con la misma entidad y el mismo rol", () => {
+    service.startGame({ gameId: "g1", players: members });
+    const first = service.join({ userId: "u2", gameId: "g1", socketId: "old" })!;
+
+    service.disconnect({ userId: "u2", gameId: "g1", socketId: "old" });
+    jest.advanceTimersByTime(44_999);
+    const resumed = service.join({ userId: "u2", gameId: "g1", socketId: "new" });
+
+    expect(resumed).toEqual(first);
+    // Un disconnect tardío del socket viejo no debe afectar al socket nuevo.
+    service.disconnect({ userId: "u2", gameId: "g1", socketId: "old" });
+    jest.advanceTimersByTime(45_001);
+    expect(service.join({ userId: "u2", gameId: "g1", socketId: "newer" })).toEqual(first);
+  });
+
+  it("elimina al jugador si no vuelve antes de 45 segundos", () => {
+    service.startGame({ gameId: "g1", players: members });
+    service.join({ userId: "u2", gameId: "g1", socketId: "socket" });
+    service.disconnect({ userId: "u2", gameId: "g1", socketId: "socket" });
+
+    jest.advanceTimersByTime(45_000);
+
+    expect(service.join({ userId: "u2", gameId: "g1", socketId: "new" })).toBeNull();
   });
 
   it("para el loop y elimina la partida cuando se van todos", () => {
