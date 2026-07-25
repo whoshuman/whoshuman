@@ -63,6 +63,5 @@ jobs:
             done
             COMPOSE_PARALLEL_LIMIT=2 docker compose up -d --build --remove-orphans --wait --wait-timeout 300
             docker compose exec -T auth-service sh -lc 'cd /app && pnpm exec prisma migrate deploy'
-            docker compose restart nginx
             docker builder prune -f
           EOF

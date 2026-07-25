@@ -54,7 +54,7 @@ function Obstacles() {
         const z = (rect.minZ + rect.maxZ) / 2;
         return (
           <group key={index} position={[x, BUILDING_HEIGHT / 2, z]} scale={[w, BUILDING_HEIGHT, d]}>
-            <mesh geometry={geometry} material={material} />
+            <mesh geometry={geometry} material={material} userData={{ blocksShot: true }} />
             <lineSegments geometry={edges} material={lineMaterial} />
           </group>
         );
@@ -83,7 +83,7 @@ function Units() {
   const selfRole = useGameStore((s) => s.selfRole);
   const aiming = useGameStore((s) => s.aiming);
   const shoot = useGameStore((s) => s.shoot);
-  const { camera, gl } = useThree();
+  const { camera, gl, scene } = useThree();
   const selfRef = useRef<THREE.Group>(null);
   const otherBodies = useRef<THREE.InstancedMesh>(null);
   const otherNoses = useRef<THREE.InstancedMesh>(null);
@@ -174,14 +174,19 @@ function Units() {
       );
       for (const mesh of meshes) mesh.computeBoundingSphere();
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-      const hit = raycaster.intersectObjects(meshes)[0];
-      if (hit?.instanceId === undefined) return;
+      const hit = raycaster
+        .intersectObject(scene, true)
+        .find(
+          ({ object }) =>
+            object.userData.blocksShot || meshes.includes(object as THREE.InstancedMesh)
+        );
+      if (hit?.object.userData.blocksShot || hit?.instanceId === undefined) return;
       const targetEntityId = entityIds.current[hit.instanceId];
       if (targetEntityId) shoot(targetEntityId);
     };
     gl.domElement.addEventListener("pointerdown", handleShoot);
     return () => gl.domElement.removeEventListener("pointerdown", handleShoot);
-  }, [aiming, camera, gl, raycaster, selfRole, shoot]);
+  }, [aiming, camera, gl, raycaster, scene, selfRole, shoot]);
 
   return (
     <group>
