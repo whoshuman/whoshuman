@@ -91,6 +91,51 @@ function Floor() {
   );
 }
 
+function Collectibles() {
+  const collectibles = useGameStore((state) => state.collectibles);
+  const group = useRef<THREE.Group>(null);
+  const geometry = useMemo(() => new THREE.OctahedronGeometry(0.11, 0), []);
+  const material = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#ffe66d",
+        emissive: "#ff9f1c",
+        emissiveIntensity: 1.4,
+        metalness: 0.15,
+        roughness: 0.25
+      }),
+    []
+  );
+
+  useFrame((_, delta) => {
+    for (const item of group.current?.children ?? []) {
+      item.rotation.y += delta * 1.4;
+      item.rotation.x += delta * 0.7;
+    }
+  });
+
+  useEffect(
+    () => () => {
+      geometry.dispose();
+      material.dispose();
+    },
+    [geometry, material]
+  );
+
+  return (
+    <group ref={group}>
+      {collectibles.map((item) => (
+        <mesh
+          key={item.collectibleId}
+          geometry={geometry}
+          material={material}
+          position={[item.x, item.y, item.z]}
+        />
+      ))}
+    </group>
+  );
+}
+
 // El cliente solo conoce su propia entidad. Todas las demás se renderizan juntas:
 // no existe ningún dato que permita distinguir humano de NPC.
 function Units() {
@@ -453,6 +498,7 @@ function GameScene() {
             <CityMap />
           </Suspense>
           <Obstacles />
+          <Collectibles />
           <Units />
           <SeekerCamera />
         </PerformanceMonitor>

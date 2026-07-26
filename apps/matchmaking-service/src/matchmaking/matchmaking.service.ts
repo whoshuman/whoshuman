@@ -146,10 +146,13 @@ export class MatchmakingService {
   }
 
   /** 1 seeker al azar, el resto hiders. */
-  private assignRoles(players: QueuedPlayer[]): { userId: string; role: PlayerRole }[] {
+  private assignRoles(
+    players: QueuedPlayer[]
+  ): { userId: string; username: string; role: PlayerRole }[] {
     const seekerIndex = Math.floor(Math.random() * players.length);
     return players.map((player, index) => ({
       userId: player.userId,
+      username: player.username,
       role: index === seekerIndex ? "seeker" : "hider"
     }));
   }

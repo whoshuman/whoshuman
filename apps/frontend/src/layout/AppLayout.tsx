@@ -1,13 +1,15 @@
 import { useEffect } from "react";
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import LanguageSelector from "../shared/LanguageSelector";
 import SceneBackground from "../features/home-3d/SceneBackground";
 import { connectSocket, disconnectSocket } from "../game/network/socket";
+import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
 import { useAuthStore } from "../shared/authStore";
 import { initNotifications } from "../shared/notifications";
 import NotificationToasts from "../shared/NotificationToasts";
+import { AUTH_UNAUTHORIZED_EVENT } from "../shared/api/httpClient";
 
 // Rutas que muestran el fondo 3D unificado. La home tiene su propia escena (con zoom)
 // y el juego tendra su escena de mapa, asi que ninguna de las dos lo usa.
@@ -39,6 +41,7 @@ const KNOWN_ROUTES = new Set([
   "/support",
   "/design-system"
 ]);
+const PROTECTED_ROUTES = new Set(["/lobby", "/game", "/profile", "/friends"]);
 
 // Enlaces del HUD superior. `exact` evita que "/" quede activo en todas las rutas.
 const NAV_LINKS = [
@@ -58,14 +61,31 @@ const navChipActive =
 
 function AppLayout() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const restore = useAuthStore((s) => s.restore);
+  const clearSession = useAuthStore((s) => s.clearSession);
   const authRestored = useAuthStore((s) => s.restored);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasAccessToken = Boolean(localStorage.getItem("authToken"));
+  const isProtectedRoute = PROTECTED_ROUTES.has(pathname);
+  const canRenderRoute = !isProtectedRoute || (isAuthenticated && hasAccessToken);
 
   useEffect(() => {
     void restore();
   }, [restore]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => clearSession();
+    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, [clearSession]);
+
+  useEffect(() => {
+    if (!authRestored || !isProtectedRoute || (isAuthenticated && hasAccessToken)) return;
+    clearSession();
+    void navigate({ to: "/", replace: true });
+  }, [authRestored, clearSession, hasAccessToken, isAuthenticated, isProtectedRoute, navigate]);
 
   // El socket vive ligado a la sesión, no al lobby: el room personal user:<id>
   // (donde llegan las notificaciones) se une al conectar. Logout → desconexión.
@@ -77,6 +97,7 @@ function AppLayout() {
     } else {
       disconnectSocket();
       useLobbyStore.getState().reset();
+      useGameStore.getState().reset();
     }
   }, [authRestored, isAuthenticated]);
 
@@ -147,7 +168,7 @@ function AppLayout() {
           </header>
         )}
 
-        <div className="flex-1">{authRestored && <Outlet />}</div>
+        <div className="flex-1">{authRestored && canRenderRoute && <Outlet />}</div>
 
         {showHud && (
           <footer className="border-t border-neon-cyan/15 bg-bg/60 px-6 py-3 text-center backdrop-blur-sm">

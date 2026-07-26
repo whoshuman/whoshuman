@@ -193,7 +193,20 @@
     "leave": "ABANDON",
     "connecting": "LINKING TO OPERATION...",
     "controls": "W/S move · A/D turn",
-    "controlsSeeker": "A/D or arrows to orbit · hold right click or press F to aim · left click to shoot"
+    "controlsSeeker": "A/D or arrows to orbit · hold right click or press F to aim · left click to shoot",
+    "score": "Score",
+    "scoreboard": "Leaderboard",
+    "round": "Round {{current}} / {{total}}",
+    "eliminated": "UNIT ELIMINATED",
+    "waitNextRound": "Wait for the next deployment.",
+    "roundComplete": "ROUND COMPLETE",
+    "reasonAllFound": "The Hunter found every cyborg.",
+    "reasonTime": "The round timer expired.",
+    "nextRound": "Next round in {{seconds}} s",
+    "operationComplete": "OPERATION COMPLETE",
+    "winnerScore": "{{score}} points",
+    "noWinner": "NO WINNER",
+    "returnLobby": "RETURN TO LOBBY"
   },
   "notFound": {
     "protocol": "SYSTEM ERROR — UNIT NOT LOCATED",

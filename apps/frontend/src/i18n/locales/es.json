@@ -193,7 +193,20 @@
     "leave": "ABANDONAR",
     "connecting": "ENLAZANDO CON LA OPERACIÓN...",
     "controls": "W/S avanzar · A/D girar",
-    "controlsSeeker": "A/D o flechas para orbitar · mantén clic derecho o pulsa F para apuntar · clic izquierdo para disparar"
+    "controlsSeeker": "A/D o flechas para orbitar · mantén clic derecho o pulsa F para apuntar · clic izquierdo para disparar",
+    "score": "Puntos",
+    "scoreboard": "Clasificación",
+    "round": "Ronda {{current}} / {{total}}",
+    "eliminated": "UNIDAD ELIMINADA",
+    "waitNextRound": "Espera al siguiente despliegue.",
+    "roundComplete": "RONDA COMPLETADA",
+    "reasonAllFound": "El Cazador encontró a todos los cyborgs.",
+    "reasonTime": "El tiempo de la ronda se ha agotado.",
+    "nextRound": "Siguiente ronda en {{seconds}} s",
+    "operationComplete": "OPERACIÓN COMPLETADA",
+    "winnerScore": "{{score}} puntos",
+    "noWinner": "SIN GANADOR",
+    "returnLobby": "VOLVER AL LOBBY"
   },
   "notFound": {
     "protocol": "ERROR DE SISTEMA — UNIDAD NO LOCALIZADA",

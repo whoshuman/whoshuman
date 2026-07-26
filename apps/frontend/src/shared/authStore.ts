@@ -13,6 +13,7 @@ interface AuthState {
   user: PublicUser | null;
   signIn: (session: AuthSessionResponse) => void;
   signOut: () => Promise<void>;
+  clearSession: () => void;
   restore: () => Promise<void>;
   updateUser: (user: PublicUser) => void;
 }
@@ -63,6 +64,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     clearStorage();
     set({ user: null, isAuthenticated: false });
+  },
+
+  clearSession: () => {
+    clearStorage();
+    set({ user: null, isAuthenticated: false, restored: true });
   },
 
   restore: async () => {
