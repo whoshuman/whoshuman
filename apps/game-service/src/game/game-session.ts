@@ -32,6 +32,7 @@ interface MovableState {
 
 interface SessionPlayer extends MovableState {
   entityId: string;
+  skinId: number;
   role: PlayerRole;
   forward: number; // -1..1
   turn: number; // -1..1
@@ -41,6 +42,7 @@ interface SessionPlayer extends MovableState {
 
 interface SessionNpc extends MovableState {
   entityId: string;
+  skinId: number;
   mode: NpcMode;
   modeTime: number;
   targetHeading: number;
@@ -48,6 +50,7 @@ interface SessionNpc extends MovableState {
 
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v);
 const NPC_SEPARATION = 0.28;
+const CHARACTER_SKIN_COUNT = 12;
 
 /** Una partida en curso. Lógica pura: sin NATS, sin tiempo real. */
 export class GameSession {
@@ -80,6 +83,7 @@ export class GameSession {
       );
       this.players.set(m.userId, {
         entityId: randomUUID(),
+        skinId: i % CHARACTER_SKIN_COUNT,
         role: m.role,
         x: spawn.x,
         z: spawn.z,
@@ -97,6 +101,7 @@ export class GameSession {
       const heading = this.random() * Math.PI * 2;
       this.npcs.push({
         entityId: randomUUID(),
+        skinId: (members.length + i) % CHARACTER_SKIN_COUNT,
         x: spawn.x,
         z: spawn.z,
         h: spawn.h,
@@ -355,6 +360,7 @@ export class GameSession {
       out.push({
         userId,
         entityId: p.entityId,
+        skinId: p.skinId,
         x: p.x,
         y: p.h,
         z: p.z,
@@ -368,6 +374,7 @@ export class GameSession {
   npcSnapshot(): NpcDebugState[] {
     return this.npcs.map((npc) => ({
       entityId: npc.entityId,
+      skinId: npc.skinId,
       x: npc.x,
       y: npc.h,
       z: npc.z,
@@ -383,6 +390,7 @@ export class GameSession {
       if (player.role === "seeker") continue;
       entities.push({
         entityId: player.entityId,
+        skinId: player.skinId,
         x: player.x,
         y: player.h,
         z: player.z,
@@ -392,6 +400,7 @@ export class GameSession {
     for (const npc of this.npcs) {
       entities.push({
         entityId: npc.entityId,
+        skinId: npc.skinId,
         x: npc.x,
         y: npc.h,
         z: npc.z,

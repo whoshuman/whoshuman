@@ -75,6 +75,7 @@ export interface AuthVerifyResponse {
 
 export interface GameEntityState {
   entityId: string;
+  skinId: number;
   x: number;
   y: number;
   z: number;

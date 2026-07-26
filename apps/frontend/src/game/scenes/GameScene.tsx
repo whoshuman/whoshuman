@@ -1,7 +1,8 @@
-import { AdaptiveDpr, PerformanceMonitor } from "@react-three/drei";
+import { AdaptiveDpr, PerformanceMonitor, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 import { getCssColor } from "../../features/home-3d/homeSceneUtils";
 import betaCity from "../maps/beta-city.json";
@@ -20,28 +21,43 @@ const CENTER_Z = (bounds.minZ + bounds.maxZ) / 2;
 // de los edificios es solo presentación.
 const BUILDING_HEIGHT = 1.4;
 const PLAYER_HEIGHT = 0.36;
-const PLAYER_RADIUS = 0.09;
 const MAX_OTHER_ENTITIES = 71; // 64 NPC + hasta 7 jugadores distintos del cliente
+const CHARACTER_MODEL_URLS: string[] = [
+  "/models/personajes/character-female-a.glb",
+  "/models/personajes/character-female-b.glb",
+  "/models/personajes/character-female-c.glb",
+  "/models/personajes/character-female-d.glb",
+  "/models/personajes/character-female-e.glb",
+  "/models/personajes/character-female-f.glb",
+  "/models/personajes/character-male-a.glb",
+  "/models/personajes/character-male-b.glb",
+  "/models/personajes/character-male-c.glb",
+  "/models/personajes/character-male-d.glb",
+  "/models/personajes/character-male-e.glb",
+  "/models/personajes/character-male-f.glb"
+];
+const CHARACTER_SCALE = 0.48;
 const SEEKER_AIM_DISTANCE = Math.max(MAP_W, MAP_D) * 0.7;
 const SEEKER_OVERVIEW_DISTANCE = Math.max(MAP_W, MAP_D) * 1.35;
 const SEEKER_AIM_SENSITIVITY = 0.002;
+const CITY_MODEL_URL = "/models/beta-city-new.glb";
+const CITY_OFFSET: [number, number, number] = [-8.5, 0, -0.3];
 
-// Edificios: los AABB del server, tal cual, como cajas neón. UNA geometría y UN
-// material compartidos entre las 10 cajas (regla: nunca gastar recursos dos veces).
+function CityMap() {
+  const { scene } = useGLTF(CITY_MODEL_URL);
+  return <primitive object={scene} position={CITY_OFFSET} />;
+}
+
+// Los AABB siguen siendo la verdad para disparos, pero el GLB aporta la imagen.
 function Obstacles() {
   const geometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
   const material = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: "#120a2a",
-        emissive: new THREE.Color(getCssColor("--color-neon-cyan")),
-        emissiveIntensity: 0.08
+        transparent: true,
+        opacity: 0,
+        depthWrite: false
       }),
-    []
-  );
-  const edges = useMemo(() => new THREE.EdgesGeometry(geometry), [geometry]);
-  const lineMaterial = useMemo(
-    () => new THREE.LineBasicMaterial({ color: getCssColor("--color-neon-cyan") }),
     []
   );
 
@@ -55,7 +71,6 @@ function Obstacles() {
         return (
           <group key={index} position={[x, BUILDING_HEIGHT / 2, z]} scale={[w, BUILDING_HEIGHT, d]}>
             <mesh geometry={geometry} material={material} userData={{ blocksShot: true }} />
-            <lineSegments geometry={edges} material={lineMaterial} />
           </group>
         );
       })}
@@ -84,42 +99,90 @@ function Units() {
   const aiming = useGameStore((s) => s.aiming);
   const shoot = useGameStore((s) => s.shoot);
   const { camera, gl, scene } = useThree();
+  const characterModels = useGLTF(CHARACTER_MODEL_URLS) as Array<{
+    scene: THREE.Group;
+    animations: THREE.AnimationClip[];
+  }>;
   const selfRef = useRef<THREE.Group>(null);
-  const otherBodies = useRef<THREE.InstancedMesh>(null);
-  const otherNoses = useRef<THREE.InstancedMesh>(null);
-  const entityIds = useRef<string[]>([]);
+  const selfMeshRef = useRef<THREE.Mesh>(null);
+  const otherCharacters = useRef<(THREE.InstancedMesh | null)[]>([]);
+  const entityIds = useRef<string[][]>(CHARACTER_MODEL_URLS.map(() => []));
   const transform = useMemo(() => new THREE.Object3D(), []);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
-  const yAxis = useMemo(() => new THREE.Vector3(0, 1, 0), []);
-  const noseRotation = useMemo(
-    () => new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2),
-    []
-  );
+  const characterAssets = useMemo(
+    () =>
+      characterModels.map(({ scene: characterScene, animations }) => {
+        const mixer = new THREE.AnimationMixer(characterScene);
+        const idle = animations.find((clip) => clip.name === "idle");
+        if (idle) {
+          mixer.clipAction(idle).play();
+          mixer.setTime(idle.duration * 0.25);
+        }
+        characterScene.updateMatrixWorld(true);
+        const meshes: THREE.Mesh[] = [];
+        characterScene.traverse((object) => {
+          if ((object as THREE.Mesh).isMesh) meshes.push(object as THREE.Mesh);
+        });
 
-  const capsule = useMemo(
-    () => new THREE.CapsuleGeometry(PLAYER_RADIUS, PLAYER_HEIGHT - PLAYER_RADIUS * 2, 4, 12),
-    []
-  );
-  const selfMaterial = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: getCssColor("--color-neon-magenta"),
-        emissive: new THREE.Color(getCssColor("--color-neon-magenta")),
-        emissiveIntensity: 0.5
+        const parts = meshes.map((mesh) => {
+          const geometry = mesh.geometry.clone();
+          if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) {
+            const skinnedMesh = mesh as THREE.SkinnedMesh;
+            const position = geometry.getAttribute("position");
+            const vertex = new THREE.Vector3();
+            for (let i = 0; i < position.count; i += 1) {
+              skinnedMesh.getVertexPosition(i, vertex).applyMatrix4(mesh.matrixWorld);
+              position.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            }
+          } else {
+            geometry.applyMatrix4(mesh.matrixWorld);
+          }
+          geometry.deleteAttribute("skinIndex");
+          geometry.deleteAttribute("skinWeight");
+          geometry.deleteAttribute("normal");
+          geometry.deleteAttribute("tangent");
+          return geometry;
+        });
+        mixer.stopAllAction();
+        mixer.uncacheRoot(characterScene);
+        const geometry = mergeGeometries(parts, false);
+        parts.forEach((part) => part.dispose());
+        if (!geometry) throw new Error("No se pudo combinar la geometría del personaje");
+        geometry.scale(CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE);
+        geometry.computeVertexNormals();
+        geometry.computeBoundingSphere();
+
+        const sourceMaterial = meshes[0]?.material;
+        if (
+          !sourceMaterial ||
+          Array.isArray(sourceMaterial) ||
+          !(sourceMaterial instanceof THREE.MeshStandardMaterial)
+        ) {
+          throw new Error("Material de personaje no compatible");
+        }
+        const material = sourceMaterial.clone();
+        material.metalness = 0;
+        material.roughness = 0.8;
+        if (material.map) {
+          material.map.colorSpace = THREE.SRGBColorSpace;
+          material.map.magFilter = THREE.NearestFilter;
+          material.map.minFilter = THREE.NearestMipmapLinearFilter;
+          material.map.anisotropy = Math.min(4, gl.capabilities.getMaxAnisotropy());
+          material.map.needsUpdate = true;
+        }
+        return { geometry, material };
       }),
-    []
+    [characterModels, gl]
   );
-  const otherMaterial = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: getCssColor("--color-neon-cyan"),
-        emissive: new THREE.Color(getCssColor("--color-neon-cyan")),
-        emissiveIntensity: 0.35
-      }),
-    []
+  useEffect(
+    () => () => {
+      for (const asset of characterAssets) {
+        asset.geometry.dispose();
+        asset.material.dispose();
+      }
+    },
+    [characterAssets]
   );
-  // Cono de "mirada": marca hacia dónde apunta cada unidad.
-  const nose = useMemo(() => new THREE.ConeGeometry(PLAYER_RADIUS * 0.5, 0.12, 8), []);
 
   useFrame(({ camera }) => {
     const entities = sampleWorld();
@@ -128,6 +191,11 @@ function Units() {
     if (selfRef.current) {
       selfRef.current.visible = selfRole !== "seeker" && !!self;
       if (selfRole !== "seeker" && self) {
+        const asset = characterAssets[self.skinId];
+        if (selfMeshRef.current && asset) {
+          selfMeshRef.current.geometry = asset.geometry;
+          selfMeshRef.current.material = asset.material;
+        }
         selfRef.current.position.set(self.x, self.y, self.z);
         selfRef.current.rotation.y = self.rotationY;
         const back = 1.6;
@@ -141,35 +209,35 @@ function Units() {
 
     const others = entities.filter((entity) => entity.entityId !== selfEntityId);
     const count = Math.min(others.length, MAX_OTHER_ENTITIES);
-    entityIds.current = others.slice(0, count).map((entity) => entity.entityId);
-    if (otherBodies.current && otherNoses.current) {
-      otherBodies.current.count = count;
-      otherNoses.current.count = count;
-      for (let i = 0; i < count; i += 1) {
-        const entity = others[i];
-        transform.position.set(entity.x, entity.y + PLAYER_HEIGHT / 2, entity.z);
-        transform.rotation.set(0, entity.rotationY, 0);
-        transform.updateMatrix();
-        otherBodies.current.setMatrixAt(i, transform.matrix);
+    const variantCounts = CHARACTER_MODEL_URLS.map(() => 0);
+    for (const ids of entityIds.current) ids.length = 0;
 
-        transform.position.set(
-          entity.x + Math.sin(entity.rotationY) * PLAYER_RADIUS * 1.4,
-          entity.y + PLAYER_HEIGHT * 0.75,
-          entity.z + Math.cos(entity.rotationY) * PLAYER_RADIUS * 1.4
-        );
-        transform.quaternion.setFromAxisAngle(yAxis, entity.rotationY).multiply(noseRotation);
-        transform.updateMatrix();
-        otherNoses.current.setMatrixAt(i, transform.matrix);
-      }
-      otherBodies.current.instanceMatrix.needsUpdate = true;
-      otherNoses.current.instanceMatrix.needsUpdate = true;
+    for (let i = 0; i < count; i += 1) {
+      const entity = others[i];
+      const variant = entity.skinId;
+      const instance = variantCounts[variant]++;
+      const mesh = otherCharacters.current[variant];
+      entityIds.current[variant][instance] = entity.entityId;
+      if (!mesh) continue;
+
+      transform.position.set(entity.x, entity.y, entity.z);
+      transform.rotation.set(0, entity.rotationY, 0);
+      transform.updateMatrix();
+      mesh.setMatrixAt(instance, transform.matrix);
+    }
+
+    for (let variant = 0; variant < otherCharacters.current.length; variant += 1) {
+      const mesh = otherCharacters.current[variant];
+      if (!mesh) continue;
+      mesh.count = variantCounts[variant];
+      mesh.instanceMatrix.needsUpdate = true;
     }
   });
 
   useEffect(() => {
     const handleShoot = (event: PointerEvent) => {
       if (event.button !== 0 || selfRole !== "seeker" || !aiming) return;
-      const meshes = [otherBodies.current, otherNoses.current].filter(
+      const meshes = otherCharacters.current.filter(
         (mesh): mesh is THREE.InstancedMesh => mesh !== null
       );
       for (const mesh of meshes) mesh.computeBoundingSphere();
@@ -178,10 +246,11 @@ function Units() {
         .intersectObject(scene, true)
         .find(
           ({ object }) =>
-            object.userData.blocksShot || meshes.includes(object as THREE.InstancedMesh)
+            object.userData.blocksShot || typeof object.userData.characterVariant === "number"
         );
       if (hit?.object.userData.blocksShot || hit?.instanceId === undefined) return;
-      const targetEntityId = entityIds.current[hit.instanceId];
+      const variant = hit.object.userData.characterVariant as number;
+      const targetEntityId = entityIds.current[variant]?.[hit.instanceId];
       if (targetEntityId) shoot(targetEntityId);
     };
     gl.domElement.addEventListener("pointerdown", handleShoot);
@@ -191,24 +260,23 @@ function Units() {
   return (
     <group>
       <group ref={selfRef} visible={false}>
-        <mesh geometry={capsule} material={selfMaterial} position={[0, PLAYER_HEIGHT / 2, 0]} />
         <mesh
-          geometry={nose}
-          material={selfMaterial}
-          position={[0, PLAYER_HEIGHT * 0.75, PLAYER_RADIUS * 1.4]}
-          rotation={[Math.PI / 2, 0, 0]}
+          ref={selfMeshRef}
+          geometry={characterAssets[0].geometry}
+          material={characterAssets[0].material}
         />
       </group>
-      <instancedMesh
-        ref={otherBodies}
-        args={[capsule, otherMaterial, MAX_OTHER_ENTITIES]}
-        frustumCulled={false}
-      />
-      <instancedMesh
-        ref={otherNoses}
-        args={[nose, otherMaterial, MAX_OTHER_ENTITIES]}
-        frustumCulled={false}
-      />
+      {characterAssets.map((asset, variant) => (
+        <instancedMesh
+          key={CHARACTER_MODEL_URLS[variant]}
+          ref={(mesh) => {
+            otherCharacters.current[variant] = mesh;
+          }}
+          args={[asset.geometry, asset.material, MAX_OTHER_ENTITIES]}
+          frustumCulled={false}
+          userData={{ characterVariant: variant }}
+        />
+      ))}
     </group>
   );
 }
@@ -363,9 +431,8 @@ function ScopeOverlay() {
   );
 }
 
-// Canvas propio de la partida: escena ligera generada del mapa lógico. NO monta
-// la ciudad GLB pesada (regla: nunca la misma escena pesada en dos canvases; y
-// además sus muros no coinciden con las colisiones que simula el server).
+// Canvas propio de la partida: monta la ciudad GLB y conserva el descriptor
+// lógico sincronizado para colisiones, cámaras y fallback de carga.
 function GameScene() {
   const selfRole = useGameStore((s) => s.selfRole);
   const aiming = useGameStore((s) => s.aiming);
@@ -382,7 +449,9 @@ function GameScene() {
           <fog attach="fog" args={["#050014", 8, 22]} />
           <ambientLight intensity={0.7} />
           <directionalLight position={[4, 8, 2]} intensity={0.8} />
-          <Floor />
+          <Suspense fallback={<Floor />}>
+            <CityMap />
+          </Suspense>
           <Obstacles />
           <Units />
           <SeekerCamera />
