@@ -7,6 +7,7 @@ import { AuthModule } from "./auth/auth.module";
 import { envs } from "./config";
 import { FriendsModule } from "./friends/friends.module";
 import { HelloController } from "./hello.controller";
+import { NotificationsModule } from "./notifications/notifications.module";
 import { NatsModule } from "./transports/nats.module";
 import { UsersModule } from "./users/users.module";
 
@@ -32,6 +33,7 @@ import { UsersModule } from "./users/users.module";
     NatsModule,
     AuthModule,
     FriendsModule,
+    NotificationsModule,
     UsersModule
   ],
   controllers: [HelloController],

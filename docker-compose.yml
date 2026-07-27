@@ -188,7 +188,10 @@ services:
       - path: ./apps/notification-service/.env
         required: false
     depends_on:
-      - nats
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
     networks:
       - internal
 

@@ -1,14 +1,16 @@
 import { useEffect } from "react";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { LogOut, UsersRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import LanguageSelector from "../shared/LanguageSelector";
 import SceneBackground from "../features/home-3d/SceneBackground";
 import { connectSocket, disconnectSocket } from "../game/network/socket";
 import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
 import { useAuthStore } from "../shared/authStore";
 import { initNotifications } from "../shared/notifications";
+import NotificationCenter from "../shared/NotificationCenter";
 import NotificationToasts from "../shared/NotificationToasts";
+import SettingsMenu from "../shared/SettingsMenu";
 import { AUTH_UNAUTHORIZED_EVENT } from "../shared/api/httpClient";
 
 // Rutas que muestran el fondo 3D unificado. La home tiene su propia escena (con zoom)
@@ -43,13 +45,17 @@ const KNOWN_ROUTES = new Set([
 ]);
 const PROTECTED_ROUTES = new Set(["/lobby", "/game", "/profile", "/friends"]);
 
-// Enlaces del HUD superior. `exact` evita que "/" quede activo en todas las rutas.
-const NAV_LINKS = [
+const PUBLIC_NAV_LINKS = [
   { to: "/", key: "home", exact: true },
   { to: "/login", key: "login", exact: false },
-  { to: "/register", key: "register", exact: false },
-  { to: "/lobby", key: "lobby", exact: false },
-  { to: "/game", key: "game", exact: false }
+  { to: "/register", key: "register", exact: false }
+] as const;
+
+const LOBBY_FOOTER_LINKS = [
+  { to: "/about", key: "about" },
+  { to: "/manual", key: "manual" },
+  { to: "/faq", key: "faq" },
+  { to: "/support", key: "support" }
 ] as const;
 
 const navChipBase =
@@ -65,11 +71,13 @@ function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const restore = useAuthStore((s) => s.restore);
   const clearSession = useAuthStore((s) => s.clearSession);
+  const signOut = useAuthStore((s) => s.signOut);
   const authRestored = useAuthStore((s) => s.restored);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasAccessToken = Boolean(localStorage.getItem("authToken"));
   const isProtectedRoute = PROTECTED_ROUTES.has(pathname);
   const canRenderRoute = !isProtectedRoute || (isAuthenticated && hasAccessToken);
+  const navLinks = !isAuthenticated && authRestored ? PUBLIC_NAV_LINKS : [];
 
   useEffect(() => {
     void restore();
@@ -108,6 +116,11 @@ function AppLayout() {
   // asi que la barra superior no se monta en ellas.
   const showHud = pathname !== "/game" && pathname !== "/";
 
+  async function handleLogout() {
+    await signOut();
+    void navigate({ to: "/", replace: true });
+  }
+
   return (
     <div>
       {showBackground && <SceneBackground />}
@@ -115,7 +128,7 @@ function AppLayout() {
 
       <div className="relative z-10 flex min-h-screen flex-col">
         {showHud && (
-          <header className="animate-hud-in sticky top-0 z-50 flex h-16 items-center justify-between gap-2 overflow-hidden border-b border-neon-cyan/30 bg-bg/75 px-3 backdrop-blur-md sm:gap-4 sm:px-6">
+          <header className="animate-hud-in sticky top-0 z-50 flex h-16 items-center justify-between gap-2 border-b border-neon-cyan/30 bg-bg/75 px-3 backdrop-blur-md sm:gap-4 sm:px-6">
             {/* Linea de escaneo tipo radar que cruza la barra. */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px">
               <div
@@ -125,7 +138,10 @@ function AppLayout() {
             </div>
 
             {/* Logo / marca a la izquierda. El texto se oculta en movil para dejar sitio. */}
-            <Link to="/" className="group flex shrink-0 items-center gap-2">
+            <Link
+              to={isAuthenticated ? "/lobby" : "/"}
+              className="group flex shrink-0 items-center gap-2"
+            >
               <span className="text-lg leading-none text-neon-magenta [text-shadow:0_0_12px_rgb(255_43_214_/_0.7)]">
                 ◢
               </span>
@@ -136,7 +152,7 @@ function AppLayout() {
 
             {/* Navegacion central estilo HUD. Scroll horizontal si no caben en movil. */}
             <nav className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {NAV_LINKS.map((link) => (
+              {navLinks.map((link) => (
                 <Link
                   key={link.key}
                   to={link.to}
@@ -149,21 +165,33 @@ function AppLayout() {
               ))}
             </nav>
 
-            {/* Idioma + acceso de desarrollo (el enlace dev se oculta en movil por espacio). */}
-            <div className="flex shrink-0 items-center gap-3">
-              <LanguageSelector />
-              <span className="hidden h-5 w-px bg-neon-cyan/20 sm:block" />
-              <Link
-                to="/design-system"
-                className="hidden border border-neon-violet/50 bg-neon-violet/10 px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-violet transition hover:bg-neon-violet/20 sm:block"
-                activeProps={{
-                  className:
-                    "hidden border border-neon-violet bg-neon-violet/25 px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-violet sm:block"
-                }}
-              >
-                <span className="mr-1 opacity-60">[DEV]</span>
-                {t("nav.designSystem")}
-              </Link>
+            {/* Acciones de cuenta. Ajustes agrupa idioma, audio y acceso de desarrollo. */}
+            <div className="flex shrink-0 items-center gap-1.5">
+              {isAuthenticated && (
+                <>
+                  <NotificationCenter />
+                  <Link
+                    to="/friends"
+                    title={t("profilePage.contacts")}
+                    aria-label={t("profilePage.contacts")}
+                    className="flex h-10 w-10 items-center justify-center border border-neon-violet/50 bg-neon-violet/8 text-neon-violet transition hover:border-neon-violet hover:bg-neon-violet/18 hover:shadow-[0_0_16px_rgba(157,78,221,0.3)]"
+                  >
+                    <UsersRound aria-hidden="true" size={19} strokeWidth={1.8} />
+                  </Link>
+                </>
+              )}
+              <SettingsMenu align="right" />
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  title={t("profilePage.logout")}
+                  aria-label={t("profilePage.logout")}
+                  className="flex h-10 w-10 items-center justify-center border border-sun-orange/50 bg-sun-orange/8 text-sun-orange transition hover:border-sun-orange hover:bg-sun-orange/18 hover:shadow-[0_0_16px_rgba(255,159,28,0.3)]"
+                >
+                  <LogOut aria-hidden="true" size={19} strokeWidth={1.8} />
+                </button>
+              )}
             </div>
           </header>
         )}
@@ -171,7 +199,22 @@ function AppLayout() {
         <div className="flex-1">{authRestored && canRenderRoute && <Outlet />}</div>
 
         {showHud && (
-          <footer className="border-t border-neon-cyan/15 bg-bg/60 px-6 py-3 text-center backdrop-blur-sm">
+          <footer className="flex flex-col items-center gap-2 border-t border-neon-cyan/15 bg-bg/60 px-6 py-3 text-center backdrop-blur-sm">
+            {(pathname === "/lobby" || pathname === "/friends") && (
+              <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+                {LOBBY_FOOTER_LINKS.map((link, index) => (
+                  <span key={link.key} className="flex items-center gap-3">
+                    {index > 0 && <span className="text-neon-cyan/25">/</span>}
+                    <Link
+                      to={link.to}
+                      className="font-display text-[0.65rem] font-bold uppercase tracking-[0.2em] text-text-muted/60 transition hover:text-neon-cyan hover:[text-shadow:0_0_10px_rgb(36_245_255_/_0.6)]"
+                    >
+                      {t(`home.menu.${link.key}`)}
+                    </Link>
+                  </span>
+                ))}
+              </nav>
+            )}
             <Link
               to="/status"
               className="font-display text-[0.65rem] font-bold uppercase tracking-[0.3em] text-text-muted/50 transition hover:text-neon-cyan"

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 import skyHome3d from "../assets/sky-home-3d.png";
 import HomeScene from "../features/home-3d/HomeScene";
 import SettingsMenu from "../shared/SettingsMenu";
+import NotificationCenter from "../shared/NotificationCenter";
 import Login from "./Login";
 import Register from "./Register";
 import Lobby from "./Lobby";
@@ -72,6 +73,7 @@ function ManualModal({ onClose }: { onClose: () => void }) {
 
 function Home() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   // La home actua de shell: las vistas de acceso y despliegue se abren aqui mismo.
   const [view, setView] = useState<HomeView>("home");
   const [isZoomed, setIsZoomed] = useState(false);
@@ -104,6 +106,8 @@ function Home() {
       clearTimeout(cardsTimer);
     };
   }, [aboutOpen]);
+
+  if (isAuthenticated) return <Navigate to="/lobby" replace />;
 
   function closeAbout() {
     setAboutOpen(false);
@@ -157,10 +161,11 @@ function Home() {
         showRoad={aboutOpen}
       />
 
-      {/* Esquina superior derecha: rueda de ajustes (idioma + herramientas dev). */}
+      {/* Esquina superior derecha: avisos y ajustes de cuenta. */}
       <div
-        className={`animate-hud-in absolute right-4 top-4 z-20 transition duration-700 sm:right-8 sm:top-8 ${overlayFade}`}
+        className={`animate-hud-in absolute right-4 top-4 z-20 flex items-start gap-3 transition duration-700 sm:right-8 sm:top-8 ${overlayFade}`}
       >
+        {isAuthenticated && <NotificationCenter />}
         <SettingsMenu align="right" />
       </div>
 
@@ -274,7 +279,7 @@ function Home() {
             embedded
             onClose={closeView}
             onSwitch={() => setView("register")}
-            onSuccess={() => setView("lobby")}
+            onSuccess={() => void navigate({ to: "/lobby", replace: true })}
           />
         </div>
       )}
@@ -284,7 +289,7 @@ function Home() {
             embedded
             onClose={closeView}
             onSwitch={() => setView("login")}
-            onSuccess={() => setView("lobby")}
+            onSuccess={() => void navigate({ to: "/lobby", replace: true })}
           />
         </div>
       )}

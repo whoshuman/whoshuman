@@ -25,22 +25,40 @@ enum FriendshipStatus {
 }
 
 model User {
-  id                     String       @id @default(uuid())
-  email                  String       @unique
-  username               String       @unique
-  passwordHash           String       @map("password")
+  id                     String         @id @default(uuid())
+  email                  String         @unique
+  username               String         @unique
+  passwordHash           String         @map("password")
   avatar                 String?
   bio                    String?
-  language               String       @default("en")
+  language               String         @default("en")
   deletedAt              DateTime?
   sessions               Session[]
   scores                 Score[]
-  sentFriendRequests     Friendship[] @relation("SentFriendRequests")
-  receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
+  sentFriendRequests     Friendship[]   @relation("SentFriendRequests")
+  receivedFriendRequests Friendship[]   @relation("ReceivedFriendRequests")
+  notifications          Notification[]
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
 
   @@map("users")
+}
+
+model Notification {
+  id            String    @id @default(uuid())
+  recipientId   String
+  type          String
+  actorId       String
+  actorUsername String
+  actorAvatar   String?
+  data          Json?
+  readAt        DateTime?
+  createdAt     DateTime  @default(now())
+  recipient     User      @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, createdAt])
+  @@index([recipientId, readAt])
+  @@map("notifications")
 }
 
 model Friendship {

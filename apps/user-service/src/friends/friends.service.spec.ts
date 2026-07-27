@@ -5,7 +5,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { MessagingService } from "../common";
 
 interface PrismaMock {
-  user: { findUnique: jest.Mock };
+  user: { findUnique: jest.Mock; findMany: jest.Mock };
   friendship: {
     findFirst: jest.Mock;
     findUnique: jest.Mock;
@@ -27,6 +27,7 @@ function dbUser(overrides: Record<string, unknown> = {}) {
     bio: null,
     createdAt: new Date("2026-01-01"),
     updatedAt: new Date("2026-01-01"),
+    deletedAt: null,
     ...overrides
   };
 }
@@ -38,7 +39,12 @@ describe("FriendsService", () => {
 
   beforeEach(async () => {
     prisma = {
-      user: { findUnique: jest.fn() },
+      user: {
+        findUnique: jest.fn(),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([dbUser({ id: "alice" }), dbUser({ id: "bob", username: "bob" })])
+      },
       friendship: {
         findFirst: jest.fn(),
         findUnique: jest.fn(),
@@ -73,7 +79,6 @@ describe("FriendsService", () => {
 
     it("creates a PENDING request and emits friendRequestReceived", async () => {
       prisma.friendship.findFirst.mockResolvedValue(null);
-      prisma.user.findUnique.mockResolvedValue(dbUser({ id: "alice" }));
       prisma.friendship.create.mockResolvedValue({ id: "f1", addresseeId: "bob" });
 
       const result = await service.sendRequest({ requesterId: "alice", addresseeId: "bob" });
@@ -109,7 +114,6 @@ describe("FriendsService", () => {
 
     it("succeeds even if the notification publish fails (side-effect must not break the request)", async () => {
       prisma.friendship.findFirst.mockResolvedValue(null);
-      prisma.user.findUnique.mockResolvedValue(dbUser({ id: "alice" }));
       prisma.friendship.create.mockResolvedValue({ id: "f1", addresseeId: "bob" });
       messaging.publish.mockRejectedValue(new Error("nats down"));
 
@@ -117,6 +121,15 @@ describe("FriendsService", () => {
 
       expect(result).toEqual({ success: true });
       expect(prisma.friendship.create).toHaveBeenCalled();
+    });
+
+    it("rejects when either account does not exist or was deleted", async () => {
+      prisma.user.findMany.mockResolvedValue([dbUser({ id: "alice" })]);
+
+      await expect(
+        service.sendRequest({ requesterId: "alice", addresseeId: "missing" })
+      ).rejects.toThrow("userNotFound");
+      expect(prisma.friendship.create).not.toHaveBeenCalled();
     });
   });
 
@@ -210,6 +223,32 @@ describe("FriendsService", () => {
       expect(result[0].user.id).toBe("bob");
       expect(result[0].status).toBe("ACCEPTED");
       expect(result[0].createdAt).toBe("2026-01-01T00:00:00.000Z");
+      expect(result[0].user).not.toHaveProperty("email");
+    });
+  });
+
+  describe("findBlockedUsers", () => {
+    it("returns only users blocked by the current user", async () => {
+      prisma.friendship.findMany.mockResolvedValue([
+        {
+          id: "b1",
+          status: "BLOCKED",
+          createdAt: new Date("2026-01-01"),
+          requesterId: "alice",
+          addresseeId: "bob",
+          requester: dbUser({ id: "alice", username: "alice" }),
+          addressee: dbUser({ id: "bob", username: "bob" })
+        }
+      ]);
+
+      const result = await service.findBlockedUsers({ userId: "alice" });
+
+      expect(prisma.friendship.findMany).toHaveBeenCalledWith({
+        where: { status: "BLOCKED", requesterId: "alice" },
+        include: { requester: true, addressee: true }
+      });
+      expect(result[0].user.id).toBe("bob");
+      expect(result[0].user).not.toHaveProperty("email");
     });
   });
 
@@ -220,6 +259,15 @@ describe("FriendsService", () => {
       const result = await service.block({ blockerId: "alice", targetId: "bob" });
       expect(result).toEqual({ success: true });
       expect(prisma.friendship.upsert).toHaveBeenCalled();
+    });
+
+    it("rejects blocking an unknown or deleted account", async () => {
+      prisma.user.findMany.mockResolvedValue([dbUser({ id: "alice" })]);
+
+      await expect(service.block({ blockerId: "alice", targetId: "missing" })).rejects.toThrow(
+        "userNotFound"
+      );
+      expect(prisma.friendship.upsert).not.toHaveBeenCalled();
     });
   });
 });

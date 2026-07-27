@@ -4,6 +4,7 @@ import type { User } from "@prisma/client";
 import { NotificationSubjects } from "@whoshuman/shared-events";
 import type {
   BlockUserPayload,
+  FindBlockedUsersPayload,
   FindFriendsPayload,
   FindPendingRequestsPayload,
   FriendActionResponse,
@@ -14,7 +15,7 @@ import type {
   SendFriendRequestPayload,
   UnblockUserPayload
 } from "@whoshuman/shared-types";
-import { MessagingService, toActor, toPublicUser } from "../common";
+import { MessagingService, toActor, toUserProfile } from "../common";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
@@ -52,10 +53,19 @@ export class FriendsService {
     });
   }
 
+  private async requireActiveUsers(...userIds: string[]): Promise<User[]> {
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds }, deletedAt: null }
+    });
+    if (users.length !== new Set(userIds).size) this.fail(404, "userNotFound");
+    return userIds.map((id) => users.find((user) => user.id === id) as User);
+  }
+
   async sendRequest(payload: SendFriendRequestPayload): Promise<FriendActionResponse> {
     const { requesterId, addresseeId } = payload;
 
     if (requesterId === addresseeId) this.fail(400, "cannotFriendYourself");
+    const [requester] = await this.requireActiveUsers(requesterId, addresseeId);
 
     const existing = await this.relationBetween(requesterId, addresseeId);
     if (existing) {
@@ -68,17 +78,12 @@ export class FriendsService {
       data: { requesterId, addresseeId, status: "PENDING" }
     });
 
-    const requester = await this.prisma.user.findUnique({
-      where: { id: requesterId }
+    await this.notify({
+      recipientId: addresseeId,
+      type: "friend.request.received",
+      from: toActor(requester),
+      data: { friendshipId: friendship.id }
     });
-    if (requester) {
-      await this.notify({
-        recipientId: addresseeId,
-        type: "friend.request.received",
-        from: toActor(requester),
-        data: { friendshipId: friendship.id }
-      });
-    }
 
     return { success: true };
   }
@@ -131,6 +136,7 @@ export class FriendsService {
   async block(payload: BlockUserPayload): Promise<FriendActionResponse> {
     const { blockerId, targetId } = payload;
     if (blockerId === targetId) this.fail(400, "cannotFriendYourself");
+    await this.requireActiveUsers(blockerId, targetId);
 
     // Remove any reverse relationship so the block is the single source of truth.
     await this.prisma.friendship.deleteMany({
@@ -172,6 +178,14 @@ export class FriendsService {
     return rows.map((row) => this.mapToOther(row, payload.userId));
   }
 
+  async findBlockedUsers(payload: FindBlockedUsersPayload): Promise<Friendship[]> {
+    const rows = await this.prisma.friendship.findMany({
+      where: { status: "BLOCKED", requesterId: payload.userId },
+      include: { requester: true, addressee: true }
+    });
+    return rows.map((row) => this.mapToOther(row, payload.userId));
+  }
+
   private mapToOther(
     row: {
       id: string;
@@ -187,7 +201,7 @@ export class FriendsService {
     return {
       id: row.id,
       status: row.status,
-      user: toPublicUser(other),
+      user: toUserProfile(other),
       createdAt: row.createdAt.toISOString()
     };
   }

@@ -1,8 +1,7 @@
 import type { NotificationEnvelope } from "@whoshuman/shared-types";
 import { create } from "zustand";
 
-// Toasts efímeros: el backend no persiste notificaciones (relay puro), así que
-// lo que no veas en pantalla se pierde — no hay bandeja que consultar.
+// Los toasts son la capa inmediata; el historial persistente vive en NotificationCenter.
 const TOAST_TTL_MS = 6000;
 const MAX_TOASTS = 4;
 

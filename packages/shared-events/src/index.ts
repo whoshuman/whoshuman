@@ -12,6 +12,7 @@ export const UserSubjects = {
   updateProfile: "users.updateProfile",
   findFriends: "users.findFriends",
   findPendingRequests: "users.findPendingRequests",
+  findBlockedUsers: "users.findBlockedUsers",
   sendFriendRequest: "users.sendFriendRequest",
   respondFriendRequest: "users.respondFriendRequest",
   removeFriend: "users.removeFriend",
@@ -57,6 +58,10 @@ export const ChatSubjects = {
 export const NotificationSubjects = {
   send: "notifications.send",
   deliver: "notifications.deliver",
+  list: "notifications.list",
+  unreadCount: "notifications.unreadCount",
+  markRead: "notifications.markRead",
+  markAllRead: "notifications.markAllRead",
   health: "notification.health"
 } as const;
 

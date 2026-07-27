@@ -36,6 +36,13 @@ export class FriendsController {
     });
   }
 
+  @Get("blocked")
+  blocked(@CurrentUser() user: AuthUser) {
+    return this.messaging.request<Friendship[]>(UserSubjects.findBlockedUsers, {
+      userId: user.sub
+    });
+  }
+
   @Post("requests")
   @HttpCode(HttpStatus.CREATED)
   send(@CurrentUser() user: AuthUser, @Body() dto: SendFriendRequestDto) {
