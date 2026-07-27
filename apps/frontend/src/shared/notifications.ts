@@ -1,5 +1,5 @@
 import { ServerSocketEvents } from "@whoshuman/shared-events";
-import type { NotificationEnvelope } from "@whoshuman/shared-types";
+import type { NotificationRecord } from "@whoshuman/shared-types";
 import type { Socket } from "socket.io-client";
 
 import { connectSocket } from "../game/network/socket";
@@ -14,11 +14,11 @@ export function initNotifications(): void {
   const socket = connectSocket();
   if (boundSocket === socket) return;
   boundSocket = socket;
-  socket.on(ServerSocketEvents.notification, (envelope: NotificationEnvelope) => {
+  socket.on(ServerSocketEvents.notification, (envelope: NotificationRecord) => {
     useNotificationStore.getState().push(envelope);
 
-    // Las dos notificaciones existentes son de amistad: refrescamos las listas para
-    // que /friends (badge de solicitudes incluido) se actualice en vivo.
+    void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    void queryClient.invalidateQueries({ queryKey: ["notificationUnreadCount"] });
     void queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
     void queryClient.invalidateQueries({ queryKey: ["friends"] });
   });

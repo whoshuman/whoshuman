@@ -145,23 +145,43 @@
     "eyebrow": "CONTACT NETWORK",
     "title": "CONTACTS",
     "subtitle": "Linked units, link requests and locating new units.",
+    "backToLobby": "BACK TO LOBBY",
     "tabContacts": "CONTACTS",
     "tabRequests": "REQUESTS",
     "tabSearch": "SEARCH",
+    "tabBlocked": "BLOCKED",
     "emptyContacts": "NO CONTACTS ON RECORD — LOCATE UNITS IN SEARCH",
     "emptyRequests": "NO INCOMING REQUESTS",
     "emptySearch": "NO UNIT MATCHES THE QUERY",
+    "emptyBlocked": "NO BLOCKED UNITS",
+    "loading": "QUERYING NETWORK...",
+    "loadError": "NETWORK QUERY FAILED",
+    "searchLabel": "CALLSIGN",
     "searchPlaceholder": "UNIT CALLSIGN...",
     "searchHint": "Minimum 2 characters. Searches by callsign, case-insensitive.",
     "statusLinked": "LINKED",
+    "statusBlocked": "BLOCKED",
     "accept": "ACCEPT",
     "decline": "DECLINE",
     "remove": "REMOVE",
     "block": "BLOCK",
+    "confirmationRequired": "CONFIRMATION REQUIRED",
+    "confirmSendTitle": "SEND REQUEST",
+    "confirmRemoveTitle": "REMOVE CONTACT",
+    "confirmDeclineTitle": "DECLINE REQUEST",
+    "confirmBlockTitle": "BLOCK UNIT",
+    "confirmUnblockTitle": "UNBLOCK UNIT",
+    "confirmSend": "Do you want to send a contact request to {{username}}?",
+    "confirmRemove": "Are you sure you want to remove {{username}} from your contacts?",
+    "confirmDecline": "Do you want to decline {{username}}'s request?",
+    "confirmBlock": "Are you sure you want to block {{username}}? This unit will be removed from your contacts.",
+    "confirmUnblock": "Do you want to unblock {{username}}?",
+    "cancel": "CANCEL",
     "unblock": "UNBLOCK",
     "sendRequest": "REQUEST LINK",
     "requestSent": "REQUEST SENT",
     "dossier": "UNIT RECORD",
+    "closeDossier": "CLOSE RECORD",
     "since": "Enrolled:",
     "loadMore": "LOAD MORE UNITS",
     "loadingMore": "LOCATING..."
@@ -175,6 +195,14 @@
     "hint": "Automatic probe every 30 seconds via gateway → NATS."
   },
   "notifications": {
+    "title": "SIGNAL LOG",
+    "ariaLabel": "Notifications: {{count}} unread",
+    "unread": "{{count}} unread",
+    "empty": "NO SIGNALS RECORDED",
+    "loading": "RETRIEVING SIGNALS...",
+    "new": "New",
+    "markAllRead": "Mark all as read",
+    "loadError": "The signal log could not be loaded.",
     "requestReceived": "INCOMING LINK REQUEST",
     "requestAccepted": "LINK ACCEPTED"
   },
@@ -184,6 +212,71 @@
     "subtitle": "Units behind the Hunter system.",
     "storyTitle": "PROJECT ORIGIN",
     "story": "Who's Human was born at 42 as the final ft_transcendence project. Five units joined forces to build a real-time multiplayer game inspired by Just Act Natural: cyborgs hiding among humans while a Hunter tries to expose them. What started as an academic challenge —microservices, WebSockets and in-browser 3D— turned into a cyberpunk world of its own."
+  },
+  "manual": {
+    "eyebrow": "FIELD PROTOCOL",
+    "intro": "Three rounds, rotating roles and one essential rule: looking human matters as much as scoring points.",
+    "sections": {
+      "objective": {
+        "title": "OBJECTIVE",
+        "description": "Finish the three rounds with the highest score. Every action counts and roles change between deployments."
+      },
+      "cyborg": {
+        "title": "CYBORG",
+        "description": "Blend in with NPCs, avoid suspicious movement and collect items without revealing your identity."
+      },
+      "hunter": {
+        "title": "HUNTER",
+        "description": "Watch the city and shoot hidden players. Correct hits score points; shooting an NPC removes them."
+      },
+      "rounds": {
+        "title": "ROUND END",
+        "description": "A round ends when time runs out or the Hunter finds every cyborg. Roles rotate before the next deployment."
+      }
+    }
+  },
+  "faq": {
+    "eyebrow": "QUERY ARCHIVE",
+    "title": "FREQUENTLY ASKED QUESTIONS",
+    "subtitle": "Quick answers before deploying a new operation.",
+    "items": {
+      "game": {
+        "question": "WHAT IS WHO'S HUMAN?",
+        "answer": "It is a social stealth multiplayer game inspired by Just Act Natural. Players hide among NPCs while another player tries to identify them."
+      },
+      "roles": {
+        "question": "HOW DO THE ROLES WORK?",
+        "answer": "The Hunter observes and shoots from an aerial view. Cyborgs move through the city, imitate NPCs and collect items."
+      },
+      "rounds": {
+        "question": "HOW LONG IS A MATCH?",
+        "answer": "Each match has three rounds. A round ends when time runs out or the Hunter finds every hidden player."
+      },
+      "friends": {
+        "question": "HOW DOES THE CONTACT NETWORK WORK?",
+        "answer": "You can search for units, send requests and manage contacts from the network icon. Received and accepted requests create notifications."
+      }
+    }
+  },
+  "support": {
+    "eyebrow": "ASSISTANCE CHANNEL",
+    "title": "SUPPORT",
+    "subtitle": "Diagnostic and help tools for restoring the operation.",
+    "links": {
+      "status": {
+        "title": "SYSTEM STATUS",
+        "description": "Check whether the main services are operational."
+      },
+      "faq": {
+        "title": "OPEN FAQ",
+        "description": "Review answers to the most common questions."
+      },
+      "manual": {
+        "title": "OPEN MANUAL",
+        "description": "Review objectives, roles, scoring and round endings."
+      }
+    },
+    "note": "If the problem continues, record the error message and the steps that caused it before restarting the session."
   },
   "game": {
     "role": "Role",

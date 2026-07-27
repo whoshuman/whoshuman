@@ -199,7 +199,7 @@ export type FriendshipStatus = "PENDING" | "ACCEPTED" | "BLOCKED";
 export interface Friendship {
   id: string;
   status: FriendshipStatus;
-  user: PublicUser; // the "other" user, relative to whoever asked
+  user: UserProfile; // the "other" user, relative to whoever asked
   createdAt: string;
 }
 
@@ -245,6 +245,7 @@ export type UnblockUserPayload = BlockScopedPayload;
 export type FindFriendsPayload = UserScopedPayload;
 
 export type FindPendingRequestsPayload = UserScopedPayload;
+export type FindBlockedUsersPayload = UserScopedPayload;
 
 // Notification envelope — generic notification contract
 export interface NotificationActor {
@@ -260,6 +261,20 @@ export interface NotificationEnvelope {
   type: NotificationType;
   from: NotificationActor; // who triggered it (minimal — no email)
   data?: Record<string, unknown>; // type-specific extra, e.g. { friendshipId }
+}
+
+export interface NotificationRecord extends NotificationEnvelope {
+  id: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationUnreadCount {
+  count: number;
+}
+
+export interface MarkNotificationReadPayload extends UserScopedPayload {
+  notificationId: string;
 }
 
 export interface UserProfile {

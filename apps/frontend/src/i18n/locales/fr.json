@@ -145,23 +145,43 @@
     "eyebrow": "RÉSEAU DE CONTACTS",
     "title": "CONTACTS",
     "subtitle": "Unités liées, demandes de liaison et localisation de nouvelles unités.",
+    "backToLobby": "RETOUR AU LOBBY",
     "tabContacts": "CONTACTS",
     "tabRequests": "DEMANDES",
     "tabSearch": "RECHERCHE",
+    "tabBlocked": "BLOQUÉS",
     "emptyContacts": "AUCUN CONTACT ENREGISTRÉ — LOCALISE DES UNITÉS DANS RECHERCHE",
     "emptyRequests": "AUCUNE DEMANDE ENTRANTE",
     "emptySearch": "AUCUNE UNITÉ NE CORRESPOND À LA REQUÊTE",
+    "emptyBlocked": "AUCUNE UNITÉ BLOQUÉE",
+    "loading": "INTERROGATION DU RÉSEAU...",
+    "loadError": "ÉCHEC DE LA REQUÊTE RÉSEAU",
+    "searchLabel": "INDICATIF",
     "searchPlaceholder": "INDICATIF D'UNITÉ...",
     "searchHint": "Minimum 2 caractères. Recherche par indicatif, insensible à la casse.",
     "statusLinked": "LIÉ",
+    "statusBlocked": "BLOQUÉ",
     "accept": "ACCEPTER",
     "decline": "REFUSER",
     "remove": "SUPPRIMER",
     "block": "BLOQUER",
+    "confirmationRequired": "CONFIRMATION REQUISE",
+    "confirmSendTitle": "ENVOYER LA DEMANDE",
+    "confirmRemoveTitle": "SUPPRIMER LE CONTACT",
+    "confirmDeclineTitle": "REFUSER LA DEMANDE",
+    "confirmBlockTitle": "BLOQUER L'UNITÉ",
+    "confirmUnblockTitle": "DÉBLOQUER L'UNITÉ",
+    "confirmSend": "Voulez-vous envoyer une demande de contact à {{username}} ?",
+    "confirmRemove": "Voulez-vous vraiment supprimer {{username}} de vos contacts ?",
+    "confirmDecline": "Voulez-vous refuser la demande de {{username}} ?",
+    "confirmBlock": "Voulez-vous vraiment bloquer {{username}} ? Cette unité sera retirée de vos contacts.",
+    "confirmUnblock": "Voulez-vous débloquer {{username}} ?",
+    "cancel": "ANNULER",
     "unblock": "DÉBLOQUER",
     "sendRequest": "DEMANDER UNE LIAISON",
     "requestSent": "DEMANDE ENVOYÉE",
     "dossier": "FICHE D'UNITÉ",
+    "closeDossier": "FERMER LA FICHE",
     "since": "Enregistré :",
     "loadMore": "CHARGER PLUS D'UNITÉS",
     "loadingMore": "LOCALISATION..."
@@ -175,6 +195,14 @@
     "hint": "Sonde automatique toutes les 30 secondes via gateway → NATS."
   },
   "notifications": {
+    "title": "JOURNAL DES SIGNAUX",
+    "ariaLabel": "Notifications : {{count}} non lues",
+    "unread": "{{count}} non lues",
+    "empty": "AUCUN SIGNAL ENREGISTRÉ",
+    "loading": "RÉCUPÉRATION DES SIGNAUX...",
+    "new": "Nouvelle",
+    "markAllRead": "Tout marquer comme lu",
+    "loadError": "Impossible de charger le journal des signaux.",
     "requestReceived": "DEMANDE DE LIAISON ENTRANTE",
     "requestAccepted": "LIAISON ACCEPTÉE"
   },
@@ -184,6 +212,71 @@
     "subtitle": "Unités derrière le système Chasseur.",
     "storyTitle": "ORIGINE DU PROJET",
     "story": "Who's Human est né à 42 comme projet final ft_transcendence. Cinq unités ont uni leurs forces pour construire un jeu multijoueur en temps réel inspiré de Just Act Natural : des cyborgs cachés parmi les humains pendant qu'un Chasseur tente de les démasquer. Ce qui a commencé comme un défi académique —microservices, WebSockets et 3D dans le navigateur— est devenu un monde cyberpunk à part entière."
+  },
+  "manual": {
+    "eyebrow": "PROTOCOLE DE TERRAIN",
+    "intro": "Trois manches, des rôles tournants et une règle essentielle : paraître humain compte autant que marquer des points.",
+    "sections": {
+      "objective": {
+        "title": "OBJECTIF",
+        "description": "Terminez les trois manches avec le meilleur score. Chaque action compte et les rôles changent entre les déploiements."
+      },
+      "cyborg": {
+        "title": "CYBORG",
+        "description": "Fondez-vous parmi les PNJ, évitez les mouvements suspects et récupérez des objets sans révéler votre identité."
+      },
+      "hunter": {
+        "title": "CHASSEUR",
+        "description": "Observez la ville et tirez sur les joueurs cachés. Un tir juste rapporte des points ; toucher un PNJ en retire."
+      },
+      "rounds": {
+        "title": "FIN DE MANCHE",
+        "description": "La manche se termine lorsque le temps est écoulé ou que le Chasseur trouve tous les cyborgs. Les rôles tournent ensuite."
+      }
+    }
+  },
+  "faq": {
+    "eyebrow": "ARCHIVE DES REQUÊTES",
+    "title": "QUESTIONS FRÉQUENTES",
+    "subtitle": "Des réponses rapides avant de lancer une nouvelle opération.",
+    "items": {
+      "game": {
+        "question": "QU'EST-CE QUE WHO'S HUMAN ?",
+        "answer": "C'est un jeu multijoueur d'infiltration sociale inspiré de Just Act Natural. Les joueurs se cachent parmi les PNJ tandis qu'un autre joueur tente de les identifier."
+      },
+      "roles": {
+        "question": "COMMENT FONCTIONNENT LES RÔLES ?",
+        "answer": "Le Chasseur observe et tire depuis une vue aérienne. Les cyborgs parcourent la ville, imitent les PNJ et récupèrent des objets."
+      },
+      "rounds": {
+        "question": "COMBIEN DE TEMPS DURE UNE PARTIE ?",
+        "answer": "Chaque partie comporte trois manches. Une manche se termine lorsque le temps est écoulé ou que le Chasseur trouve tous les joueurs cachés."
+      },
+      "friends": {
+        "question": "COMMENT FONCTIONNE LE RÉSEAU DE CONTACTS ?",
+        "answer": "Vous pouvez chercher des unités, envoyer des demandes et gérer vos contacts depuis l'icône réseau. Les demandes reçues et acceptées créent des notifications."
+      }
+    }
+  },
+  "support": {
+    "eyebrow": "CANAL D'ASSISTANCE",
+    "title": "SUPPORT",
+    "subtitle": "Outils de diagnostic et d'aide pour rétablir l'opération.",
+    "links": {
+      "status": {
+        "title": "ÉTAT DU SYSTÈME",
+        "description": "Vérifiez si les services principaux sont opérationnels."
+      },
+      "faq": {
+        "title": "CONSULTER LA FAQ",
+        "description": "Consultez les réponses aux questions les plus courantes."
+      },
+      "manual": {
+        "title": "OUVRIR LE MANUEL",
+        "description": "Consultez les objectifs, les rôles, le score et les fins de manche."
+      }
+    },
+    "note": "Si le problème persiste, notez le message d'erreur et les étapes qui l'ont provoqué avant de redémarrer la session."
   },
   "game": {
     "role": "Rôle",

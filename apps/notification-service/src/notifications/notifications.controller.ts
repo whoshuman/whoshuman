@@ -1,14 +1,18 @@
 import { Controller, Logger } from "@nestjs/common";
-import { EventPattern, Payload } from "@nestjs/microservices";
+import { EventPattern, MessagePattern, Payload } from "@nestjs/microservices";
 import { NotificationSubjects } from "@whoshuman/shared-events";
-import type { NotificationEnvelope } from "@whoshuman/shared-types";
-import { MessagingService } from "../common";
+import type {
+  MarkNotificationReadPayload,
+  NotificationEnvelope,
+  UserScopedPayload
+} from "@whoshuman/shared-types";
+import { NotificationsService } from "./notifications.service";
 
 @Controller()
 export class NotificationsController {
   private readonly logger = new Logger(NotificationsController.name);
 
-  constructor(private readonly messaging: MessagingService) {}
+  constructor(private readonly notifications: NotificationsService) {}
 
   @EventPattern(NotificationSubjects.send)
   async handleSend(@Payload() envelope: NotificationEnvelope): Promise<void> {
@@ -16,12 +20,31 @@ export class NotificationsController {
       this.logger.warn("Ignoring notification without recipientId");
       return;
     }
-    // Pass-through: today it just forwards. Persistence / multi-channel fan-out goes here later.
     try {
-      await this.messaging.publish(NotificationSubjects.deliver, envelope);
+      await this.notifications.storeAndDeliver(envelope);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`No se pudo entregar la notificación: ${message}`);
+      this.logger.warn(`No se pudo guardar o entregar la notificación: ${message}`);
     }
+  }
+
+  @MessagePattern(NotificationSubjects.list)
+  list(@Payload() payload: UserScopedPayload) {
+    return this.notifications.list(payload);
+  }
+
+  @MessagePattern(NotificationSubjects.unreadCount)
+  unreadCount(@Payload() payload: UserScopedPayload) {
+    return this.notifications.unreadCount(payload);
+  }
+
+  @MessagePattern(NotificationSubjects.markRead)
+  markRead(@Payload() payload: MarkNotificationReadPayload) {
+    return this.notifications.markRead(payload);
+  }
+
+  @MessagePattern(NotificationSubjects.markAllRead)
+  markAllRead(@Payload() payload: UserScopedPayload) {
+    return this.notifications.markAllRead(payload);
   }
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import LanguageSelector from "./LanguageSelector";
@@ -25,24 +26,19 @@ function SettingsMenu({ align = "left" }: SettingsMenuProps) {
         onClick={() => setOpen((o) => !o)}
         aria-label={t("settings.title")}
         aria-expanded={open}
-        className={`group flex h-11 w-11 items-center justify-center border bg-bg/50 backdrop-blur-sm transition ${
+        title={t("settings.title")}
+        className={`group flex h-10 w-10 items-center justify-center border bg-bg/50 backdrop-blur-sm transition ${
           open
             ? "border-neon-cyan bg-neon-cyan/15 text-neon-cyan shadow-[0_0_24px_rgb(36_245_255_/_0.45)]"
             : "border-neon-cyan/40 text-neon-cyan/80 hover:border-neon-cyan hover:text-neon-cyan hover:shadow-[0_0_18px_rgb(36_245_255_/_0.35)]"
         }`}
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`h-5 w-5 transition-transform duration-500 ${open ? "rotate-90" : "group-hover:rotate-45"}`}
-        >
-          <circle cx="12" cy="12" r="3" />
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-        </svg>
+        <Settings
+          aria-hidden="true"
+          size={19}
+          strokeWidth={1.8}
+          className={`transition-transform duration-500 ${open ? "rotate-90" : "group-hover:rotate-45"}`}
+        />
       </button>
 
       {open && (

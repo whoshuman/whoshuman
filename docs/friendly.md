@@ -85,6 +85,7 @@ rutas HTTP en el `api-gateway`.
 | **Rechazar solicitud** | **Borra la relación `PENDING`** (no se guarda ningún estado "rechazada"). | Solo el `addressee`.                                      |
 | Listar amigos          | Devuelve las relaciones `ACCEPTED`.                                       | El propio usuario.                                        |
 | Listar pendientes      | Devuelve las solicitudes `PENDING` recibidas.                             | El propio usuario.                                        |
+| Listar bloqueados      | Devuelve las relaciones `BLOCKED` creadas por el usuario.                 | El propio usuario.                                        |
 | Eliminar amigo         | Borra una relación `ACCEPTED`.                                            | Cualquiera de los dos.                                    |
 | Bloquear               | Crea/actualiza la relación a `BLOCKED`.                                   | Quien bloquea.                                            |
 | Desbloquear            | Borra la relación `BLOCKED`.                                              | Quien bloqueó.                                            |
@@ -169,6 +170,7 @@ user-service (FriendsController @MessagePattern)
 | `users.unblockUser`          | Desbloquear                   |
 | `users.findFriends`          | Listar amigos                 |
 | `users.findPendingRequests`  | Listar solicitudes pendientes |
+| `users.findBlockedUsers`     | Listar usuarios bloqueados    |
 
 Los errores se devuelven como `RpcException({ statusCode, message })`, donde
 `message` es una **clave de traducción** (i18n), no texto literal. El
@@ -176,19 +178,20 @@ Los errores se devuelven como `RpcException({ statusCode, message })`, donde
 
 ---
 
-## 5. Notificaciones en vivo (eventos + WebSocket)
+## 5. Notificaciones persistentes (PostgreSQL + WebSocket)
 
 Además de la respuesta inmediata, ciertos cambios **avisan en vivo** al otro
 usuario por WebSocket. Las notificaciones se enrutan por el
-**`notification-service`** (el hub), que las reenvía al `realtime-gateway` para
-la entrega.
+**`notification-service`** (el hub), que primero las guarda y después las envía
+al `realtime-gateway` para la entrega.
 
 ```
 user-service (FriendsService)
    │  client.emit("notifications.send", envelope)   (tras crear/aceptar solicitud)
    ▼  NATS
 notification-service (hub)
-   │  reenvía  →  client.emit("notifications.deliver", envelope)
+   │  guarda Notification en PostgreSQL
+   │  publica → client.emit("notifications.deliver", record)
    ▼  NATS
 realtime-gateway (RealtimeEventsController @EventPattern)
    │  server.to("user:<recipientId>").emit("notification", envelope)
@@ -199,7 +202,7 @@ Frontend del destinatario
 Cada socket se une a su room `user:${userId}` al conectarse (`handleConnection`),
 así el gateway dirige el mensaje a **un usuario concreto** (todas sus pestañas).
 
-El payload es un **envelope genérico**, reutilizable por cualquier servicio:
+El emisor usa un **envelope genérico**, reutilizable por cualquier servicio:
 
 ```ts
 NotificationEnvelope {
@@ -209,6 +212,10 @@ NotificationEnvelope {
   data?: { friendshipId };
 }
 ```
+
+Tras persistirlo, el hub entrega un `NotificationRecord` que añade `id`,
+`createdAt` y `readAt`. El frontend utiliza esos campos para mantener el
+historial y el contador de no leídas.
 
 El frontend escucha **un único** evento de socket `notification` y decide según
 `envelope.type`.
@@ -223,28 +230,38 @@ El frontend escucha **un único** evento de socket `notification` y decide segú
 > fila ni se emite nada → el destinatario **no recibe notificación** (ver
 > [Bloqueo silencioso](#bloqueo-silencioso-información-sensible)).
 
-> **Persistencia:** las notificaciones son **efímeras** (solo en vivo). Lo que
-> persiste es el _estado_ (la solicitud en `friendships`); por eso "lo que te
-> perdiste" se ve consultando `GET /friends/requests` al cargar la app, no por un
-> replay de notificaciones. El `notification-service` es hoy un _pass-through_;
-> es la costura donde, el día que haga falta, se añadiría la persistencia.
+> **Privacidad:** rechazar una solicitud y bloquear a alguien no crean ningún
+> evento ni registro de notificación. Así no se revela una decisión sensible al
+> otro usuario.
+
+La bandeja consulta rutas autenticadas:
+
+| Ruta                                        | Acción                   |
+| ------------------------------------------- | ------------------------ |
+| `GET /notifications`                        | Últimos 50 avisos        |
+| `GET /notifications/unread-count`           | Contador de no leídos    |
+| `PATCH /notifications/:notificationId/read` | Marcar uno como leído    |
+| `PATCH /notifications/read-all`             | Marcar todos como leídos |
 
 ---
 
 ## 6. Servicios implicados
 
-| Servicio               | Responsabilidad                                                                                                                                        |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `prisma`               | Modelo `Friendship` + migración.                                                                                                                       |
-| `shared-types`         | Tipos `Friendship`, payloads y `NotificationEnvelope`.                                                                                                 |
-| `shared-events`        | Subjects (incl. `notifications.*`) y eventos de socket.                                                                                                |
-| `user-service`         | Lógica de amistades + emite `notifications.send`.                                                                                                      |
-| `notification-service` | **Hub** de notificaciones: recibe `notifications.send` y reenvía `notifications.deliver` (hoy pass-through; aquí va la persistencia el día de mañana). |
-| `api-gateway`          | Rutas HTTP, validación de DTOs, guard de JWT.                                                                                                          |
-| `realtime-gateway`     | Recibe `notifications.deliver` y lo empuja por WebSocket (evento `notification`).                                                                      |
+| Servicio               | Responsabilidad                                                                   |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| `prisma`               | Modelos `Friendship` y `Notification` + migraciones.                              |
+| `shared-types`         | Tipos de amistad, `NotificationEnvelope` y `NotificationRecord`.                  |
+| `shared-events`        | Subjects de amistad/notificaciones y eventos de socket.                           |
+| `user-service`         | Lógica de amistades + emite `notifications.send` solo al solicitar o aceptar.     |
+| `notification-service` | Guarda el aviso, sirve historial/no leídos y publica `notifications.deliver`.     |
+| `api-gateway`          | Rutas HTTP autenticadas, validación de DTOs y guard de JWT.                       |
+| `realtime-gateway`     | Recibe `notifications.deliver` y lo empuja por WebSocket (evento `notification`). |
 
 > `PublicUser` **no cambia**: los amigos se piden por endpoints dedicados, no
 > viajan dentro del usuario básico que devuelve auth.
+>
+> Las relaciones incluyen únicamente el `UserProfile` público del otro usuario:
+> nunca exponen su email, idioma ni datos privados de sesión.
 
 ---
 
@@ -272,6 +289,10 @@ carpeta **Friends**) y el entorno `whoshuman local`.
 | B acepta              | `Friends > Respond Request` (`{ friendshipId, accept: true }`) | `200 { "success": true }`                                 |
 | A lista amigos        | `Friends > List Friends` (token de A)                          | aparece B como amigo (`status: ACCEPTED`)                 |
 | A elimina amigo       | `Friends > Remove Friend` (`{{friendshipId}}`)                 | `200`; al volver a listar, ya no está                     |
+
+La interfaz web expone estos flujos en `/friends`, mediante las pestañas de
+contactos, solicitudes, búsqueda y bloqueados. Desde esta última se puede
+desbloquear una unidad sin mostrar acciones contradictorias en su perfil.
 
 ### Notificaciones en vivo (WebSocket)
 

@@ -238,8 +238,9 @@ Responsabilidades:
 Responsabilidades:
 
 - hub de notificaciones: recibe peticiones de notificar de cualquier ms
+- persistencia del historial y estado leído/no leído
 - enruta al `realtime-gateway` para la entrega en vivo
-- (futuro) persistencia / bandeja, fan-out a otros canales (email, push)
+- (futuro) fan-out a otros canales (email, push)
 
 ### Flujo de notificaciones
 
@@ -250,11 +251,13 @@ Responsabilidades:
         ↓
 3. notification-service recibe (hub)
         ↓
-4. emit "notifications.deliver"  (hoy pass-through; aquí irá persistencia / fan-out)
+4. guarda Notification en PostgreSQL
         ↓
-5. realtime-gateway → server.to("user:<recipientId>").emit("notification", …)
+5. emit "notifications.deliver" con id, createdAt y readAt
         ↓
-6. Frontend del destinatario lo recibe en vivo
+6. realtime-gateway → server.to("user:<recipientId>").emit("notification", …)
+        ↓
+7. Frontend del destinatario lo recibe en vivo y actualiza la bandeja
 ```
 
 **Principio — qué pasa por el hub y qué no:**
@@ -264,11 +267,10 @@ Responsabilidades:
 - **Señal transitoria** (estado de partida, presencia…) → **directa** al
   `realtime-gateway` (el salto por el hub no aporta nada).
 
-Mientras el hub sea _pass-through_, las notificaciones son **efímeras**: si el
-destinatario no está conectado se pierde el aviso en vivo, pero el **estado**
-persiste en su servicio de origen (p.ej. las solicitudes en `friendships`) y se
-consulta al cargar la app. La persistencia de notificaciones (bandeja,
-leídas/no leídas) se añadiría en este servicio cuando haga falta.
+Si el destinatario no está conectado se pierde únicamente el aviso WebSocket;
+el registro permanece en `notifications` y la bandeja lo recupera al cargar la
+app. Rechazar solicitudes y bloquear usuarios son acciones silenciosas: no
+generan registros ni eventos.
 
 ---
 

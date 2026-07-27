@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from "@nestjs/microservices";
 import { UserSubjects } from "@whoshuman/shared-events";
 import type {
   BlockUserPayload,
+  FindBlockedUsersPayload,
   FindFriendsPayload,
   FindPendingRequestsPayload,
   RemoveFriendPayload,
@@ -49,5 +50,10 @@ export class FriendsController {
   @MessagePattern(UserSubjects.findPendingRequests)
   findPending(@Payload() payload: FindPendingRequestsPayload) {
     return this.friends.findPendingRequests(payload);
+  }
+
+  @MessagePattern(UserSubjects.findBlockedUsers)
+  findBlocked(@Payload() payload: FindBlockedUsersPayload) {
+    return this.friends.findBlockedUsers(payload);
   }
 }

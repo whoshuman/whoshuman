@@ -13,6 +13,11 @@ export async function getPendingRequests(): Promise<Friendship[]> {
   return data;
 }
 
+export async function getBlockedUsers(): Promise<Friendship[]> {
+  const { data } = await httpClient.get<Friendship[]>("/friends/blocked");
+  return data;
+}
+
 export async function sendFriendRequest(addresseeId: string): Promise<FriendActionResponse> {
   const { data } = await httpClient.post<FriendActionResponse>("/friends/requests", {
     addresseeId

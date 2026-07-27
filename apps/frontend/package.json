@@ -20,6 +20,7 @@
     "@whoshuman/shared-validation": "workspace:*",
     "axios": "^1.16.1",
     "i18next": "^26.3.1",
+    "lucide-react": "^0.468.0",
     "postprocessing": "^6.39.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

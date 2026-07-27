@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
@@ -186,7 +187,7 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
 
   return (
     <main
-      className={`relative px-4 py-6 sm:px-10 sm:py-8 ${embedded ? "h-full overflow-y-auto" : "min-h-[calc(100vh-4rem)]"}`}
+      className={`relative px-4 py-6 sm:px-10 sm:py-8 ${embedded ? "h-full overflow-y-auto" : "min-h-[calc(100vh-11.5rem)] sm:min-h-[calc(100vh-8.5rem)]"}`}
     >
       {/* Fila superior: tarjeta de perfil (izquierda) y boton SALIR (derecha). */}
       <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
@@ -214,19 +215,25 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
           </span>
         </button>
 
-        {/* Arriba derecha: SALIR y, debajo, los ajustes (idioma / audio). */}
-        <div className="flex flex-col items-end gap-3">
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="border border-neon-cyan/40 bg-bg/40 px-5 py-2 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:border-neon-cyan hover:bg-neon-cyan/10"
-            >
-              {t("lobby.exit")} ✕
-            </button>
-          )}
-          <SettingsMenu align="right" />
-        </div>
+        {/* El modo invitado no tiene la cabecera global: conserva salir y ajustes aquí. */}
+        {embedded && (
+          <div className="flex self-end border border-neon-cyan/20 bg-surface/75 p-1.5 shadow-[0_0_24px_rgba(36,245,255,0.1)] backdrop-blur-sm sm:self-start">
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                title={t("lobby.exit")}
+                aria-label={t("lobby.exit")}
+                className="flex h-10 w-10 items-center justify-center border border-sun-orange/50 bg-sun-orange/8 text-sun-orange transition hover:border-sun-orange hover:bg-sun-orange/18 hover:shadow-[0_0_16px_rgba(255,159,28,0.3)]"
+              >
+                <LogOut aria-hidden="true" size={19} strokeWidth={1.8} />
+              </button>
+            )}
+            <div className={onClose ? "ml-1.5" : undefined}>
+              <SettingsMenu align="right" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Titulo centrado, en una sola linea. */}
