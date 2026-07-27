@@ -7,13 +7,13 @@ import skyHome3d from "../assets/sky-home-3d.png";
 import HomeScene from "../features/home-3d/HomeScene";
 import SettingsMenu from "../shared/SettingsMenu";
 import NotificationCenter from "../shared/NotificationCenter";
+import ManualPanel from "../shared/ManualPanel";
 import Login from "./Login";
 import Register from "./Register";
 import Lobby from "./Lobby";
 import ProfileEdit from "./ProfileEdit";
 import AboutTeam from "./AboutTeam";
 import { useMusic } from "../shared/musicStore";
-import { useHologramSound } from "../shared/useHologramSound";
 import { useAuthStore } from "../shared/authStore";
 
 // Vistas que se montan como overlay sobre la home sin cambiar de ruta.
@@ -44,32 +44,6 @@ const footerLinks = [
 // Estilo comun de los enlaces del pie.
 const FOOTER_LINK_CLASS =
   "font-display text-[0.7rem] font-bold uppercase tracking-[0.25em] text-text-muted/60 transition hover:text-neon-cyan hover:[text-shadow:0_0_10px_rgb(36_245_255_/_0.6)]";
-
-// Modal-broma del boton "Manual": el sistema se rie de que necesites instrucciones.
-function ManualModal({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation();
-  useHologramSound(0);
-  return (
-    <div className="animate-fade-in fixed inset-0 z-40 flex items-center justify-center bg-bg/70 backdrop-blur-sm">
-      <div
-        className="panel-neon mx-4 max-w-md bg-surface/90 p-6 text-center backdrop-blur-sm sm:p-8"
-        style={{ "--accent": "#ff2bd6" } as CSSProperties}
-      >
-        <p className="font-display text-xl font-black uppercase leading-tight text-text-main [text-shadow:0_0_18px_rgb(255_43_214_/_0.5)] sm:text-2xl">
-          {t("home.manualJoke")}
-        </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-6 border border-neon-cyan/50 px-6 py-2 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
-        >
-          <span className="sm:hidden">{t("common.backShort")}</span>
-          <span className="hidden sm:inline">{t("common.back")}</span>
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function Home() {
   const { t } = useTranslation();
@@ -308,7 +282,7 @@ function Home() {
       {view === "home" && aboutOpen && teamReady && <AboutTeam onClose={closeAbout} />}
 
       {/* Modal-broma del boton Manual. */}
-      {manualOpen && <ManualModal onClose={() => setManualOpen(false)} />}
+      {manualOpen && <ManualPanel onClose={() => setManualOpen(false)} />}
     </main>
   );
 }

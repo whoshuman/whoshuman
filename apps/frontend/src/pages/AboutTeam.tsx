@@ -11,6 +11,8 @@ import sergioPhoto from "../assets/team/sergio.png";
 
 type AboutTeamProps = {
   onClose: () => void;
+  backLabel?: string;
+  withHeader?: boolean;
   // Atenua las fichas (la camara hace picado cenital sobre el coche).
   dimmed?: boolean;
   // Selecciona una ficha: el coche se desliza al carril bajo esa tarjeta.
@@ -136,7 +138,13 @@ function CyberAvatar({ accent, name }: { accent: string; name: string }) {
 }
 
 // Pantalla del equipo: aparece cuando la camara se da la vuelta completa (sobre el proyecto).
-function AboutTeam({ onClose, dimmed = false, onSelect }: AboutTeamProps) {
+function AboutTeam({
+  onClose,
+  backLabel,
+  withHeader = false,
+  dimmed = false,
+  onSelect
+}: AboutTeamProps) {
   const { t } = useTranslation();
   // Sonido de aparicion holografica al montar (las tarjetas ya salen tras el viaje de camara),
   // igual que el resto de modales/paneles del sistema.
@@ -144,18 +152,20 @@ function AboutTeam({ onClose, dimmed = false, onSelect }: AboutTeamProps) {
 
   return (
     <div
-      className={`animate-fade-in fixed inset-0 z-40 flex flex-col items-center justify-start overflow-y-auto px-4 pb-8 pt-16 transition-opacity duration-700 sm:px-10 sm:pt-8 ${
-        dimmed ? "pointer-events-none invisible opacity-0" : "opacity-100"
-      }`}
+      className={`animate-fade-in fixed inset-0 z-40 flex flex-col items-center justify-start overflow-y-auto px-4 pb-8 transition-opacity duration-700 sm:px-10 ${
+        withHeader ? "pt-32 sm:pt-24" : "pt-16 sm:pt-8"
+      } ${dimmed ? "pointer-events-none invisible opacity-0" : "opacity-100"}`}
     >
       {/* Volver: arriba del todo, a la derecha de la pantalla. */}
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-4 top-4 z-10 border border-neon-cyan/40 bg-bg/60 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan backdrop-blur-sm transition hover:bg-neon-cyan/10 sm:right-8 sm:top-6"
+        className={`absolute right-4 z-10 border border-neon-cyan/40 bg-bg/60 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan backdrop-blur-sm transition hover:bg-neon-cyan/10 sm:right-8 ${
+          withHeader ? "top-20" : "top-4 sm:top-6"
+        }`}
       >
         ← <span className="sm:hidden">{t("common.backShort")}</span>
-        <span className="hidden sm:inline">{t("common.back")}</span>
+        <span className="hidden sm:inline">{backLabel ?? t("common.back")}</span>
       </button>
 
       {/* Cabecera del equipo, centrada. */}

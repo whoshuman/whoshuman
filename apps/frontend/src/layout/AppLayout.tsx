@@ -115,6 +115,7 @@ function AppLayout() {
   // El juego y la home son pantallas inmersivas con su propio HUD de esquinas,
   // asi que la barra superior no se monta en ellas.
   const showHud = pathname !== "/game" && pathname !== "/";
+  const showFooter = showHud && pathname !== "/about" && pathname !== "/manual";
 
   async function handleLogout() {
     await signOut();
@@ -198,7 +199,7 @@ function AppLayout() {
 
         <div className="flex-1">{authRestored && canRenderRoute && <Outlet />}</div>
 
-        {showHud && (
+        {showFooter && (
           <footer className="flex flex-col items-center gap-2 border-t border-neon-cyan/15 bg-bg/60 px-6 py-3 text-center backdrop-blur-sm">
             {(pathname === "/lobby" || pathname === "/friends") && (
               <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">

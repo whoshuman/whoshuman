@@ -213,6 +213,71 @@
     "storyTitle": "ORIGEN DEL PROYECTO",
     "story": "Who's Human nace en la 42 como proyecto final ft_transcendence. Cinco unidades unieron fuerzas para construir un juego multijugador en tiempo real inspirado en Just Act Natural: cyborgs que se esconden entre humanos mientras un Cazador intenta desenmascararlos. Lo que empezó como un reto académico —microservicios, WebSockets y 3D en el navegador— acabó convirtiéndose en un mundo cyberpunk propio."
   },
+  "manual": {
+    "eyebrow": "PROTOCOLO DE CAMPO",
+    "intro": "Tres rondas, roles rotatorios y una regla esencial: parecer humano importa tanto como sumar puntos.",
+    "sections": {
+      "objective": {
+        "title": "OBJETIVO",
+        "description": "Consigue la mayor puntuación al terminar las tres rondas. Cada acción cuenta y los roles cambian entre despliegues."
+      },
+      "cyborg": {
+        "title": "CYBORG",
+        "description": "Mézclate con los NPC, evita movimientos sospechosos y recoge coleccionables sin revelar tu identidad."
+      },
+      "hunter": {
+        "title": "CAZADOR",
+        "description": "Observa la ciudad y dispara a los jugadores ocultos. Acertar suma puntos; disparar a un NPC los resta."
+      },
+      "rounds": {
+        "title": "FIN DE RONDA",
+        "description": "La ronda termina cuando se agota el tiempo o el Cazador encuentra a todos los cyborgs. Después se rotan los roles."
+      }
+    }
+  },
+  "faq": {
+    "eyebrow": "ARCHIVO DE CONSULTAS",
+    "title": "PREGUNTAS FRECUENTES",
+    "subtitle": "Respuestas rápidas antes de desplegar una nueva operación.",
+    "items": {
+      "game": {
+        "question": "¿QUÉ ES WHO'S HUMAN?",
+        "answer": "Es un juego multijugador de sigilo social inspirado en Just Act Natural. Los jugadores se ocultan entre NPC mientras otro jugador intenta identificarlos."
+      },
+      "roles": {
+        "question": "¿CÓMO FUNCIONAN LOS ROLES?",
+        "answer": "El Cazador observa y dispara desde una vista aérea. Los cyborgs recorren la ciudad, imitan a los NPC y recogen coleccionables."
+      },
+      "rounds": {
+        "question": "¿CUÁNTO DURA UNA PARTIDA?",
+        "answer": "Cada partida tiene tres rondas. Una ronda termina al agotarse el tiempo o cuando el Cazador encuentra a todos los jugadores ocultos."
+      },
+      "friends": {
+        "question": "¿CÓMO FUNCIONA LA RED DE CONTACTOS?",
+        "answer": "Puedes buscar unidades, enviar solicitudes y gestionar contactos desde el icono de red. Las solicitudes recibidas y aceptadas generan notificaciones."
+      }
+    }
+  },
+  "support": {
+    "eyebrow": "CANAL DE ASISTENCIA",
+    "title": "SOPORTE",
+    "subtitle": "Herramientas de diagnóstico y ayuda para recuperar la operación.",
+    "links": {
+      "status": {
+        "title": "ESTADO DEL SISTEMA",
+        "description": "Comprueba si los servicios principales están operativos."
+      },
+      "faq": {
+        "title": "CONSULTAR FAQ",
+        "description": "Revisa las respuestas a las dudas más habituales."
+      },
+      "manual": {
+        "title": "ABRIR MANUAL",
+        "description": "Consulta objetivos, roles, puntuación y final de ronda."
+      }
+    },
+    "note": "Si el problema continúa, anota el mensaje de error y los pasos que lo provocaron antes de reiniciar la sesión."
+  },
   "game": {
     "role": "Rol",
     "roleSeeker": "CAZADOR",
