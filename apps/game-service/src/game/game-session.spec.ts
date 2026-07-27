@@ -1,4 +1,4 @@
-import { GameSession } from "./game-session";
+import { GAME_RULES, GameSession } from "./game-session";
 import { loadMap, type Heightmap } from "./map";
 
 // construye un heightmap sobre [minX,maxX]×[minZ,maxZ] con altura dada por f(x,z)
@@ -149,6 +149,67 @@ describe("GameSession", () => {
     s.setAiming("u2", true);
     expect(s.shoot("u2", hider.entityId)).toBe(true);
     expect(s.snapshot()).toHaveLength(0);
+  });
+
+  it("suma por encontrar cyborgs, resta por disparar a NPCs y termina la ronda", () => {
+    const s = new GameSession("g1", members, { ...config, npcCount: 1 });
+    const hider = s.markPresent("u1")!;
+    s.markPresent("u2");
+    const npcId = s.npcSnapshot()[0].entityId;
+
+    s.setAiming("u2", true);
+    expect(s.shoot("u2", npcId)).toBe(true);
+    expect(find(s, "u2").score).toBe(GAME_RULES.npcHitPoints);
+    expect(s.shoot("u2", hider.entityId)).toBe(true);
+    expect(find(s, "u2").score).toBe(GAME_RULES.npcHitPoints + GAME_RULES.hiderHitPoints);
+    expect(s.roundSnapshot()).toMatchObject({
+      phase: "intermission",
+      current: 1,
+      endReason: "all-hiders-found"
+    });
+  });
+
+  it("rota el seeker, conserva puntos y termina después de tres rondas", () => {
+    const rotatingMembers = [
+      { userId: "u1", username: "Uno", role: "hider" as const },
+      { userId: "u2", username: "Dos", role: "seeker" as const },
+      { userId: "u3", username: "Tres", role: "hider" as const }
+    ];
+    const s = new GameSession("rounds", rotatingMembers, config);
+    rotatingMembers.forEach(({ userId }) => s.markPresent(userId));
+
+    s.tick(GAME_RULES.roundSeconds);
+    expect(s.roundSnapshot().phase).toBe("intermission");
+    s.tick(GAME_RULES.intermissionSeconds);
+    expect(s.roundSnapshot()).toMatchObject({ phase: "playing", current: 2 });
+    expect(s.scoreSnapshot().find((entry) => entry.role === "seeker")?.userId).toBe("u3");
+
+    s.tick(GAME_RULES.roundSeconds);
+    s.tick(GAME_RULES.intermissionSeconds);
+    expect(s.roundSnapshot()).toMatchObject({ phase: "playing", current: 3 });
+    expect(s.scoreSnapshot().find((entry) => entry.role === "seeker")?.userId).toBe("u1");
+
+    s.tick(GAME_RULES.roundSeconds);
+    expect(s.roundSnapshot()).toMatchObject({
+      phase: "finished",
+      current: 3,
+      endReason: "time"
+    });
+  });
+
+  it("los hiders recogen objetos cercanos y suman puntos", () => {
+    const tinyHeightmap = makeHM(-0.05, -0.05, 0.05, 0.05, 0.05, () => 0);
+    const s = new GameSession("collectibles", [{ userId: "u1", username: "Uno", role: "hider" }], {
+      ...config,
+      bounds: { minX: -0.05, minZ: -0.05, maxX: 0.05, maxZ: 0.05 },
+      heightmap: tinyHeightmap
+    });
+    s.markPresent("u1");
+
+    expect(s.collectibleSnapshot()).toHaveLength(GAME_RULES.collectibleCount);
+    s.tick(0.05);
+    expect(s.collectibleSnapshot()).toHaveLength(0);
+    expect(find(s, "u1").score).toBe(GAME_RULES.collectibleCount * GAME_RULES.collectiblePoints);
   });
 
   it("queda vacío cuando se van todos", () => {

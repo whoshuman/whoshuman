@@ -1,6 +1,7 @@
 import { GameSubjects } from "@whoshuman/shared-events";
 import type { GameStateSnapshotPayload } from "@whoshuman/shared-types";
 import { envs } from "../config";
+import { GAME_RULES } from "./game-session";
 import { GameService } from "./game.service";
 
 describe("GameService", () => {
@@ -47,7 +48,15 @@ describe("GameService", () => {
     expect(snaps.length).toBeGreaterThanOrEqual(1);
     expect(snaps[0].gameId).toBe("g1");
     expect(joined?.role).toBe("seeker");
+    expect(joined?.selfUserId).toBe("u1");
     expect(snaps.at(-1)!.entities).toHaveLength(envs.gameNpcCount + 1);
+    expect(snaps.at(-1)!.collectibles).toHaveLength(GAME_RULES.collectibleCount);
+    expect(snaps.at(-1)!.round).toMatchObject({
+      phase: "playing",
+      current: 1,
+      total: GAME_RULES.totalRounds
+    });
+    expect(snaps.at(-1)!.scores).toHaveLength(2);
     expect(snaps.at(-1)!.entities.some((entity) => entity.entityId === joined?.selfEntityId)).toBe(
       false
     );

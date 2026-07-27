@@ -1,4 +1,6 @@
 import { io, Socket } from "socket.io-client";
+import { ServerSocketEvents } from "@whoshuman/shared-events";
+import { AUTH_UNAUTHORIZED_EVENT } from "../../shared/api/httpClient";
 
 // Singleton a nivel de módulo (mismo patrón que `audio` en musicStore): una única
 // conexión WebSocket para toda la app, viva entre pantallas. El estado reactivo
@@ -17,6 +19,12 @@ export function connectSocket(): Socket {
     // así siempre manda el access token vigente (caduca a los 15 min) y no el que
     // hubiera en memoria al crear el socket.
     auth: (cb) => cb({ token: localStorage.getItem("authToken") ?? "" })
+  });
+
+  socket.on(ServerSocketEvents.gatewayError, (payload: { message: string }) => {
+    if (payload.message.toLowerCase().includes("authentication token")) {
+      window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
+    }
   });
 
   return socket;

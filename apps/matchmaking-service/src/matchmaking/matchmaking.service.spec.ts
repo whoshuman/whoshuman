@@ -53,6 +53,14 @@ describe("MatchmakingService", () => {
         .players.map((p) => p.userId)
         .sort()
     ).toEqual(["user-1", "user-2"]);
+    expect(
+      matchFound()[0]
+        .players.map(({ userId, username }) => ({ userId, username }))
+        .sort((a, b) => a.userId.localeCompare(b.userId))
+    ).toEqual([
+      { userId: "user-1", username: "u1" },
+      { userId: "user-2", username: "u2" }
+    ]);
     expect(service.getQueueSize("main")).toBe(0);
   });
 

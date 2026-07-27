@@ -84,6 +84,7 @@ export interface GameEntityState {
 
 export interface GameJoinResponse {
   gameId: string;
+  selfUserId: string;
   selfEntityId: string;
   role: PlayerRole;
 }
@@ -128,14 +129,42 @@ export interface GameStateSnapshotPayload {
   gameId: string;
   tick: number;
   entities: GameEntityState[];
+  collectibles: GameCollectibleState[];
+  round: GameRoundState;
+  scores: GameScoreState[];
 }
 
 export type PlayerRole = "hider" | "seeker";
+export type GameRoundPhase = "playing" | "intermission" | "finished";
+export type GameRoundEndReason = "time" | "all-hiders-found" | null;
+
+export interface GameCollectibleState {
+  collectibleId: string;
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface GameRoundState {
+  phase: GameRoundPhase;
+  current: number;
+  total: number;
+  remainingSeconds: number;
+  endReason: GameRoundEndReason;
+}
+
+export interface GameScoreState {
+  userId: string;
+  username: string;
+  score: number;
+  role: PlayerRole;
+  alive: boolean;
+}
 
 export interface MatchFoundPayload {
   lobbyId?: string;
   gameId: string;
-  players: { userId: string; role: PlayerRole }[];
+  players: { userId: string; username: string; role: PlayerRole }[];
 }
 
 export interface LobbyStatePayload {

@@ -195,6 +195,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     if (currentGameId === gameId && socket.data.selfEntityId && socket.data.selfRole) {
       socket.emit(ServerSocketEvents.gameJoined, {
         gameId,
+        selfUserId: user.sub,
         selfEntityId: socket.data.selfEntityId,
         role: socket.data.selfRole
       });
@@ -260,6 +261,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   ) {
     const user = this.requireUser(socket);
     const gameId = this.requireId(socket, payload?.gameId ?? socket.data.gameId, "gameId");
+    const lobbyId = socket.data.lobbyId;
 
     await socket.leave(this.rooms.gameRoom(gameId));
     socket.data.gameId = undefined;
@@ -271,6 +273,23 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       gameId,
       socketId: socket.id
     });
+
+    if (lobbyId) {
+      const rejoinedLobby = await this.publishToNats(MatchmakingSubjects.joinQueue, {
+        userId: user.sub,
+        username: user.username,
+        lobbyId,
+        socketId: socket.id
+      });
+
+      if (rejoinedLobby) {
+        socket.emit(ServerSocketEvents.lobbyJoined, { lobbyId });
+      } else {
+        socket.emit(ServerSocketEvents.gatewayError, {
+          message: "Unable to rejoin matchmaking queue"
+        });
+      }
+    }
 
     socket.emit(ServerSocketEvents.gameLeft, { gameId });
   }

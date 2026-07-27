@@ -193,7 +193,20 @@
     "leave": "ABANDONNER",
     "connecting": "LIAISON À L'OPÉRATION...",
     "controls": "W/S avancer · A/D tourner",
-    "controlsSeeker": "A/D ou flèches pour orbiter · maintenir clic droit ou appuyer sur F pour viser · clic gauche pour tirer"
+    "controlsSeeker": "A/D ou flèches pour orbiter · maintenir clic droit ou appuyer sur F pour viser · clic gauche pour tirer",
+    "score": "Points",
+    "scoreboard": "Classement",
+    "round": "Manche {{current}} / {{total}}",
+    "eliminated": "UNITÉ ÉLIMINÉE",
+    "waitNextRound": "Attendez le prochain déploiement.",
+    "roundComplete": "MANCHE TERMINÉE",
+    "reasonAllFound": "Le Chasseur a trouvé tous les cyborgs.",
+    "reasonTime": "Le temps de la manche est écoulé.",
+    "nextRound": "Prochaine manche dans {{seconds}} s",
+    "operationComplete": "OPÉRATION TERMINÉE",
+    "winnerScore": "{{score}} points",
+    "noWinner": "AUCUN GAGNANT",
+    "returnLobby": "RETOUR AU LOBBY"
   },
   "notFound": {
     "protocol": "ERREUR SYSTÈME — UNITÉ NON LOCALISÉE",

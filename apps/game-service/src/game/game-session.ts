@@ -1,11 +1,22 @@
 import { randomUUID } from "node:crypto";
-import type { GameEntityState, PlayerRole } from "@whoshuman/shared-types";
+import type {
+  GameCollectibleState,
+  GameEntityState,
+  GameRoundEndReason,
+  GameRoundPhase,
+  GameRoundState,
+  GameScoreState,
+  PlayerRole
+} from "@whoshuman/shared-types";
 import { sampleHeight, type Bounds, type Heightmap, type Obstacle } from "./map";
 
 type NpcMode = "idle" | "turning" | "walking";
 
 interface PlayerDebugState extends GameEntityState {
   userId: string;
+  alive: boolean;
+  role: PlayerRole;
+  score: number;
 }
 
 interface NpcDebugState extends GameEntityState {
@@ -33,7 +44,10 @@ interface MovableState {
 interface SessionPlayer extends MovableState {
   entityId: string;
   skinId: number;
+  username: string;
   role: PlayerRole;
+  score: number;
+  alive: boolean;
   forward: number; // -1..1
   turn: number; // -1..1
   aiming: boolean;
@@ -51,44 +65,55 @@ interface SessionNpc extends MovableState {
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v);
 const NPC_SEPARATION = 0.28;
 const CHARACTER_SKIN_COUNT = 12;
+const COLLECTIBLE_SEPARATION = 0.4;
+
+export const GAME_RULES = {
+  totalRounds: 3,
+  roundSeconds: 90,
+  intermissionSeconds: 5,
+  collectibleCount: 8,
+  collectibleRadius: 0.24,
+  hiderHitPoints: 100,
+  npcHitPoints: -25,
+  collectiblePoints: 25
+} as const;
 
 /** Una partida en curso. Lógica pura: sin NATS, sin tiempo real. */
 export class GameSession {
   readonly gameId: string;
   private readonly players = new Map<string, SessionPlayer>();
   private readonly npcs: SessionNpc[] = [];
+  private readonly collectibles: GameCollectibleState[] = [];
   private readonly config: GameSessionConfig;
   private randomSeed: number;
+  private seekerUserId: string;
+  private roundNumber = 1;
+  private roundPhase: GameRoundPhase = "playing";
+  private remainingSeconds: number = GAME_RULES.roundSeconds;
+  private roundEndReason: GameRoundEndReason = null;
 
   constructor(
     gameId: string,
-    members: { userId: string; role: PlayerRole }[],
+    members: { userId: string; username?: string; role: PlayerRole }[],
     config: GameSessionConfig
   ) {
     this.gameId = gameId;
     this.config = config;
     this.randomSeed = this.seed(gameId);
-    const n = Math.max(members.length, 1);
-    const b = config.bounds;
-    const cx = (b.minX + b.maxX) / 2; // centro del área jugable
-    const cz = (b.minZ + b.maxZ) / 2;
-    const radius = Math.min(b.maxX - b.minX, b.maxZ - b.minZ) * 0.3;
+    this.seekerUserId = members.find((member) => member.role === "seeker")?.userId ?? "";
+
     members.forEach((m, i) => {
-      const angle = (2 * Math.PI * i) / n; // spawns repartidos en círculo
-      const spawn = this.freeSpawn(
-        cx + Math.cos(angle) * radius,
-        cz + Math.sin(angle) * radius,
-        cx,
-        cz
-      );
       this.players.set(m.userId, {
         entityId: randomUUID(),
         skinId: i % CHARACTER_SKIN_COUNT,
+        username: m.username ?? m.userId,
         role: m.role,
-        x: spawn.x,
-        z: spawn.z,
-        h: sampleHeight(config.heightmap, spawn.x, spawn.z) ?? 0,
-        heading: 0, // mira hacia +z
+        score: 0,
+        alive: true,
+        x: 0,
+        z: 0,
+        h: 0,
+        heading: 0,
         forward: 0,
         turn: 0,
         aiming: false,
@@ -96,12 +121,56 @@ export class GameSession {
       });
     });
 
-    for (let i = 0; i < config.npcCount; i += 1) {
+    this.resetRoundWorld(false);
+  }
+
+  private resetRoundWorld(rotateSeeker: boolean): void {
+    const userIds = [...this.players.keys()];
+    if (rotateSeeker && userIds.length > 0 && this.seekerUserId) {
+      const current = userIds.indexOf(this.seekerUserId);
+      this.seekerUserId = userIds[(current + 1 + userIds.length) % userIds.length];
+    }
+
+    this.npcs.length = 0;
+    this.collectibles.length = 0;
+    const n = Math.max(userIds.length, 1);
+    const b = this.config.bounds;
+    const cx = (b.minX + b.maxX) / 2;
+    const cz = (b.minZ + b.maxZ) / 2;
+    const radius = Math.min(b.maxX - b.minX, b.maxZ - b.minZ) * 0.3;
+    userIds.forEach((userId, index) => {
+      const player = this.players.get(userId) as SessionPlayer;
+      const angle = (2 * Math.PI * index) / n;
+      const spawn = this.freeSpawn(
+        cx + Math.cos(angle) * radius,
+        cz + Math.sin(angle) * radius,
+        cx,
+        cz
+      );
+      if (this.seekerUserId) {
+        player.role = userId === this.seekerUserId ? "seeker" : "hider";
+      }
+      player.alive = true;
+      player.x = spawn.x;
+      player.z = spawn.z;
+      player.h = sampleHeight(this.config.heightmap, spawn.x, spawn.z) ?? 0;
+      player.heading = 0;
+      player.forward = 0;
+      player.turn = 0;
+      player.aiming = false;
+    });
+
+    this.spawnNpcs();
+    this.spawnCollectibles();
+  }
+
+  private spawnNpcs(): void {
+    for (let i = 0; i < this.config.npcCount; i += 1) {
       const spawn = this.randomWalkablePoint();
       const heading = this.random() * Math.PI * 2;
       this.npcs.push({
         entityId: randomUUID(),
-        skinId: (members.length + i) % CHARACTER_SKIN_COUNT,
+        skinId: (this.players.size + i) % CHARACTER_SKIN_COUNT,
         x: spawn.x,
         z: spawn.z,
         h: spawn.h,
@@ -109,6 +178,25 @@ export class GameSession {
         targetHeading: heading,
         mode: "idle",
         modeTime: 0.2 + this.random() * 1.8
+      });
+    }
+  }
+
+  private spawnCollectibles(): void {
+    for (let i = 0; i < GAME_RULES.collectibleCount; i += 1) {
+      let spawn = this.randomWalkablePoint();
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        const separated = this.collectibles.every(
+          (item) => Math.hypot(item.x - spawn.x, item.z - spawn.z) >= COLLECTIBLE_SEPARATION
+        );
+        if (separated) break;
+        spawn = this.randomWalkablePoint();
+      }
+      this.collectibles.push({
+        collectibleId: randomUUID(),
+        x: spawn.x,
+        y: spawn.h + 0.14,
+        z: spawn.z
       });
     }
   }
@@ -177,14 +265,18 @@ export class GameSession {
   /** Intención del jugador: forward y turn en [-1, 1] (el servidor fija las velocidades). */
   setInput(userId: string, forward: number, turn: number): void {
     const p = this.players.get(userId);
-    if (!p || !p.present || p.role === "seeker") return;
+    if (!p || !p.present || !p.alive || p.role === "seeker" || this.roundPhase !== "playing") {
+      return;
+    }
     p.forward = clamp(forward, -1, 1);
     p.turn = clamp(turn, -1, 1);
   }
 
   setAiming(userId: string, aiming: boolean): boolean {
     const player = this.players.get(userId);
-    if (!player?.present || player.role !== "seeker") return false;
+    if (!player?.present || player.role !== "seeker" || this.roundPhase !== "playing") {
+      return false;
+    }
     player.aiming = aiming;
     return true;
   }
@@ -192,6 +284,7 @@ export class GameSession {
   shoot(userId: string, targetEntityId: string): boolean {
     const shooter = this.players.get(userId);
     if (
+      this.roundPhase !== "playing" ||
       !shooter?.present ||
       shooter.role !== "seeker" ||
       !shooter.aiming ||
@@ -200,9 +293,13 @@ export class GameSession {
       return false;
     }
 
-    for (const [targetUserId, player] of this.players) {
-      if (player.entityId === targetEntityId && player.role === "hider") {
-        this.players.delete(targetUserId);
+    for (const player of this.players.values()) {
+      if (player.entityId === targetEntityId && player.role === "hider" && player.alive) {
+        player.alive = false;
+        player.forward = 0;
+        player.turn = 0;
+        shooter.score += GAME_RULES.hiderHitPoints;
+        if (this.allHidersFound) this.endRound("all-hiders-found");
         return true;
       }
     }
@@ -210,11 +307,15 @@ export class GameSession {
     const npcIndex = this.npcs.findIndex((npc) => npc.entityId === targetEntityId);
     if (npcIndex < 0) return false;
     this.npcs.splice(npcIndex, 1);
+    shooter.score += GAME_RULES.npcHitPoints;
     return true;
   }
 
   removePlayer(userId: string): void {
     this.players.delete(userId);
+    if (this.roundPhase === "playing" && this.allHidersFound) {
+      this.endRound("all-hiders-found");
+    }
   }
 
   get isEmpty(): boolean {
@@ -223,8 +324,15 @@ export class GameSession {
 
   /** Avanza dt segundos: gira con turn, avanza con forward hacia el heading. */
   tick(dtSeconds: number): void {
+    if (this.roundPhase === "finished") return;
+    this.remainingSeconds = Math.max(0, this.remainingSeconds - dtSeconds);
+    if (this.roundPhase === "intermission") {
+      if (this.remainingSeconds === 0) this.startNextRound();
+      return;
+    }
+
     for (const p of this.players.values()) {
-      if (!p.present) continue;
+      if (!p.present || !p.alive || p.role === "seeker") continue;
       if (p.turn !== 0) {
         p.heading += p.turn * this.config.turnSpeed * dtSeconds;
       }
@@ -234,6 +342,52 @@ export class GameSession {
     }
 
     for (const npc of this.npcs) this.tickNpc(npc, dtSeconds);
+    this.collectNearbyItems();
+    if (this.remainingSeconds === 0) this.endRound("time");
+  }
+
+  private collectNearbyItems(): void {
+    for (const player of this.players.values()) {
+      if (!player.present || !player.alive || player.role !== "hider") continue;
+      for (let i = this.collectibles.length - 1; i >= 0; i -= 1) {
+        const item = this.collectibles[i];
+        if (Math.hypot(player.x - item.x, player.z - item.z) > GAME_RULES.collectibleRadius) {
+          continue;
+        }
+        this.collectibles.splice(i, 1);
+        player.score += GAME_RULES.collectiblePoints;
+      }
+    }
+  }
+
+  private get allHidersFound(): boolean {
+    const hiders = [...this.players.values()].filter((player) => player.role === "hider");
+    return hiders.length > 0 && hiders.every((player) => !player.alive);
+  }
+
+  private endRound(reason: Exclude<GameRoundEndReason, null>): void {
+    if (this.roundPhase !== "playing") return;
+    this.roundEndReason = reason;
+    for (const player of this.players.values()) {
+      player.forward = 0;
+      player.turn = 0;
+      player.aiming = false;
+    }
+    if (this.roundNumber >= GAME_RULES.totalRounds) {
+      this.roundPhase = "finished";
+      this.remainingSeconds = 0;
+      return;
+    }
+    this.roundPhase = "intermission";
+    this.remainingSeconds = GAME_RULES.intermissionSeconds;
+  }
+
+  private startNextRound(): void {
+    this.roundNumber += 1;
+    this.roundPhase = "playing";
+    this.remainingSeconds = GAME_RULES.roundSeconds;
+    this.roundEndReason = null;
+    this.resetRoundWorld(true);
   }
 
   private tickNpc(npc: SessionNpc, dtSeconds: number): void {
@@ -361,6 +515,9 @@ export class GameSession {
         userId,
         entityId: p.entityId,
         skinId: p.skinId,
+        alive: p.alive,
+        role: p.role,
+        score: p.score,
         x: p.x,
         y: p.h,
         z: p.z,
@@ -383,11 +540,35 @@ export class GameSession {
     }));
   }
 
+  roundSnapshot(): GameRoundState {
+    return {
+      phase: this.roundPhase,
+      current: this.roundNumber,
+      total: GAME_RULES.totalRounds,
+      remainingSeconds: Math.ceil(this.remainingSeconds),
+      endReason: this.roundEndReason
+    };
+  }
+
+  scoreSnapshot(): GameScoreState[] {
+    return [...this.players.entries()].map(([userId, player]) => ({
+      userId,
+      username: player.username,
+      score: player.score,
+      role: player.role,
+      alive: player.alive
+    }));
+  }
+
+  collectibleSnapshot(): GameCollectibleState[] {
+    return this.collectibles.map((item) => ({ ...item }));
+  }
+
   /** Estado público: humanos y NPC tienen exactamente la misma forma y orden opaco. */
   snapshot(): GameEntityState[] {
     const entities: GameEntityState[] = [];
     for (const player of this.players.values()) {
-      if (player.role === "seeker") continue;
+      if (player.role === "seeker" || !player.alive) continue;
       entities.push({
         entityId: player.entityId,
         skinId: player.skinId,

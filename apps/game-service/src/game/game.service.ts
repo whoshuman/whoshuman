@@ -87,7 +87,12 @@ export class GameService {
       running?.reconnectTimers.delete(payload.userId);
     }
     return player
-      ? { gameId: payload.gameId, selfEntityId: player.entityId, role: player.role }
+      ? {
+          gameId: payload.gameId,
+          selfUserId: payload.userId,
+          selfEntityId: player.entityId,
+          role: player.role
+        }
       : null;
   }
 
@@ -158,7 +163,10 @@ export class GameService {
     const event: GameStateSnapshotPayload = {
       gameId,
       tick,
-      entities: session.snapshot()
+      entities: session.snapshot(),
+      collectibles: session.collectibleSnapshot(),
+      round: session.roundSnapshot(),
+      scores: session.scoreSnapshot()
     };
     try {
       await this.messaging.publish(GameSubjects.stateSnapshot, event);
