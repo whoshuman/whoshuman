@@ -185,6 +185,14 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
 
   const inRoom = lobbyStatus !== "idle";
 
+  function handleEditProfile() {
+    if (onEditProfile) {
+      onEditProfile();
+      return;
+    }
+    void navigate({ to: "/profile" });
+  }
+
   return (
     <main
       className={`relative px-4 py-6 sm:px-10 sm:py-8 ${embedded ? "h-full overflow-y-auto" : "min-h-[calc(100vh-11.5rem)] sm:min-h-[calc(100vh-8.5rem)]"}`}
@@ -194,7 +202,7 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
         {/* Tarjeta de identidad del jugador. Abre la edicion de perfil. */}
         <button
           type="button"
-          onClick={onEditProfile}
+          onClick={handleEditProfile}
           className="panel-neon animate-crt-on [transform-origin:center] group relative w-full bg-surface/90 p-5 text-left transition hover:-translate-y-0.5 sm:w-80"
           style={{ "--accent": "var(--color-neon-cyan)", opacity: 0 } as CSSProperties}
         >

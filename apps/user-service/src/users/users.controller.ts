@@ -17,6 +17,11 @@ export class UsersController {
     return this.users.findMe(payload);
   }
 
+  @MessagePattern(UserSubjects.combatStats)
+  combatStats(@Payload() payload: UserScopedPayload) {
+    return this.users.combatStats(payload);
+  }
+
   @MessagePattern(UserSubjects.findProfile)
   findProfile(@Payload() payload: UserScopedPayload) {
     return this.users.findProfile(payload);

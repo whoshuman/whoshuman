@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { Navigate, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, PencilLine } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { apiError } from "../shared/api/errors";
-import { deleteMe, getMe } from "../shared/api/users";
+import { deleteMe, getCombatStats, getMe } from "../shared/api/users";
 import { useAuthStore } from "../shared/authStore";
 import ProfileEdit from "./ProfileEdit";
 
@@ -27,6 +28,16 @@ function Profile() {
     queryFn: getMe,
     enabled: isAuthenticated,
     initialData: storedUser ?? undefined
+  });
+  const {
+    data: combatStats,
+    isLoading: statsLoading,
+    isError: statsError
+  } = useQuery({
+    queryKey: ["me", "combat-stats"],
+    queryFn: getCombatStats,
+    enabled: isAuthenticated,
+    refetchOnMount: "always"
   });
 
   // Sincroniza el store cuando el servidor trae datos más recientes (p. ej. el
@@ -54,6 +65,10 @@ function Profile() {
 
   if (!user) return null;
 
+  if (editOpen) {
+    return <ProfileEdit onClose={() => setEditOpen(false)} />;
+  }
+
   const initials =
     user.username
       .replace(/[^a-zA-Z]/g, "")
@@ -65,11 +80,11 @@ function Profile() {
     month: "long",
     day: "numeric"
   }).format(new Date(user.createdAt));
-
-  async function handleLogout() {
-    await signOut();
-    void navigate({ to: "/" });
-  }
+  const matchDateFormatter = new Intl.DateTimeFormat(i18n.language, {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
 
   async function handleDelete() {
     setDeleteError(null);
@@ -94,10 +109,19 @@ function Profile() {
 
       <div className="animate-unfold-down relative w-full max-w-2xl origin-top border border-neon-cyan/50 bg-surface shadow-[0_0_48px_rgba(36,245,255,0.18),inset_0_0_48px_rgba(36,245,255,0.03)]">
         {/* Cabecera terminal */}
-        <div className="border-b border-neon-cyan/30 bg-neon-cyan/8 px-6 py-3 sm:px-10">
+        <div className="flex items-center justify-between gap-4 border-b border-neon-cyan/30 bg-neon-cyan/8 px-6 py-3 sm:px-10">
           <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-cyan">
             // {t("profilePage.eyebrow")}
           </p>
+          <button
+            type="button"
+            onClick={() => void navigate({ to: "/lobby" })}
+            className="flex shrink-0 items-center gap-2 border border-neon-cyan/40 px-3 py-2 font-display text-[0.65rem] font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10"
+          >
+            <ArrowLeft aria-hidden="true" size={16} strokeWidth={2} />
+            <span className="hidden sm:inline">{t("profilePage.backToLobby")}</span>
+            <span className="sm:hidden">{t("common.backShort")}</span>
+          </button>
         </div>
 
         {/* Esquinas decorativas */}
@@ -152,38 +176,102 @@ function Profile() {
             </div>
           </dl>
 
-          {/* Registro de combate: placeholder hasta que backend exponga stats */}
+          {/* Registro de combate persistido al finalizar cada partida. */}
           <div className="mb-8 border border-neon-cyan/25 bg-black/20 px-5 py-4">
             <p className="font-display mb-3 text-xs font-bold uppercase tracking-[0.25em] text-neon-cyan/80">
               // {t("profilePage.statsTitle")}
             </p>
-            <span className="inline-flex border border-current bg-white/5 px-3 py-1 text-sm font-bold text-text-muted/60">
-              {t("profilePage.statsEmpty")}
-            </span>
-            <p className="mt-3 text-xs text-text-muted/70">{t("profilePage.statsPending")}</p>
+            {statsLoading && (
+              <p className="font-display animate-pulse text-xs font-bold uppercase tracking-wider text-neon-cyan/70">
+                {t("profilePage.statsLoading")}
+              </p>
+            )}
+            {!statsLoading && statsError && (
+              <p className="font-display text-xs font-bold uppercase tracking-wider text-error">
+                {t("profilePage.statsError")}
+              </p>
+            )}
+            {!statsLoading && !statsError && combatStats?.totalGames === 0 && (
+              <>
+                <span className="inline-flex border border-current bg-white/5 px-3 py-1 text-sm font-bold text-text-muted/60">
+                  {t("profilePage.statsEmpty")}
+                </span>
+                <p className="mt-3 text-xs text-text-muted/70">{t("profilePage.statsPending")}</p>
+              </>
+            )}
+            {!statsLoading && !statsError && combatStats && combatStats.totalGames > 0 && (
+              <>
+                <dl className="grid grid-cols-2 gap-px border border-neon-cyan/20 bg-neon-cyan/20 sm:grid-cols-5">
+                  {[
+                    ["statsGames", combatStats.totalGames],
+                    ["statsWins", combatStats.wins],
+                    ["statsTotalPoints", combatStats.totalPoints],
+                    ["statsBestScore", combatStats.bestScore],
+                    ["statsAverage", combatStats.averagePoints]
+                  ].map(([label, value]) => (
+                    <div key={label} className="min-w-0 bg-surface px-3 py-3">
+                      <dt className="font-display text-[0.6rem] font-bold uppercase leading-tight tracking-wider text-text-muted">
+                        {t(`profilePage.${label}`)}
+                      </dt>
+                      <dd className="font-display mt-1 truncate text-xl font-black text-neon-cyan">
+                        {value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <div className="mt-5">
+                  <p className="font-display mb-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-neon-magenta">
+                    {t("profilePage.statsRecent")}
+                  </p>
+                  <div className="border-y border-neon-cyan/20">
+                    {combatStats.recentMatches.map((match) => (
+                      <div
+                        key={match.gameId}
+                        className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-neon-cyan/15 px-1 py-3 last:border-b-0 sm:grid-cols-[1fr_auto_auto]"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-display truncate text-xs font-bold uppercase text-text-main">
+                            {t("profilePage.statsMatch", {
+                              id: match.gameId.slice(0, 8).toUpperCase()
+                            })}
+                          </p>
+                          <p className="mt-1 text-xs text-text-muted">
+                            {matchDateFormatter.format(new Date(match.playedAt))}
+                          </p>
+                        </div>
+                        <p className="hidden text-xs font-bold text-text-muted sm:block">
+                          {t("profilePage.statsPlacement", {
+                            placement: match.placement,
+                            count: match.playerCount
+                          })}
+                        </p>
+                        <p className="font-display text-sm font-black text-neon-magenta">
+                          {match.points > 0 ? "+" : ""}
+                          {match.points} {t("profilePage.statsPointsShort")}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Acciones */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          {/* Acción principal */}
+          <div className="border-t border-neon-cyan/20 pt-6">
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              className="flex-1 border-2 border-neon-cyan px-6 py-3 font-display font-black uppercase tracking-widest text-neon-cyan shadow-[0_0_20px_rgba(36,245,255,0.35)] transition hover:brightness-125 hover:shadow-[0_0_36px_rgba(36,245,255,0.55)] active:translate-y-px"
+              className="group flex w-full items-center justify-center gap-3 border-2 border-neon-magenta bg-neon-magenta px-6 py-4 font-display text-sm font-black uppercase tracking-[0.2em] text-bg shadow-[0_0_24px_rgba(255,43,214,0.35)] transition hover:brightness-110 hover:shadow-[0_0_38px_rgba(255,43,214,0.55)] active:translate-y-px"
             >
+              <PencilLine
+                aria-hidden="true"
+                size={21}
+                strokeWidth={2.2}
+                className="transition-transform group-hover:-rotate-6"
+              />
               {t("profilePage.edit")}
-            </button>
-            <Link
-              to="/friends"
-              className="border-2 border-neon-violet px-6 py-3 text-center font-display font-black uppercase tracking-widest text-neon-violet transition hover:bg-neon-violet/10 active:translate-y-px"
-            >
-              {t("profilePage.contacts")}
-            </Link>
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              className="border-2 border-sun-orange bg-sun-orange px-6 py-3 font-display font-black uppercase tracking-widest text-bg transition hover:brightness-110 active:translate-y-px"
-            >
-              {t("profilePage.logout")}
             </button>
           </div>
 
@@ -228,8 +316,6 @@ function Profile() {
           </div>
         </div>
       </div>
-
-      {editOpen && <ProfileEdit onClose={() => setEditOpen(false)} />}
     </main>
   );
 }

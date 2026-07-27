@@ -20,6 +20,7 @@ export const UserSubjects = {
   unblockUser: "users.unblockUser",
   health: "users.health",
   findMe: "users.findMe",
+  combatStats: "users.combatStats",
   deleteAccount: "users.deleteAccount",
   searchUsers: "users.searchUsers"
 } as const;

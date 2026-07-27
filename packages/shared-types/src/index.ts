@@ -161,6 +161,23 @@ export interface GameScoreState {
   alive: boolean;
 }
 
+export interface CombatMatchSummary {
+  gameId: string;
+  points: number;
+  placement: number;
+  playerCount: number;
+  playedAt: string;
+}
+
+export interface UserCombatStats {
+  totalGames: number;
+  wins: number;
+  totalPoints: number;
+  bestScore: number;
+  averagePoints: number;
+  recentMatches: CombatMatchSummary[];
+}
+
 export interface MatchFoundPayload {
   lobbyId?: string;
   gameId: string;
