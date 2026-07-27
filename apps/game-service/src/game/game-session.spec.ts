@@ -110,6 +110,19 @@ describe("GameSession", () => {
     expect(after.rotationY).toBe(before.rotationY);
   });
 
+  it("publica una skin estable para cada entidad", () => {
+    const s = new GameSession("g1", members, config);
+    const player = s.markPresent("u1")!;
+    const privateState = find(s, "u1");
+    const publicState = s.snapshot().find((entity) => entity.entityId === player.entityId);
+
+    expect(publicState?.skinId).toBe(privateState.skinId);
+    s.tick(1);
+    expect(s.snapshot().find((entity) => entity.entityId === player.entityId)?.skinId).toBe(
+      privateState.skinId
+    );
+  });
+
   it("el seeker no camina ni aparece entre la multitud", () => {
     const s = new GameSession("g1", members, config);
     const seeker = s.markPresent("u2")!;

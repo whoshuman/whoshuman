@@ -337,8 +337,7 @@ las posiciones de los jugadores.
 
 Se genera el descriptor JSON del nuevo `.glb` con el script de extracción, se
 apunta `GAME_MAP` a él y se afina `GAME_MAX_STEP`. **El código del servidor no se
-toca.** El paso a paso del script, sus flags y cómo probarlo están en
-[`docs/demo.md`](./demo.md).
+toca.**
 
 ---
 
