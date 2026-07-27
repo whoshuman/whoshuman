@@ -11,6 +11,7 @@ interface PrismaMock {
   };
   session: { deleteMany: jest.Mock };
   friendship: { deleteMany: jest.Mock };
+  score: { findMany: jest.Mock };
   $transaction: jest.Mock;
 }
 
@@ -43,6 +44,7 @@ describe("UsersService", () => {
       },
       session: { deleteMany: jest.fn() },
       friendship: { deleteMany: jest.fn() },
+      score: { findMany: jest.fn() },
       $transaction: jest.fn().mockResolvedValue([])
     };
     const moduleRef = await Test.createTestingModule({
@@ -83,6 +85,78 @@ describe("UsersService", () => {
     it("404 si no existe", async () => {
       prisma.user.findFirst.mockResolvedValue(null);
       await expect(service.findProfile({ userId: "ghost" })).rejects.toThrow("userNotFound");
+    });
+  });
+
+  describe("combatStats", () => {
+    it("agrega partidas, victorias, puntos y las cinco más recientes", async () => {
+      prisma.user.findFirst.mockResolvedValue({ id: "alice" });
+      prisma.score.findMany.mockResolvedValue([
+        {
+          gameId: "g2",
+          points: 75,
+          createdAt: new Date("2026-02-02"),
+          game: {
+            updatedAt: new Date("2026-02-02"),
+            scores: [{ points: 100 }, { points: 75 }, { points: 25 }]
+          }
+        },
+        {
+          gameId: "g1",
+          points: 150,
+          createdAt: new Date("2026-02-01"),
+          game: {
+            updatedAt: new Date("2026-02-01"),
+            scores: [{ points: 150 }, { points: 100 }]
+          }
+        }
+      ]);
+
+      const result = await service.combatStats({ userId: "alice" });
+
+      expect(result).toMatchObject({
+        totalGames: 2,
+        wins: 1,
+        totalPoints: 225,
+        bestScore: 150,
+        averagePoints: 113
+      });
+      expect(result.recentMatches).toEqual([
+        {
+          gameId: "g2",
+          points: 75,
+          placement: 2,
+          playerCount: 3,
+          playedAt: "2026-02-02T00:00:00.000Z"
+        },
+        {
+          gameId: "g1",
+          points: 150,
+          placement: 1,
+          playerCount: 2,
+          playedAt: "2026-02-01T00:00:00.000Z"
+        }
+      ]);
+      expect(prisma.score.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: "alice", game: { status: "ENDED" } },
+          orderBy: { createdAt: "desc" }
+        })
+      );
+    });
+
+    it("devuelve ceros cuando todavía no hay partidas", async () => {
+      prisma.user.findFirst.mockResolvedValue({ id: "alice" });
+      prisma.score.findMany.mockResolvedValue([]);
+
+      await expect(service.combatStats({ userId: "alice" })).resolves.toEqual({
+        totalGames: 0,
+        wins: 0,
+        totalPoints: 0,
+        bestScore: 0,
+        averagePoints: 0,
+        recentMatches: []
+      });
     });
   });
 

@@ -66,7 +66,7 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
   return (
     // perspective da profundidad para que la pantalla se sienta inclinada sobre la fachada.
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto p-4"
+      className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-bg p-4"
       style={{ perspective: "1800px" }}
     >
       {/* Carcasa de la pantalla: bisel oscuro grueso, ligeramente girada como sobre un muro.

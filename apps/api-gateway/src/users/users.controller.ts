@@ -1,6 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Put, Query, UseGuards } from "@nestjs/common";
 import { UserSubjects } from "@whoshuman/shared-events";
-import type { ActionResponse, Paginated, PublicUser, UserProfile } from "@whoshuman/shared-types";
+import type {
+  ActionResponse,
+  Paginated,
+  PublicUser,
+  UserCombatStats,
+  UserProfile
+} from "@whoshuman/shared-types";
 import { MessagingService } from "../common";
 import type { AuthUser } from "../auth/auth-user.types";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
@@ -16,6 +22,13 @@ export class UsersController {
   @Get("me")
   me(@CurrentUser() user: AuthUser) {
     return this.messaging.request<PublicUser>(UserSubjects.findMe, { userId: user.sub });
+  }
+
+  @Get("me/stats")
+  combatStats(@CurrentUser() user: AuthUser) {
+    return this.messaging.request<UserCombatStats>(UserSubjects.combatStats, {
+      userId: user.sub
+    });
   }
 
   @Put("me")

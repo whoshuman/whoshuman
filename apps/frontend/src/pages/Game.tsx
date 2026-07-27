@@ -2,6 +2,7 @@ import { Navigate, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
+import MobileGameControls from "../game/components/MobileGameControls";
 import { useKeyboardInput } from "../game/hooks/useKeyboardInput";
 import GameScene from "../game/scenes/GameScene";
 import { useGameStore } from "../game/store/gameStore";
@@ -48,7 +49,7 @@ function Game() {
   }
 
   return (
-    <div className="relative h-screen w-full bg-bg">
+    <div className="relative h-dvh w-full touch-none overflow-hidden overscroll-none bg-bg">
       <div className="absolute inset-0">
         <GameScene />
       </div>
@@ -212,9 +213,11 @@ function Game() {
         </div>
       )}
 
+      <MobileGameControls enabled={playing && selfAlive} />
+
       {/* Controles. */}
       {round?.phase === "playing" && selfAlive && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
+        <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 [@media(any-pointer:coarse)]:hidden">
           <p className="border border-neon-cyan/25 bg-bg/70 px-4 py-1.5 font-display text-[0.65rem] font-bold uppercase tracking-[0.2em] text-text-muted backdrop-blur-sm">
             {t(selfRole === "seeker" ? "game.controlsSeeker" : "game.controls")}
           </p>

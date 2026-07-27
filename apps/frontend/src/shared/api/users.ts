@@ -1,8 +1,13 @@
-import type { Paginated, PublicUser, UserProfile } from "@whoshuman/shared-types";
+import type { Paginated, PublicUser, UserCombatStats, UserProfile } from "@whoshuman/shared-types";
 import { httpClient } from "./httpClient";
 
 export async function getMe(): Promise<PublicUser> {
   const { data } = await httpClient.get<PublicUser>("/users/me");
+  return data;
+}
+
+export async function getCombatStats(): Promise<UserCombatStats> {
+  const { data } = await httpClient.get<UserCombatStats>("/users/me/stats");
   return data;
 }
 

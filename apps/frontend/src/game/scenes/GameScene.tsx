@@ -5,6 +5,11 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 import { getCssColor } from "../../features/home-3d/homeSceneUtils";
+import {
+  TOUCH_SEEKER_LOOK_EVENT,
+  TOUCH_SEEKER_SHOOT_EVENT,
+  type TouchSeekerLookDetail
+} from "../input/touchInput";
 import betaCity from "../maps/beta-city.json";
 import { useGameStore } from "../store/gameStore";
 import { sampleWorld } from "../systems/interpolation";
@@ -22,6 +27,9 @@ const CENTER_Z = (bounds.minZ + bounds.maxZ) / 2;
 const BUILDING_HEIGHT = 1.4;
 const PLAYER_HEIGHT = 0.36;
 const MAX_OTHER_ENTITIES = 71; // 64 NPC + hasta 7 jugadores distintos del cliente
+const SPRINT_FRAME_COUNT = 8;
+const SPRINT_FPS = 16;
+const MOVEMENT_EPSILON_SQ = 0.000001;
 const CHARACTER_MODEL_URLS: string[] = [
   "/models/personajes/character-female-a.glb",
   "/models/personajes/character-female-b.glb",
@@ -150,8 +158,11 @@ function Units() {
   }>;
   const selfRef = useRef<THREE.Group>(null);
   const selfMeshRef = useRef<THREE.Mesh>(null);
-  const otherCharacters = useRef<(THREE.InstancedMesh | null)[]>([]);
-  const entityIds = useRef<string[][]>(CHARACTER_MODEL_URLS.map(() => []));
+  const idleCharacters = useRef<(THREE.InstancedMesh | null)[]>([]);
+  const sprintingCharacters = useRef<(THREE.InstancedMesh | null)[]>([]);
+  const idleEntityIds = useRef<string[][]>(CHARACTER_MODEL_URLS.map(() => []));
+  const sprintingEntityIds = useRef<string[][]>(CHARACTER_MODEL_URLS.map(() => []));
+  const previousPositions = useRef(new Map<string, { x: number; z: number }>());
   const transform = useMemo(() => new THREE.Object3D(), []);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const characterAssets = useMemo(
@@ -159,43 +170,53 @@ function Units() {
       characterModels.map(({ scene: characterScene, animations }) => {
         const mixer = new THREE.AnimationMixer(characterScene);
         const idle = animations.find((clip) => clip.name === "idle");
-        if (idle) {
-          mixer.clipAction(idle).play();
-          mixer.setTime(idle.duration * 0.25);
-        }
-        characterScene.updateMatrixWorld(true);
+        const sprint = animations.find((clip) => clip.name === "sprint");
         const meshes: THREE.Mesh[] = [];
         characterScene.traverse((object) => {
           if ((object as THREE.Mesh).isMesh) meshes.push(object as THREE.Mesh);
         });
 
-        const parts = meshes.map((mesh) => {
-          const geometry = mesh.geometry.clone();
-          if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) {
-            const skinnedMesh = mesh as THREE.SkinnedMesh;
-            const position = geometry.getAttribute("position");
-            const vertex = new THREE.Vector3();
-            for (let i = 0; i < position.count; i += 1) {
-              skinnedMesh.getVertexPosition(i, vertex).applyMatrix4(mesh.matrixWorld);
-              position.setXYZ(i, vertex.x, vertex.y, vertex.z);
-            }
-          } else {
-            geometry.applyMatrix4(mesh.matrixWorld);
+        const bakeGeometry = (clip: THREE.AnimationClip | undefined, time: number) => {
+          mixer.stopAllAction();
+          if (clip) {
+            mixer.clipAction(clip).reset().play();
+            mixer.setTime(time);
           }
-          geometry.deleteAttribute("skinIndex");
-          geometry.deleteAttribute("skinWeight");
-          geometry.deleteAttribute("normal");
-          geometry.deleteAttribute("tangent");
+          characterScene.updateMatrixWorld(true);
+
+          const parts = meshes.map((mesh) => {
+            const geometry = mesh.geometry.clone();
+            if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) {
+              const skinnedMesh = mesh as THREE.SkinnedMesh;
+              const position = geometry.getAttribute("position");
+              const vertex = new THREE.Vector3();
+              for (let i = 0; i < position.count; i += 1) {
+                skinnedMesh.getVertexPosition(i, vertex).applyMatrix4(mesh.matrixWorld);
+                position.setXYZ(i, vertex.x, vertex.y, vertex.z);
+              }
+            } else {
+              geometry.applyMatrix4(mesh.matrixWorld);
+            }
+            geometry.deleteAttribute("skinIndex");
+            geometry.deleteAttribute("skinWeight");
+            geometry.deleteAttribute("normal");
+            geometry.deleteAttribute("tangent");
+            return geometry;
+          });
+          const geometry = mergeGeometries(parts, false);
+          parts.forEach((part) => part.dispose());
+          if (!geometry) throw new Error("No se pudo combinar la geometría del personaje");
+          geometry.scale(CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE);
+          geometry.computeVertexNormals();
+          geometry.computeBoundingSphere();
           return geometry;
-        });
+        };
+        const idleGeometry = bakeGeometry(idle, (idle?.duration ?? 0) * 0.25);
+        const sprintGeometries = Array.from({ length: SPRINT_FRAME_COUNT }, (_, frame) =>
+          bakeGeometry(sprint, ((sprint?.duration ?? 0) * frame) / SPRINT_FRAME_COUNT)
+        );
         mixer.stopAllAction();
         mixer.uncacheRoot(characterScene);
-        const geometry = mergeGeometries(parts, false);
-        parts.forEach((part) => part.dispose());
-        if (!geometry) throw new Error("No se pudo combinar la geometría del personaje");
-        geometry.scale(CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE);
-        geometry.computeVertexNormals();
-        geometry.computeBoundingSphere();
 
         const sourceMaterial = meshes[0]?.material;
         if (
@@ -215,30 +236,39 @@ function Units() {
           material.map.anisotropy = Math.min(4, gl.capabilities.getMaxAnisotropy());
           material.map.needsUpdate = true;
         }
-        return { geometry, material };
+        return { idleGeometry, sprintGeometries, material };
       }),
     [characterModels, gl]
   );
   useEffect(
     () => () => {
       for (const asset of characterAssets) {
-        asset.geometry.dispose();
+        asset.idleGeometry.dispose();
+        asset.sprintGeometries.forEach((geometry) => geometry.dispose());
         asset.material.dispose();
       }
     },
     [characterAssets]
   );
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera, clock }) => {
     const entities = sampleWorld();
     const self = entities.find((entity) => entity.entityId === selfEntityId);
+    const sprintFrame = Math.floor(clock.elapsedTime * SPRINT_FPS) % SPRINT_FRAME_COUNT;
 
     if (selfRef.current) {
       selfRef.current.visible = selfRole !== "seeker" && !!self;
       if (selfRole !== "seeker" && self) {
         const asset = characterAssets[self.skinId];
+        const previous = previousPositions.current.get(self.entityId);
+        const isMoving =
+          !!previous &&
+          (self.x - previous.x) ** 2 + (self.z - previous.z) ** 2 > MOVEMENT_EPSILON_SQ;
+        previousPositions.current.set(self.entityId, { x: self.x, z: self.z });
         if (selfMeshRef.current && asset) {
-          selfMeshRef.current.geometry = asset.geometry;
+          selfMeshRef.current.geometry = isMoving
+            ? asset.sprintGeometries[sprintFrame]
+            : asset.idleGeometry;
           selfMeshRef.current.material = asset.material;
         }
         selfRef.current.position.set(self.x, self.y, self.z);
@@ -254,15 +284,26 @@ function Units() {
 
     const others = entities.filter((entity) => entity.entityId !== selfEntityId);
     const count = Math.min(others.length, MAX_OTHER_ENTITIES);
-    const variantCounts = CHARACTER_MODEL_URLS.map(() => 0);
-    for (const ids of entityIds.current) ids.length = 0;
+    const idleCounts = CHARACTER_MODEL_URLS.map(() => 0);
+    const sprintingCounts = CHARACTER_MODEL_URLS.map(() => 0);
+    for (const ids of idleEntityIds.current) ids.length = 0;
+    for (const ids of sprintingEntityIds.current) ids.length = 0;
 
     for (let i = 0; i < count; i += 1) {
       const entity = others[i];
       const variant = entity.skinId;
-      const instance = variantCounts[variant]++;
-      const mesh = otherCharacters.current[variant];
-      entityIds.current[variant][instance] = entity.entityId;
+      const previous = previousPositions.current.get(entity.entityId);
+      const isMoving =
+        !!previous &&
+        (entity.x - previous.x) ** 2 + (entity.z - previous.z) ** 2 > MOVEMENT_EPSILON_SQ;
+      previousPositions.current.set(entity.entityId, { x: entity.x, z: entity.z });
+      const counts = isMoving ? sprintingCounts : idleCounts;
+      const ids = isMoving ? sprintingEntityIds.current : idleEntityIds.current;
+      const mesh = isMoving
+        ? sprintingCharacters.current[variant]
+        : idleCharacters.current[variant];
+      const instance = counts[variant]++;
+      ids[variant][instance] = entity.entityId;
       if (!mesh) continue;
 
       transform.position.set(entity.x, entity.y, entity.z);
@@ -271,18 +312,25 @@ function Units() {
       mesh.setMatrixAt(instance, transform.matrix);
     }
 
-    for (let variant = 0; variant < otherCharacters.current.length; variant += 1) {
-      const mesh = otherCharacters.current[variant];
-      if (!mesh) continue;
-      mesh.count = variantCounts[variant];
-      mesh.instanceMatrix.needsUpdate = true;
+    for (let variant = 0; variant < CHARACTER_MODEL_URLS.length; variant += 1) {
+      const idleMesh = idleCharacters.current[variant];
+      if (idleMesh) {
+        idleMesh.count = idleCounts[variant];
+        idleMesh.instanceMatrix.needsUpdate = true;
+      }
+      const sprintingMesh = sprintingCharacters.current[variant];
+      if (sprintingMesh) {
+        sprintingMesh.geometry = characterAssets[variant].sprintGeometries[sprintFrame];
+        sprintingMesh.count = sprintingCounts[variant];
+        sprintingMesh.instanceMatrix.needsUpdate = true;
+      }
     }
   });
 
   useEffect(() => {
-    const handleShoot = (event: PointerEvent) => {
-      if (event.button !== 0 || selfRole !== "seeker" || !aiming) return;
-      const meshes = otherCharacters.current.filter(
+    const shootAtCrosshair = () => {
+      if (selfRole !== "seeker" || !aiming) return;
+      const meshes = [...idleCharacters.current, ...sprintingCharacters.current].filter(
         (mesh): mesh is THREE.InstancedMesh => mesh !== null
       );
       for (const mesh of meshes) mesh.computeBoundingSphere();
@@ -295,11 +343,22 @@ function Units() {
         );
       if (hit?.object.userData.blocksShot || hit?.instanceId === undefined) return;
       const variant = hit.object.userData.characterVariant as number;
-      const targetEntityId = entityIds.current[variant]?.[hit.instanceId];
+      const entityIds = hit.object.userData.sprinting
+        ? sprintingEntityIds.current
+        : idleEntityIds.current;
+      const targetEntityId = entityIds[variant]?.[hit.instanceId];
       if (targetEntityId) shoot(targetEntityId);
     };
+    const handleShoot = (event: PointerEvent) => {
+      if (event.button !== 0 || event.pointerType === "touch") return;
+      shootAtCrosshair();
+    };
     gl.domElement.addEventListener("pointerdown", handleShoot);
-    return () => gl.domElement.removeEventListener("pointerdown", handleShoot);
+    window.addEventListener(TOUCH_SEEKER_SHOOT_EVENT, shootAtCrosshair);
+    return () => {
+      gl.domElement.removeEventListener("pointerdown", handleShoot);
+      window.removeEventListener(TOUCH_SEEKER_SHOOT_EVENT, shootAtCrosshair);
+    };
   }, [aiming, camera, gl, raycaster, scene, selfRole, shoot]);
 
   return (
@@ -307,20 +366,29 @@ function Units() {
       <group ref={selfRef} visible={false}>
         <mesh
           ref={selfMeshRef}
-          geometry={characterAssets[0].geometry}
+          geometry={characterAssets[0].idleGeometry}
           material={characterAssets[0].material}
         />
       </group>
       {characterAssets.map((asset, variant) => (
-        <instancedMesh
-          key={CHARACTER_MODEL_URLS[variant]}
-          ref={(mesh) => {
-            otherCharacters.current[variant] = mesh;
-          }}
-          args={[asset.geometry, asset.material, MAX_OTHER_ENTITIES]}
-          frustumCulled={false}
-          userData={{ characterVariant: variant }}
-        />
+        <group key={CHARACTER_MODEL_URLS[variant]}>
+          <instancedMesh
+            ref={(mesh) => {
+              idleCharacters.current[variant] = mesh;
+            }}
+            args={[asset.idleGeometry, asset.material, MAX_OTHER_ENTITIES]}
+            frustumCulled={false}
+            userData={{ characterVariant: variant, sprinting: false }}
+          />
+          <instancedMesh
+            ref={(mesh) => {
+              sprintingCharacters.current[variant] = mesh;
+            }}
+            args={[asset.sprintGeometries[0], asset.material, MAX_OTHER_ENTITIES]}
+            frustumCulled={false}
+            userData={{ characterVariant: variant, sprinting: true }}
+          />
+        </group>
       ))}
     </group>
   );
@@ -388,19 +456,38 @@ function SeekerCamera() {
   }, [aiming, camera, selfRole, target]);
 
   useEffect(() => {
-    if (selfRole !== "seeker" || !aiming) return;
-    const moveAim = (event: MouseEvent) => {
-      aimYaw.current -= event.movementX * SEEKER_AIM_SENSITIVITY;
+    if (selfRole !== "seeker") return;
+    const applyAimMovement = (movementX: number, movementY: number) => {
+      if (!aiming) {
+        camera.position
+          .sub(target)
+          .applyAxisAngle(yAxis, -movementX * SEEKER_AIM_SENSITIVITY)
+          .add(target);
+        camera.lookAt(target);
+        return;
+      }
+      aimYaw.current -= movementX * SEEKER_AIM_SENSITIVITY;
       aimPitch.current = THREE.MathUtils.clamp(
-        aimPitch.current - event.movementY * SEEKER_AIM_SENSITIVITY,
+        aimPitch.current - movementY * SEEKER_AIM_SENSITIVITY,
         -Math.PI / 2 + 0.1,
         -0.05
       );
       camera.rotation.set(aimPitch.current, aimYaw.current, 0, "YXZ");
     };
+    const moveAim = (event: MouseEvent) => {
+      if (aiming) applyAimMovement(event.movementX, event.movementY);
+    };
+    const moveTouchAim = (event: Event) => {
+      const { movementX, movementY } = (event as CustomEvent<TouchSeekerLookDetail>).detail;
+      applyAimMovement(movementX, movementY);
+    };
     document.addEventListener("mousemove", moveAim);
-    return () => document.removeEventListener("mousemove", moveAim);
-  }, [aiming, camera, selfRole]);
+    window.addEventListener(TOUCH_SEEKER_LOOK_EVENT, moveTouchAim);
+    return () => {
+      document.removeEventListener("mousemove", moveAim);
+      window.removeEventListener(TOUCH_SEEKER_LOOK_EVENT, moveTouchAim);
+    };
+  }, [aiming, camera, selfRole, target, yAxis]);
 
   useEffect(() => {
     if (selfRole !== "seeker") return;
@@ -486,7 +573,10 @@ function GameScene() {
       <Canvas
         dpr={[1, 1.5]}
         camera={{ position: [CENTER_X, 4.5, bounds.maxZ + 5], fov: 60 }}
-        style={{ cursor: selfRole === "seeker" && aiming ? "crosshair" : "default" }}
+        style={{
+          cursor: selfRole === "seeker" && aiming ? "crosshair" : "default",
+          touchAction: "none"
+        }}
       >
         <PerformanceMonitor>
           <AdaptiveDpr />

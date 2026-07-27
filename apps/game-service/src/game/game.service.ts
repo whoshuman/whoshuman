@@ -2,12 +2,14 @@ import { Injectable, Logger } from "@nestjs/common";
 import { GameSubjects } from "@whoshuman/shared-events";
 import type {
   GameJoinResponse,
+  GameScoreState,
   GameStateSnapshotPayload,
   MatchFoundPayload
 } from "@whoshuman/shared-types";
 import { MessagingService } from "../common/messaging.service";
 import { envs } from "../config";
-import { GameSession } from "./game-session";
+import { PrismaService } from "../prisma/prisma.service";
+import { GAME_RULES, GameSession } from "./game-session";
 import { loadMap, type MapDescriptor } from "./map";
 
 interface RunningGame {
@@ -15,6 +17,8 @@ interface RunningGame {
   timer: NodeJS.Timeout;
   reconnectTimers: Map<string, NodeJS.Timeout>;
   activeSockets: Map<string, string>;
+  departedScores: Map<string, GameScoreState>;
+  finishing: boolean;
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
@@ -25,7 +29,10 @@ export class GameService {
   private readonly logger = new Logger(GameService.name);
   private readonly games = new Map<string, RunningGame>();
 
-  constructor(private readonly messaging: MessagingService) {}
+  constructor(
+    private readonly messaging: MessagingService,
+    private readonly prisma: PrismaService
+  ) {}
 
   /** match.found → crea la partida y arranca su loop. */
   startGame(payload: unknown): void {
@@ -59,6 +66,13 @@ export class GameService {
     const timer = setInterval(() => {
       tick += 1;
       session.tick(dt);
+      const running = this.games.get(payload.gameId);
+      if (!running) return;
+      if (session.roundSnapshot().phase === "finished") {
+        clearInterval(timer);
+        void this.finishGame(payload.gameId, tick, running);
+        return;
+      }
       void this.broadcast(payload.gameId, tick, session);
     }, envs.gameTickMs);
 
@@ -66,7 +80,9 @@ export class GameService {
       session,
       timer,
       reconnectTimers: new Map(),
-      activeSockets: new Map()
+      activeSockets: new Map(),
+      departedScores: new Map(),
+      finishing: false
     });
     this.logger.log(
       `Game started: game=${payload.gameId} players=${payload.players.length} npcs=${envs.gameNpcCount}`
@@ -146,7 +162,8 @@ export class GameService {
     if (reconnectTimer) clearTimeout(reconnectTimer);
     running.reconnectTimers.delete(userId);
     running.activeSockets.delete(userId);
-    running.session.removePlayer(userId);
+    const departed = running.session.removePlayer(userId);
+    if (departed) running.departedScores.set(userId, departed);
     if (running.session.isEmpty) {
       clearInterval(running.timer);
       for (const pending of running.reconnectTimers.values()) clearTimeout(pending);
@@ -157,6 +174,53 @@ export class GameService {
 
   getGameCount(): number {
     return this.games.size;
+  }
+
+  private async finishGame(gameId: string, tick: number, running: RunningGame): Promise<void> {
+    if (running.finishing) return;
+    running.finishing = true;
+
+    const scoreMap = new Map(running.departedScores);
+    for (const score of running.session.scoreSnapshot()) scoreMap.set(score.userId, score);
+    const scores = [...scoreMap.values()];
+
+    try {
+      await this.prisma.$transaction([
+        this.prisma.game.upsert({
+          where: { id: gameId },
+          create: { id: gameId, status: "ENDED" },
+          update: { status: "ENDED" }
+        }),
+        this.prisma.round.deleteMany({ where: { gameId } }),
+        this.prisma.round.createMany({
+          data: running.session.roundRecords().map((round) => ({
+            gameId,
+            number: round.number,
+            status: "ENDED",
+            timeLimit: GAME_RULES.roundSeconds,
+            startedAt: round.startedAt,
+            endedAt: round.endedAt
+          }))
+        }),
+        ...scores.map((score) =>
+          this.prisma.score.upsert({
+            where: { userId_gameId: { userId: score.userId, gameId } },
+            create: { userId: score.userId, gameId, points: score.score },
+            update: { points: score.score }
+          })
+        )
+      ]);
+      this.logger.log(`Game result saved: game=${gameId} players=${scores.length}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to save game result: game=${gameId} error=${message}`);
+    }
+
+    // El cliente solo ve `finished` cuando el resultado ya está disponible para
+    // el perfil. Así evitamos que consulte estadísticas antiguas al salir rápido.
+    await this.broadcast(gameId, tick, running.session);
+    for (const timer of running.reconnectTimers.values()) clearTimeout(timer);
+    if (this.games.get(gameId) === running) this.games.delete(gameId);
   }
 
   private async broadcast(gameId: string, tick: number, session: GameSession): Promise<void> {

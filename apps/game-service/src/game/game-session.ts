@@ -34,6 +34,12 @@ export interface GameSessionConfig {
   npcSpeed: number;
 }
 
+export interface GameRoundRecord {
+  number: number;
+  startedAt: Date;
+  endedAt: Date;
+}
+
 interface MovableState {
   x: number;
   z: number;
@@ -91,6 +97,8 @@ export class GameSession {
   private roundPhase: GameRoundPhase = "playing";
   private remainingSeconds: number = GAME_RULES.roundSeconds;
   private roundEndReason: GameRoundEndReason = null;
+  private roundStartedAt = new Date();
+  private readonly completedRounds: GameRoundRecord[] = [];
 
   constructor(
     gameId: string,
@@ -311,11 +319,20 @@ export class GameSession {
     return true;
   }
 
-  removePlayer(userId: string): void {
+  removePlayer(userId: string): GameScoreState | null {
+    const player = this.players.get(userId);
+    if (!player) return null;
     this.players.delete(userId);
     if (this.roundPhase === "playing" && this.allHidersFound) {
       this.endRound("all-hiders-found");
     }
+    return {
+      userId,
+      username: player.username,
+      score: player.score,
+      role: player.role,
+      alive: player.alive
+    };
   }
 
   get isEmpty(): boolean {
@@ -368,6 +385,11 @@ export class GameSession {
   private endRound(reason: Exclude<GameRoundEndReason, null>): void {
     if (this.roundPhase !== "playing") return;
     this.roundEndReason = reason;
+    this.completedRounds.push({
+      number: this.roundNumber,
+      startedAt: this.roundStartedAt,
+      endedAt: new Date()
+    });
     for (const player of this.players.values()) {
       player.forward = 0;
       player.turn = 0;
@@ -387,6 +409,7 @@ export class GameSession {
     this.roundPhase = "playing";
     this.remainingSeconds = GAME_RULES.roundSeconds;
     this.roundEndReason = null;
+    this.roundStartedAt = new Date();
     this.resetRoundWorld(true);
   }
 
@@ -558,6 +581,10 @@ export class GameSession {
       role: player.role,
       alive: player.alive
     }));
+  }
+
+  roundRecords(): GameRoundRecord[] {
+    return this.completedRounds.map((round) => ({ ...round }));
   }
 
   collectibleSnapshot(): GameCollectibleState[] {

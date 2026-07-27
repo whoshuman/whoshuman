@@ -8,6 +8,7 @@ import type {
   PublicUser,
   SearchUsersPayload,
   UpdateProfilePayload,
+  UserCombatStats,
   UserProfile,
   UserScopedPayload
 } from "@whoshuman/shared-types";
@@ -60,6 +61,52 @@ export class UsersService {
     });
     if (!user) this.fail(404, "userNotFound");
     return toUserProfile(user);
+  }
+
+  /** Estadísticas agregadas de las partidas terminadas del usuario. */
+  async combatStats(payload: UserScopedPayload): Promise<UserCombatStats> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: payload.userId, deletedAt: null },
+      select: { id: true }
+    });
+    if (!user) this.fail(404, "userNotFound");
+
+    const scores = await this.prisma.score.findMany({
+      where: { userId: payload.userId, game: { status: "ENDED" } },
+      orderBy: { createdAt: "desc" },
+      select: {
+        gameId: true,
+        points: true,
+        createdAt: true,
+        game: {
+          select: {
+            updatedAt: true,
+            scores: { select: { points: true } }
+          }
+        }
+      }
+    });
+
+    const matches = scores.map((score) => {
+      const placement = 1 + score.game.scores.filter((entry) => entry.points > score.points).length;
+      return {
+        gameId: score.gameId,
+        points: score.points,
+        placement,
+        playerCount: score.game.scores.length,
+        playedAt: score.game.updatedAt.toISOString()
+      };
+    });
+    const totalPoints = matches.reduce((total, match) => total + match.points, 0);
+
+    return {
+      totalGames: matches.length,
+      wins: matches.filter((match) => match.placement === 1).length,
+      totalPoints,
+      bestScore: matches.length > 0 ? Math.max(...matches.map((match) => match.points)) : 0,
+      averagePoints: matches.length > 0 ? Math.round(totalPoints / matches.length) : 0,
+      recentMatches: matches.slice(0, 5)
+    };
   }
 
   /**
