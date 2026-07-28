@@ -1,15 +1,37 @@
-export const TOUCH_SEEKER_LOOK_EVENT = "game:touch-seeker-look";
+export const TOUCH_CAMERA_EVENT = "game:touch-camera";
 export const TOUCH_SEEKER_SHOOT_EVENT = "game:touch-seeker-shoot";
 
-export interface TouchSeekerLookDetail {
-  movementX: number;
-  movementY: number;
+export interface TouchCameraDetail {
+  x: number;
+  y: number;
 }
 
-export function moveTouchSeeker(movementX: number, movementY: number): void {
+export interface JoystickVector {
+  knobX: number;
+  knobY: number;
+  x: number;
+  y: number;
+}
+
+export function normalizeJoystick(
+  rawX: number,
+  rawY: number,
+  radius: number,
+  deadZone: number
+): JoystickVector {
+  const distance = Math.hypot(rawX, rawY);
+  const scale = distance > radius ? radius / distance : 1;
+  const knobX = rawX * scale;
+  const knobY = rawY * scale;
+  const x = Math.abs(knobX / radius) < deadZone ? 0 : knobX / radius;
+  const y = Math.abs(knobY / radius) < deadZone ? 0 : knobY / radius;
+  return { knobX, knobY, x, y };
+}
+
+export function setTouchCamera(x: number, y: number): void {
   window.dispatchEvent(
-    new CustomEvent<TouchSeekerLookDetail>(TOUCH_SEEKER_LOOK_EVENT, {
-      detail: { movementX, movementY }
+    new CustomEvent<TouchCameraDetail>(TOUCH_CAMERA_EVENT, {
+      detail: { x, y }
     })
   );
 }

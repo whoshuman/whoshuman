@@ -1,5 +1,5 @@
 import { Navigate, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import MobileGameControls from "../game/components/MobileGameControls";
@@ -7,6 +7,82 @@ import { useKeyboardInput } from "../game/hooks/useKeyboardInput";
 import GameScene from "../game/scenes/GameScene";
 import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
+
+type LockableOrientation = Partial<Pick<ScreenOrientation, "lock" | "unlock">>;
+
+function MobileGameGate({ enabled }: { enabled: boolean }) {
+  const { t } = useTranslation();
+  const enteredFullscreen = useRef(false);
+  const [touchAvailable] = useState(
+    () => navigator.maxTouchPoints > 0 || window.matchMedia("(any-pointer: coarse)").matches
+  );
+  const [portrait, setPortrait] = useState(
+    () => window.matchMedia("(orientation: portrait)").matches
+  );
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(orientation: portrait)");
+    const update = () => setPortrait(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  useEffect(
+    () => () => {
+      const orientation = screen.orientation as LockableOrientation | undefined;
+      orientation?.unlock?.();
+      if (enteredFullscreen.current && document.fullscreenElement) {
+        void document.exitFullscreen?.();
+      }
+    },
+    []
+  );
+
+  async function startGame() {
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+        enteredFullscreen.current = true;
+      }
+    } catch {
+      // Fullscreen depende del navegador; se intenta igualmente el bloqueo horizontal.
+    }
+    try {
+      const orientation = screen.orientation as LockableOrientation | undefined;
+      await orientation?.lock?.("landscape");
+    } catch {
+      // El giro manual es el fallback cuando la API no existe o rechaza el bloqueo.
+    }
+    setStarted(true);
+  }
+
+  if (!enabled || !touchAvailable || (started && !portrait)) return null;
+
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-bg/95 p-6 text-center backdrop-blur-sm">
+      <div className="w-full max-w-sm border border-neon-cyan/60 bg-surface/90 px-6 py-6 shadow-[0_0_40px_rgba(36,245,255,0.2)]">
+        <div
+          aria-hidden="true"
+          className={`mx-auto mb-5 h-20 w-12 rounded-lg border-2 border-neon-cyan transition-transform duration-500 ${portrait ? "rotate-90" : ""}`}
+        />
+        <h2 className="font-display text-xl font-black uppercase text-neon-cyan">
+          {t(portrait ? "game.rotateTitle" : "game.fullscreenTitle")}
+        </h2>
+        <p className="mt-2 text-sm text-text-muted">
+          {t(portrait ? "game.rotateText" : "game.fullscreenText")}
+        </p>
+        <button
+          type="button"
+          onClick={() => void startGame()}
+          className="mt-5 border-2 border-neon-magenta bg-neon-magenta/15 px-6 py-3 font-display text-sm font-black uppercase text-neon-magenta shadow-[0_0_24px_rgba(255,43,214,0.3)] active:scale-95"
+        >
+          {t("game.enterFullscreen")}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function Game() {
   const { t } = useTranslation();
@@ -214,6 +290,7 @@ function Game() {
       )}
 
       <MobileGameControls enabled={playing && selfAlive} />
+      <MobileGameGate enabled={playing} />
 
       {/* Controles. */}
       {round?.phase === "playing" && selfAlive && (

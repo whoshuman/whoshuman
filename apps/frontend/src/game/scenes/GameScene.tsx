@@ -6,9 +6,9 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 
 import { getCssColor } from "../../features/home-3d/homeSceneUtils";
 import {
-  TOUCH_SEEKER_LOOK_EVENT,
+  TOUCH_CAMERA_EVENT,
   TOUCH_SEEKER_SHOOT_EVENT,
-  type TouchSeekerLookDetail
+  type TouchCameraDetail
 } from "../input/touchInput";
 import betaCity from "../maps/beta-city.json";
 import { useGameStore } from "../store/gameStore";
@@ -48,6 +48,9 @@ const CHARACTER_SCALE = 0.48;
 const SEEKER_AIM_DISTANCE = Math.max(MAP_W, MAP_D) * 0.7;
 const SEEKER_OVERVIEW_DISTANCE = Math.max(MAP_W, MAP_D) * 1.35;
 const SEEKER_AIM_SENSITIVITY = 0.002;
+const TOUCH_CAMERA_SPEED = 1.8;
+const TOUCH_SEEKER_AIM_SPEED = 0.65;
+const HIDER_CAMERA_DISTANCE = 1.8;
 const CITY_MODEL_URL = "/models/beta-city-new.glb";
 const CITY_OFFSET: [number, number, number] = [-8.5, 0, -0.3];
 
@@ -163,8 +166,13 @@ function Units() {
   const idleEntityIds = useRef<string[][]>(CHARACTER_MODEL_URLS.map(() => []));
   const sprintingEntityIds = useRef<string[][]>(CHARACTER_MODEL_URLS.map(() => []));
   const previousPositions = useRef(new Map<string, { x: number; z: number }>());
+  const touchCamera = useRef({ x: 0, y: 0 });
+  const hiderCameraYaw = useRef(0);
+  const hiderCameraPitch = useRef(0.45);
   const transform = useMemo(() => new THREE.Object3D(), []);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const cameraDestination = useMemo(() => new THREE.Vector3(), []);
+  const cameraTarget = useMemo(() => new THREE.Vector3(), []);
   const characterAssets = useMemo(
     () =>
       characterModels.map(({ scene: characterScene, animations }) => {
@@ -251,7 +259,21 @@ function Units() {
     [characterAssets]
   );
 
-  useFrame(({ camera, clock }) => {
+  useEffect(() => {
+    const updateCamera = (event: Event) => {
+      touchCamera.current = (event as CustomEvent<TouchCameraDetail>).detail;
+    };
+    window.addEventListener(TOUCH_CAMERA_EVENT, updateCamera);
+    return () => window.removeEventListener(TOUCH_CAMERA_EVENT, updateCamera);
+  }, []);
+
+  useEffect(() => {
+    touchCamera.current = { x: 0, y: 0 };
+    hiderCameraYaw.current = 0;
+    hiderCameraPitch.current = 0.45;
+  }, [selfRole]);
+
+  useFrame(({ camera, clock }, delta) => {
     const entities = sampleWorld();
     const self = entities.find((entity) => entity.entityId === selfEntityId);
     const sprintFrame = Math.floor(clock.elapsedTime * SPRINT_FPS) % SPRINT_FRAME_COUNT;
@@ -273,12 +295,22 @@ function Units() {
         }
         selfRef.current.position.set(self.x, self.y, self.z);
         selfRef.current.rotation.y = self.rotationY;
-        const back = 1.6;
-        const height = 1.1;
-        const targetX = self.x - Math.sin(self.rotationY) * back;
-        const targetZ = self.z - Math.cos(self.rotationY) * back;
-        camera.position.lerp(new THREE.Vector3(targetX, self.y + height, targetZ), 0.08);
-        camera.lookAt(self.x, self.y + PLAYER_HEIGHT, self.z);
+        hiderCameraYaw.current += touchCamera.current.x * TOUCH_CAMERA_SPEED * delta;
+        hiderCameraPitch.current = THREE.MathUtils.clamp(
+          hiderCameraPitch.current + touchCamera.current.y * TOUCH_CAMERA_SPEED * delta,
+          0.12,
+          1.05
+        );
+        const yaw = self.rotationY + hiderCameraYaw.current;
+        const horizontalDistance = Math.cos(hiderCameraPitch.current) * HIDER_CAMERA_DISTANCE;
+        cameraDestination.set(
+          self.x - Math.sin(yaw) * horizontalDistance,
+          self.y + PLAYER_HEIGHT + Math.sin(hiderCameraPitch.current) * HIDER_CAMERA_DISTANCE,
+          self.z - Math.cos(yaw) * horizontalDistance
+        );
+        cameraTarget.set(self.x, self.y + PLAYER_HEIGHT, self.z);
+        camera.position.lerp(cameraDestination, 0.08);
+        camera.lookAt(cameraTarget);
       }
     }
 
@@ -400,6 +432,7 @@ function SeekerCamera() {
   const setAiming = useGameStore((s) => s.setAiming);
   const { camera, gl } = useThree();
   const pressed = useRef({ left: false, right: false });
+  const touchCamera = useRef({ x: 0, y: 0 });
   const aimPitch = useRef(0);
   const aimYaw = useRef(0);
   const target = useMemo(() => new THREE.Vector3(CENTER_X, 0.4, CENTER_Z), []);
@@ -458,14 +491,6 @@ function SeekerCamera() {
   useEffect(() => {
     if (selfRole !== "seeker") return;
     const applyAimMovement = (movementX: number, movementY: number) => {
-      if (!aiming) {
-        camera.position
-          .sub(target)
-          .applyAxisAngle(yAxis, -movementX * SEEKER_AIM_SENSITIVITY)
-          .add(target);
-        camera.lookAt(target);
-        return;
-      }
       aimYaw.current -= movementX * SEEKER_AIM_SENSITIVITY;
       aimPitch.current = THREE.MathUtils.clamp(
         aimPitch.current - movementY * SEEKER_AIM_SENSITIVITY,
@@ -477,17 +502,17 @@ function SeekerCamera() {
     const moveAim = (event: MouseEvent) => {
       if (aiming) applyAimMovement(event.movementX, event.movementY);
     };
-    const moveTouchAim = (event: Event) => {
-      const { movementX, movementY } = (event as CustomEvent<TouchSeekerLookDetail>).detail;
-      applyAimMovement(movementX, movementY);
-    };
     document.addEventListener("mousemove", moveAim);
-    window.addEventListener(TOUCH_SEEKER_LOOK_EVENT, moveTouchAim);
-    return () => {
-      document.removeEventListener("mousemove", moveAim);
-      window.removeEventListener(TOUCH_SEEKER_LOOK_EVENT, moveTouchAim);
+    return () => document.removeEventListener("mousemove", moveAim);
+  }, [aiming, camera, selfRole]);
+
+  useEffect(() => {
+    const updateCamera = (event: Event) => {
+      touchCamera.current = (event as CustomEvent<TouchCameraDetail>).detail;
     };
-  }, [aiming, camera, selfRole, target, yAxis]);
+    window.addEventListener(TOUCH_CAMERA_EVENT, updateCamera);
+    return () => window.removeEventListener(TOUCH_CAMERA_EVENT, updateCamera);
+  }, []);
 
   useEffect(() => {
     if (selfRole !== "seeker") return;
@@ -528,13 +553,23 @@ function SeekerCamera() {
 
   useFrame(({ camera }, delta) => {
     if (selfRole !== "seeker") return;
-    const direction = Number(pressed.current.right) - Number(pressed.current.left);
-    if (direction === 0) return;
+    const direction = THREE.MathUtils.clamp(
+      Number(pressed.current.right) - Number(pressed.current.left) + touchCamera.current.x,
+      -1,
+      1
+    );
     if (aiming) {
-      aimYaw.current -= direction * delta * 1.2;
+      if (direction === 0 && touchCamera.current.y === 0) return;
+      aimYaw.current -= direction * delta * TOUCH_SEEKER_AIM_SPEED;
+      aimPitch.current = THREE.MathUtils.clamp(
+        aimPitch.current - touchCamera.current.y * delta * TOUCH_SEEKER_AIM_SPEED,
+        -Math.PI / 2 + 0.1,
+        -0.05
+      );
       camera.rotation.set(aimPitch.current, aimYaw.current, 0, "YXZ");
       return;
     }
+    if (direction === 0) return;
     camera.position
       .sub(target)
       .applyAxisAngle(yAxis, direction * delta * 1.2)
