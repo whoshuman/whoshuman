@@ -27,6 +27,7 @@ import type {
 } from "@whoshuman/shared-types";
 import { MessagingService } from "../common/messaging.service";
 import { envs } from "../config";
+import { PresenceService } from "./presence.service";
 import { RealtimeAuthService } from "./realtime-auth.service";
 import { RealtimeRoomsService } from "./realtime-rooms.service";
 import type { RealtimeServer, RealtimeSocket } from "./realtime.types";
@@ -46,7 +47,8 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   constructor(
     private readonly auth: RealtimeAuthService,
     private readonly messaging: MessagingService,
-    private readonly rooms: RealtimeRoomsService
+    private readonly rooms: RealtimeRoomsService,
+    private readonly presence: PresenceService
   ) {}
 
   afterInit() {
@@ -60,6 +62,10 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       socket.data.user = user;
       await socket.join(this.rooms.userRoom(user.sub));
       socket.emit(ServerSocketEvents.gatewayReady, { user });
+      if (this.presence.add(user.sub)) {
+        // Primer socket de este usuario: avisamos a todos los clientes conectados.
+        this.server.emit(ServerSocketEvents.presenceChanged, { userId: user.sub, online: true });
+      }
       this.logger.log(`Socket connected: ${socket.id} user=${user.sub}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Socket authentication failed";
@@ -85,6 +91,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
         gameId,
         socketId: socket.id
       });
+    }
+
+    if (user && this.presence.remove(user.sub)) {
+      // Se ha cerrado su último socket: pasa a offline.
+      this.server.emit(ServerSocketEvents.presenceChanged, { userId: user.sub, online: false });
     }
 
     this.logger.log(`Socket disconnected: ${socket.id} user=${user?.sub ?? "anonymous"}`);
@@ -366,6 +377,12 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       aiming: payload.aiming,
       socketId: socket.id
     });
+  }
+
+  @SubscribeMessage(ClientSocketEvents.presenceList)
+  handlePresenceList(@ConnectedSocket() socket: RealtimeSocket) {
+    this.requireUser(socket); // ignora sockets no autenticados, igual que el resto
+    socket.emit(ServerSocketEvents.presenceState, { userIds: this.presence.list() });
   }
 
   private requireUser(socket: RealtimeSocket) {

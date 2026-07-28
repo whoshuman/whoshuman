@@ -37,6 +37,8 @@ export interface ServerToClientEvents {
   [ServerSocketEvents.gameJoined]: (payload: GameJoinResponse) => void;
   [ServerSocketEvents.gameLeft]: (payload: { gameId: string }) => void;
   [ServerSocketEvents.gameState]: (payload: GameStateSnapshotPayload) => void;
+  [ServerSocketEvents.presenceState]: (payload: { userIds: string[] }) => void;
+  [ServerSocketEvents.presenceChanged]: (payload: { userId: string; online: boolean }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -48,6 +50,7 @@ export interface ClientToServerEvents {
   [ClientSocketEvents.gameAim]: (payload: GameAimPayload) => void;
   [ClientSocketEvents.gameShoot]: (payload: GameShootPayload) => void;
   [ClientSocketEvents.playerInput]: (payload: PlayerInputPayload) => void;
+  [ClientSocketEvents.presenceList]: () => void;
 }
 
 export type RealtimeSocket = Socket<ClientToServerEvents, ServerToClientEvents, object, SocketData>;

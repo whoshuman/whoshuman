@@ -18,7 +18,9 @@ import {
 } from "../shared/api/friends";
 import { searchUsers } from "../shared/api/users";
 import { useAuthStore } from "../shared/authStore";
+import ConfirmDialog from "../shared/ConfirmDialog";
 import CornerBrackets from "../shared/CornerBrackets";
+import { usePresenceStore } from "../shared/presenceStore";
 import { useHologramSound } from "../shared/useHologramSound";
 
 type FriendsTab = "contacts" | "requests" | "search" | "blocked";
@@ -40,13 +42,16 @@ function RegistryRow({
   username,
   meta,
   onOpen,
+  online,
   children
 }: {
   username: string;
   meta: string;
   onOpen?: () => void;
+  online?: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-3 border border-neon-cyan/20 bg-white/3 px-4 py-3 transition hover:border-neon-cyan/40 hover:bg-white/5 sm:flex-row sm:items-center sm:justify-between">
       <button
@@ -59,7 +64,18 @@ function RegistryRow({
           {initialsOf(username)}
         </span>
         <span className="min-w-0">
-          <span className="font-display block truncate text-sm font-bold text-text-main">
+          <span className="font-display flex items-center gap-2 truncate text-sm font-bold text-text-main">
+            {online !== undefined && (
+              <span
+                title={online ? t("friends.online") : t("friends.offline")}
+                aria-label={online ? t("friends.online") : t("friends.offline")}
+                className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                  online
+                    ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
+                    : "bg-text-muted/30"
+                }`}
+              />
+            )}
             {username}
           </span>
           <span className="block text-xs text-text-muted/80">{meta}</span>
@@ -87,6 +103,39 @@ function LoadingState({ text }: { text: string }) {
   );
 }
 
+// Textos de cada acción de amistad. El diálogo en sí es el genérico de shared/ConfirmDialog.
+const FRIEND_ACTION_KEYS: Record<
+  FriendActionKind,
+  { action: string; title: string; message: string }
+> = {
+  send: {
+    action: "friends.sendRequest",
+    title: "friends.confirmSendTitle",
+    message: "friends.confirmSend"
+  },
+  remove: {
+    action: "friends.remove",
+    title: "friends.confirmRemoveTitle",
+    message: "friends.confirmRemove"
+  },
+  decline: {
+    action: "friends.decline",
+    title: "friends.confirmDeclineTitle",
+    message: "friends.confirmDecline"
+  },
+  block: {
+    action: "friends.block",
+    title: "friends.confirmBlockTitle",
+    message: "friends.confirmBlock"
+  },
+  unblock: {
+    action: "friends.unblock",
+    title: "friends.confirmUnblockTitle",
+    message: "friends.confirmUnblock"
+  }
+};
+
+// Traduce una acción de amistad a los textos del diálogo genérico.
 function ConfirmationDialog({
   kind,
   username,
@@ -101,106 +150,18 @@ function ConfirmationDialog({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const isDanger = kind === "remove" || kind === "decline" || kind === "block";
-  const actionKey: Record<FriendActionKind, string> = {
-    send: "friends.sendRequest",
-    remove: "friends.remove",
-    decline: "friends.decline",
-    block: "friends.block",
-    unblock: "friends.unblock"
-  };
-  const titleKey: Record<FriendActionKind, string> = {
-    send: "friends.confirmSendTitle",
-    remove: "friends.confirmRemoveTitle",
-    decline: "friends.confirmDeclineTitle",
-    block: "friends.confirmBlockTitle",
-    unblock: "friends.confirmUnblockTitle"
-  };
-  const messageKey: Record<FriendActionKind, string> = {
-    send: "friends.confirmSend",
-    remove: "friends.confirmRemove",
-    decline: "friends.confirmDecline",
-    block: "friends.confirmBlock",
-    unblock: "friends.confirmUnblock"
-  };
-
-  useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !pending) onCancel();
-    };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [onCancel, pending]);
+  const keys = FRIEND_ACTION_KEYS[kind];
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <div
-        aria-hidden="true"
-        onClick={pending ? undefined : onCancel}
-        className="absolute inset-0 cursor-default bg-bg/90 backdrop-blur-sm"
-      />
-      <section
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="friend-confirmation-title"
-        aria-describedby="friend-confirmation-message"
-        className={`animate-unfold-down relative w-full max-w-md origin-top border bg-surface shadow-[0_0_48px_rgba(0,0,0,0.6)] ${
-          isDanger ? "border-sun-orange/70" : "border-neon-cyan/70"
-        }`}
-      >
-        <CornerBrackets color={isDanger ? "var(--color-sun-orange)" : "var(--color-neon-cyan)"} />
-        <div
-          className={`border-b px-6 py-3 ${
-            isDanger ? "border-sun-orange/30 bg-sun-orange/8" : "border-neon-cyan/30 bg-neon-cyan/8"
-          }`}
-        >
-          <p
-            className={`font-display text-xs font-bold uppercase tracking-[0.3em] ${
-              isDanger ? "text-sun-orange" : "text-neon-cyan"
-            }`}
-          >
-            // {t("friends.confirmationRequired")}
-          </p>
-        </div>
-
-        <div className="px-6 py-7">
-          <h2
-            id="friend-confirmation-title"
-            className="font-display text-xl font-black uppercase text-text-main"
-          >
-            {t(titleKey[kind])}
-          </h2>
-          <p
-            id="friend-confirmation-message"
-            className="mt-3 text-sm leading-relaxed text-text-muted"
-          >
-            {t(messageKey[kind], { username })}
-          </p>
-
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              autoFocus
-              disabled={pending}
-              onClick={onCancel}
-              className="border border-neon-cyan/50 px-5 py-2.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10 disabled:opacity-50"
-            >
-              {t("friends.cancel")}
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={onConfirm}
-              className={`border-2 px-5 py-2.5 font-display text-xs font-black uppercase tracking-wider text-bg transition hover:brightness-110 disabled:opacity-50 ${
-                isDanger ? "border-sun-orange bg-sun-orange" : "border-neon-cyan bg-neon-cyan"
-              }`}
-            >
-              {t(actionKey[kind])}
-            </button>
-          </div>
-        </div>
-      </section>
-    </div>
+    <ConfirmDialog
+      title={t(keys.title)}
+      message={t(keys.message, { username })}
+      confirmLabel={t(keys.action)}
+      danger={kind === "remove" || kind === "decline" || kind === "block"}
+      pending={pending}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
   );
 }
 
@@ -330,6 +291,7 @@ function Friends() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
   const [pendingAction, setPendingAction] = useState<PendingFriendAction | null>(null);
+  const onlineIds = usePresenceStore((state) => state.online);
   useHologramSound();
 
   // Debounce: la query de red usa el texto "asentado" 300ms después de teclear,
@@ -509,6 +471,7 @@ function Friends() {
                   key={friendship.id}
                   username={friendship.user.username}
                   meta={sinceOf(friendship)}
+                  online={onlineIds.has(friendship.user.id)}
                   onOpen={() =>
                     setDossier({
                       profile: friendship.user,

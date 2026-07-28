@@ -14,7 +14,11 @@
     "underConstruction": "MÓDULO EN CONSTRUCCIÓN",
     "underConstructionDesc": "Esta sección aún no está disponible en el sistema. Vuelve más tarde.",
     "back": "VOLVER A INICIO",
-    "backShort": "ATRÁS"
+    "backShort": "ATRÁS",
+    "confirmationRequired": "CONFIRMACIÓN REQUERIDA",
+    "cancel": "CANCELAR",
+    "logoutTitle": "¿CERRAR SESIÓN?",
+    "logoutMessage": "Se cerrará tu sesión en este dispositivo. Tendrás que volver a identificarte para acceder de nuevo."
   },
   "settings": {
     "title": "AJUSTES",
@@ -36,7 +40,9 @@
       "logout": "Salir",
       "about": "Sobre el proyecto",
       "faq": "FAQ",
-      "support": "Soporte"
+      "support": "Soporte",
+      "privacy": "Privacidad",
+      "terms": "Términos"
     },
     "login": "Iniciar sesión",
     "register": "Registrarse",
@@ -173,11 +179,12 @@
     "searchHint": "Mínimo 2 caracteres. Búsqueda por distintivo, sin distinguir mayúsculas.",
     "statusLinked": "VINCULADO",
     "statusBlocked": "BLOQUEADO",
+    "online": "En línea",
+    "offline": "Desconectado",
     "accept": "ACEPTAR",
     "decline": "RECHAZAR",
     "remove": "ELIMINAR",
     "block": "BLOQUEAR",
-    "confirmationRequired": "CONFIRMACIÓN REQUERIDA",
     "confirmSendTitle": "ENVIAR SOLICITUD",
     "confirmRemoveTitle": "ELIMINAR CONTACTO",
     "confirmDeclineTitle": "RECHAZAR SOLICITUD",
@@ -188,7 +195,6 @@
     "confirmDecline": "¿Quieres rechazar la solicitud de {{username}}?",
     "confirmBlock": "¿Seguro que quieres bloquear a {{username}}? Esta unidad dejará de ser tu contacto.",
     "confirmUnblock": "¿Quieres desbloquear a {{username}}?",
-    "cancel": "CANCELAR",
     "unblock": "DESBLOQUEAR",
     "sendRequest": "SOLICITAR ENLACE",
     "requestSent": "SOLICITUD ENVIADA",
@@ -289,6 +295,70 @@
       }
     },
     "note": "Si el problema continúa, anota el mensaje de error y los pasos que lo provocaron antes de reiniciar la sesión."
+  },
+  "privacy": {
+    "eyebrow": "PROTOCOLO DE DATOS",
+    "title": "POLÍTICA DE PRIVACIDAD",
+    "subtitle": "Qué datos guarda Who's Human, para qué se usan y qué control tienes sobre ellos.",
+    "lastUpdated": "Última actualización: julio de 2026",
+    "items": {
+      "collect": {
+        "title": "QUÉ DATOS RECOGEMOS",
+        "body": "Al crear una cuenta guardamos tu correo electrónico y tu nombre de usuario. De forma opcional puedes añadir una biografía, un avatar y tu idioma preferido. Durante el juego se registran estadísticas de partida (rondas jugadas y puntuación) y tu lista de contactos."
+      },
+      "purpose": {
+        "title": "PARA QUÉ LOS USAMOS",
+        "body": "Únicamente para autenticar tu cuenta, mostrar tu perfil a otros jugadores y hacer funcionar las partidas. No usamos tus datos con fines publicitarios, no los vendemos y no los cedemos a terceros."
+      },
+      "storage": {
+        "title": "DÓNDE SE GUARDAN",
+        "body": "En la base de datos PostgreSQL del propio proyecto, alojada junto al resto de servicios. Tu contraseña nunca se guarda en claro: almacenamos únicamente su hash cifrado con bcrypt."
+      },
+      "cookies": {
+        "title": "SESIÓN Y NAVEGADOR",
+        "body": "No utilizamos cookies de seguimiento ni analítica de terceros. Al iniciar sesión guardamos un token de acceso en el almacenamiento local de tu navegador para mantener la sesión abierta; se elimina al cerrar sesión."
+      },
+      "rights": {
+        "title": "TUS DERECHOS",
+        "body": "Puedes consultar y modificar tus datos desde tu perfil en cualquier momento, y eliminar tu cuenta cuando quieras. Al eliminarla, tus datos personales se anonimizan de forma permanente."
+      },
+      "academic": {
+        "title": "PROYECTO ACADÉMICO",
+        "body": "Who's Human es un proyecto educativo desarrollado en 42 School, sin ánimo de lucro ni explotación comercial de los datos. El servicio puede detenerse una vez finalizada su evaluación."
+      }
+    }
+  },
+  "terms": {
+    "eyebrow": "PROTOCOLO DE USO",
+    "title": "TÉRMINOS DEL SERVICIO",
+    "subtitle": "Las condiciones bajo las que puedes usar Who's Human.",
+    "lastUpdated": "Última actualización: julio de 2026",
+    "items": {
+      "acceptance": {
+        "title": "ACEPTACIÓN",
+        "body": "Al crear una cuenta y utilizar el servicio aceptas estas condiciones. Si no estás de acuerdo con ellas, no uses la plataforma."
+      },
+      "nature": {
+        "title": "NATURALEZA DEL SERVICIO",
+        "body": "Who's Human es un proyecto educativo de 42 School. El servicio se ofrece tal cual, sin garantía de disponibilidad, de conservación de los datos ni de ausencia de errores."
+      },
+      "accounts": {
+        "title": "TU CUENTA",
+        "body": "Eres responsable de mantener tu contraseña a salvo y de la actividad realizada desde tu cuenta. Se permite una cuenta por persona y no está permitido suplantar la identidad de otros usuarios."
+      },
+      "conduct": {
+        "title": "NORMAS DE CONDUCTA",
+        "body": "No está permitido acosar, insultar ni discriminar a otros jugadores, hacer trampas o modificar el cliente para obtener ventaja, ni intentar interrumpir o sobrecargar el servicio."
+      },
+      "enforcement": {
+        "title": "INCUMPLIMIENTO",
+        "body": "Podemos suspender o eliminar las cuentas que incumplan estas normas, sin aviso previo y sin derecho a compensación."
+      },
+      "availability": {
+        "title": "DISPONIBILIDAD Y CAMBIOS",
+        "body": "Al tratarse de un entorno de prácticas, el servicio puede interrumpirse, reiniciarse o cambiar en cualquier momento. Las partidas en curso pueden perderse durante un reinicio."
+      }
+    }
   },
   "game": {
     "role": "Rol",

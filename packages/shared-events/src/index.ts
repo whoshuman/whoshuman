@@ -78,7 +78,8 @@ export const ClientSocketEvents = {
   gameLeave: "game:leave",
   gameAim: "game:aim",
   gameShoot: "game:shoot",
-  playerInput: "game:player-input"
+  playerInput: "game:player-input",
+  presenceList: "presence:list"
 } as const;
 
 export const ServerSocketEvents = {
@@ -91,7 +92,9 @@ export const ServerSocketEvents = {
   gameLeft: "game:left",
   notification: "notification",
   gameState: "game:state",
-  lobbyState: "lobby:state"
+  lobbyState: "lobby:state",
+  presenceState: "presence:state",
+  presenceChanged: "presence:changed"
 } as const;
 
 export type AuthSubject = (typeof AuthSubjects)[keyof typeof AuthSubjects];

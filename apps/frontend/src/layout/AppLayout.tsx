@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LogOut, UsersRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,9 +7,12 @@ import { connectSocket, disconnectSocket } from "../game/network/socket";
 import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
 import { useAuthStore } from "../shared/authStore";
+import ConfirmDialog from "../shared/ConfirmDialog";
 import { initNotifications } from "../shared/notifications";
 import NotificationCenter from "../shared/NotificationCenter";
 import NotificationToasts from "../shared/NotificationToasts";
+import { initPresence } from "../shared/presence";
+import { usePresenceStore } from "../shared/presenceStore";
 import SettingsMenu from "../shared/SettingsMenu";
 import { AUTH_UNAUTHORIZED_EVENT } from "../shared/api/httpClient";
 
@@ -25,7 +28,9 @@ const ROUTES_WITH_BACKGROUND = new Set([
   "/manual",
   "/about",
   "/faq",
-  "/support"
+  "/support",
+  "/privacy",
+  "/terms"
 ]);
 // Rutas reconocidas por el router. Si la ruta actual no esta aqui, es un 404.
 const KNOWN_ROUTES = new Set([
@@ -41,6 +46,8 @@ const KNOWN_ROUTES = new Set([
   "/about",
   "/faq",
   "/support",
+  "/privacy",
+  "/terms",
   "/design-system"
 ]);
 const PROTECTED_ROUTES = new Set(["/lobby", "/game", "/profile", "/friends"]);
@@ -55,7 +62,9 @@ const LOBBY_FOOTER_LINKS = [
   { to: "/about", key: "about" },
   { to: "/manual", key: "manual" },
   { to: "/faq", key: "faq" },
-  { to: "/support", key: "support" }
+  { to: "/support", key: "support" },
+  { to: "/privacy", key: "privacy" },
+  { to: "/terms", key: "terms" }
 ] as const;
 
 const navChipBase =
@@ -78,6 +87,8 @@ function AppLayout() {
   const isProtectedRoute = PROTECTED_ROUTES.has(pathname);
   const canRenderRoute = !isProtectedRoute || (isAuthenticated && hasAccessToken);
   const navLinks = !isAuthenticated && authRestored ? PUBLIC_NAV_LINKS : [];
+  // Cerrar sesión pide confirmación: es fácil pulsarlo sin querer y pierdes la partida en curso.
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   useEffect(() => {
     void restore();
@@ -102,10 +113,12 @@ function AppLayout() {
     if (isAuthenticated) {
       connectSocket();
       initNotifications();
+      initPresence();
     } else {
       disconnectSocket();
       useLobbyStore.getState().reset();
       useGameStore.getState().reset();
+      usePresenceStore.getState().reset();
     }
   }, [authRestored, isAuthenticated]);
 
@@ -118,6 +131,7 @@ function AppLayout() {
   const showFooter = showHud && pathname !== "/about" && pathname !== "/manual";
 
   async function handleLogout() {
+    setLogoutOpen(false);
     await signOut();
     void navigate({ to: "/", replace: true });
   }
@@ -126,6 +140,17 @@ function AppLayout() {
     <div>
       {showBackground && <SceneBackground />}
       <NotificationToasts />
+
+      {logoutOpen && (
+        <ConfirmDialog
+          title={t("common.logoutTitle")}
+          message={t("common.logoutMessage")}
+          confirmLabel={t("profilePage.logout")}
+          danger
+          onConfirm={() => void handleLogout()}
+          onCancel={() => setLogoutOpen(false)}
+        />
+      )}
 
       <div className="relative z-10 flex min-h-screen flex-col">
         {showHud && (
@@ -185,7 +210,7 @@ function AppLayout() {
               {isAuthenticated && (
                 <button
                   type="button"
-                  onClick={() => void handleLogout()}
+                  onClick={() => setLogoutOpen(true)}
                   title={t("profilePage.logout")}
                   aria-label={t("profilePage.logout")}
                   className="flex h-10 w-10 items-center justify-center border border-sun-orange/50 bg-sun-orange/8 text-sun-orange transition hover:border-sun-orange hover:bg-sun-orange/18 hover:shadow-[0_0_16px_rgba(255,159,28,0.3)]"
