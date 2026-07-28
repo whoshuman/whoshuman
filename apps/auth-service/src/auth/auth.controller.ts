@@ -3,6 +3,9 @@ import { MessagePattern, Payload } from "@nestjs/microservices";
 import { AuthSubjects } from "@whoshuman/shared-events";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
+import { OAuthCallbackDto } from "./dto/oauth-callback.dto";
+import { OAuthCompleteDto } from "./dto/oauth-complete.dto";
+import { OAuthStartDto } from "./dto/oauth-start.dto";
 import { RefreshDto } from "./dto/refresh.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { VerifyDto } from "./dto/verify.dto";
@@ -29,6 +32,21 @@ export class AuthController {
   @MessagePattern(AuthSubjects.login)
   login(@Payload() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @MessagePattern(AuthSubjects.oauthStart)
+  oauthStart(@Payload() dto: OAuthStartDto) {
+    return this.authService.oauthStart(dto);
+  }
+
+  @MessagePattern(AuthSubjects.oauthCallback)
+  oauthCallback(@Payload() dto: OAuthCallbackDto) {
+    return this.authService.oauthCallback(dto);
+  }
+
+  @MessagePattern(AuthSubjects.oauthComplete)
+  oauthComplete(@Payload() dto: OAuthCompleteDto) {
+    return this.authService.oauthComplete(dto);
   }
 
   @MessagePattern(AuthSubjects.logout)

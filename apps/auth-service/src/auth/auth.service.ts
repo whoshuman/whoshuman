@@ -4,6 +4,9 @@ import { JwtService, type JwtSignOptions } from "@nestjs/jwt";
 import { RpcException } from "@nestjs/microservices";
 import type { User } from "@prisma/client";
 import type {
+  OAuthCallbackResponse,
+  OAuthProvider,
+  OAuthStartResponse,
   AuthLogoutResponse,
   AuthRefreshResponse,
   AuthSessionResponse,
@@ -17,7 +20,11 @@ import ms from "ms";
 import { envs } from "../config";
 import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
+import { OAuthCallbackDto } from "./dto/oauth-callback.dto";
+import { OAuthCompleteDto } from "./dto/oauth-complete.dto";
+import { OAuthStartDto } from "./dto/oauth-start.dto";
 import { RegisterDto } from "./dto/register.dto";
+import { OAuthProviderService } from "./oauth-provider.service";
 
 // ─── Constantes de seguridad ───────────────────────────────────────────────────
 
@@ -27,6 +34,17 @@ import { RegisterDto } from "./dto/register.dto";
  * de fuerza bruta, pero rápido para el usuario al hacer login.
  */
 const SALT_ROUNDS = 10;
+const OAUTH_TICKET_AUDIENCE = "oauth-complete";
+const OAUTH_TICKET_ISSUER = "whoshuman-auth";
+
+interface OAuthTicketPayload {
+  kind: "oauth-login";
+  provider: OAuthProvider;
+  providerAccountId: string;
+  email: string;
+  avatar: string | null;
+  userId?: string;
+}
 
 /**
  * AuthService concentra TODA la lógica de autenticación.
@@ -44,7 +62,8 @@ const SALT_ROUNDS = 10;
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jwt: JwtService
+    private readonly jwt: JwtService,
+    private readonly oauthProvider: OAuthProviderService
   ) {}
 
   // ─── Helpers privados ──────────────────────────────────────────────────────────
@@ -116,6 +135,43 @@ export class AuthService {
     return refreshToken;
   }
 
+  private async authSession(user: User): Promise<AuthSessionResponse> {
+    const accessToken = this.signAccessToken({
+      sub: user.id,
+      email: user.email,
+      username: user.username
+    });
+    const refreshToken = await this.createSession(user.id);
+    return {
+      user: this.toPublicUser(user),
+      tokens: { accessToken, refreshToken }
+    };
+  }
+
+  private signOAuthTicket(payload: OAuthTicketPayload): string {
+    return this.jwt.sign(payload, {
+      secret: envs.jwtRefreshSecret,
+      expiresIn: "5m",
+      audience: OAUTH_TICKET_AUDIENCE,
+      issuer: OAUTH_TICKET_ISSUER,
+      jwtid: randomUUID()
+    });
+  }
+
+  private verifyOAuthTicket(ticket: string): OAuthTicketPayload {
+    try {
+      const payload = this.jwt.verify<OAuthTicketPayload>(ticket, {
+        secret: envs.jwtRefreshSecret,
+        audience: OAUTH_TICKET_AUDIENCE,
+        issuer: OAUTH_TICKET_ISSUER
+      });
+      if (payload.kind !== "oauth-login") throw new Error("Wrong ticket kind");
+      return payload;
+    } catch {
+      throw new RpcException({ statusCode: 401, message: "oauthTicketInvalid" });
+    }
+  }
+
   // ─── Métodos públicos ──────────────────────────────────────────────────────────
 
   /**
@@ -151,17 +207,7 @@ export class AuthService {
       data: { email: dto.email, username: dto.username, passwordHash, language }
     });
 
-    const accessToken = this.signAccessToken({
-      sub: user.id,
-      email: user.email,
-      username: user.username
-    });
-    const refreshToken = await this.createSession(user.id);
-
-    return {
-      user: this.toPublicUser(user),
-      tokens: { accessToken, refreshToken }
-    };
+    return this.authSession(user);
   }
 
   /**
@@ -186,17 +232,116 @@ export class AuthService {
       throw new RpcException({ statusCode: 401, message: "invalidCredentials" });
     }
 
-    const accessToken = this.signAccessToken({
-      sub: user.id,
-      email: user.email,
-      username: user.username
+    return this.authSession(user);
+  }
+
+  oauthStart(dto: OAuthStartDto): OAuthStartResponse {
+    return {
+      authorizationUrl: this.oauthProvider.authorizationUrl(dto.provider, dto.state)
+    };
+  }
+
+  async oauthCallback(dto: OAuthCallbackDto): Promise<OAuthCallbackResponse> {
+    const identity = await this.oauthProvider.exchangeCode(dto.provider, dto.code);
+    const account = await this.prisma.oAuthAccount.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider: identity.provider,
+          providerAccountId: identity.providerAccountId
+        }
+      },
+      include: { user: true }
     });
-    const refreshToken = await this.createSession(user.id);
+    const emailUser = account
+      ? null
+      : await this.prisma.user.findUnique({ where: { email: identity.email } });
+    const user = account?.user ?? emailUser;
+    if (user?.deletedAt) {
+      throw new RpcException({ statusCode: 401, message: "userNotFound" });
+    }
 
     return {
-      user: this.toPublicUser(user),
-      tokens: { accessToken, refreshToken }
+      ticket: this.signOAuthTicket({
+        kind: "oauth-login",
+        provider: identity.provider,
+        providerAccountId: identity.providerAccountId,
+        email: identity.email,
+        avatar: identity.avatar,
+        userId: user?.id
+      }),
+      requiresDesignation: !user,
+      suggestedDesignation: user ? undefined : identity.suggestedDesignation
     };
+  }
+
+  async oauthComplete(dto: OAuthCompleteDto): Promise<AuthSessionResponse> {
+    const ticket = this.verifyOAuthTicket(dto.ticket);
+    const linkedAccount = await this.prisma.oAuthAccount.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider: ticket.provider,
+          providerAccountId: ticket.providerAccountId
+        }
+      },
+      include: { user: true }
+    });
+    if (linkedAccount) {
+      if (linkedAccount.user.deletedAt) {
+        throw new RpcException({ statusCode: 401, message: "userNotFound" });
+      }
+      return this.authSession(linkedAccount.user);
+    }
+
+    let user = ticket.userId
+      ? await this.prisma.user.findUnique({ where: { id: ticket.userId } })
+      : await this.prisma.user.findUnique({ where: { email: ticket.email } });
+
+    if (user) {
+      if (user.deletedAt) {
+        throw new RpcException({ statusCode: 401, message: "userNotFound" });
+      }
+      await this.prisma.oAuthAccount.create({
+        data: {
+          provider: ticket.provider,
+          providerAccountId: ticket.providerAccountId,
+          userId: user.id
+        }
+      });
+      return this.authSession(user);
+    }
+
+    const username = dto.username?.trim();
+    if (!username || username.length < 3 || username.length > 20) {
+      throw new RpcException({ statusCode: 400, message: "oauthDesignationRequired" });
+    }
+    const usernameTaken = await this.prisma.user.findUnique({ where: { username } });
+    if (usernameTaken) {
+      throw new RpcException({ statusCode: 409, message: "usernameTaken" });
+    }
+
+    const passwordHash = await bcrypt.hash(randomUUID(), SALT_ROUNDS);
+    const language =
+      dto.language &&
+      SUPPORTED_LANGUAGES.includes(dto.language as (typeof SUPPORTED_LANGUAGES)[number])
+        ? dto.language
+        : DEFAULT_LANGUAGE;
+    user = await this.prisma.user.create({
+      data: {
+        email: ticket.email,
+        username,
+        passwordHash,
+        avatar: ticket.avatar,
+        language,
+        oauthAccounts: {
+          create: {
+            provider: ticket.provider,
+            providerAccountId: ticket.providerAccountId
+          }
+        }
+      }
+    });
+
+    return this.authSession(user);
   }
 
   /**

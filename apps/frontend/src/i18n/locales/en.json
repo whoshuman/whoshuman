@@ -79,7 +79,24 @@
   "oauth": {
     "continueWith": "OR CONTINUE WITH",
     "google": "Google",
-    "school": "42 School"
+    "school": "42 School",
+    "protocol": "IDENTITY LINK",
+    "connectingTitle": "SYNCING UNIT",
+    "connecting": "VERIFYING CREDENTIALS...",
+    "designationTitle": "UNIT DESIGNATION",
+    "designationDescription": "This is your first access. Choose the identifier other players will see.",
+    "designationLabel": "Unit designation",
+    "designationHint": "Between 3 and 20 characters.",
+    "confirmDesignation": "CONFIRM DESIGNATION",
+    "backToLogin": "BACK TO ACCESS",
+    "errors": {
+      "oauthDenied": "You cancelled access with the provider.",
+      "oauthStateInvalid": "The access request has expired or is invalid.",
+      "oauthCodeMissing": "The provider did not return an access code.",
+      "oauthProviderInvalid": "Invalid access provider.",
+      "oauthProviderUnavailable": "Access could not be completed with the provider.",
+      "oauthFailed": "External authentication could not be completed."
+    }
   },
   "lobby": {
     "eyebrow": "OPERATIONS TERMINAL",

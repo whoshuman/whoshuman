@@ -79,7 +79,24 @@
   "oauth": {
     "continueWith": "OU CONTINUER AVEC",
     "google": "Google",
-    "school": "42 School"
+    "school": "42 School",
+    "protocol": "LIEN D'IDENTITÉ",
+    "connectingTitle": "SYNCHRONISATION DE L'UNITÉ",
+    "connecting": "VÉRIFICATION DES IDENTIFIANTS...",
+    "designationTitle": "DÉSIGNATION DE L'UNITÉ",
+    "designationDescription": "C'est votre premier accès. Choisissez l'identifiant visible par les autres joueurs.",
+    "designationLabel": "Désignation de l'unité",
+    "designationHint": "Entre 3 et 20 caractères.",
+    "confirmDesignation": "CONFIRMER LA DÉSIGNATION",
+    "backToLogin": "RETOUR À L'ACCÈS",
+    "errors": {
+      "oauthDenied": "Vous avez annulé l'accès avec le fournisseur.",
+      "oauthStateInvalid": "La demande d'accès a expiré ou n'est pas valide.",
+      "oauthCodeMissing": "Le fournisseur n'a pas renvoyé de code d'accès.",
+      "oauthProviderInvalid": "Fournisseur d'accès non valide.",
+      "oauthProviderUnavailable": "Impossible de terminer l'accès avec le fournisseur.",
+      "oauthFailed": "L'authentification externe n'a pas pu être terminée."
+    }
   },
   "lobby": {
     "eyebrow": "TERMINAL D'OPÉRATIONS",

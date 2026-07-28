@@ -21,6 +21,19 @@ export async function register(
   return data;
 }
 
+export async function completeOAuth(
+  ticket: string,
+  username: string | undefined,
+  language: string
+): Promise<AuthSessionResponse> {
+  const { data } = await httpClient.post<AuthSessionResponse>("/auth/oauth/complete", {
+    ticket,
+    username,
+    language
+  });
+  return data;
+}
+
 export async function refresh(refreshToken: string): Promise<AuthRefreshResponse> {
   const { data } = await httpClient.post<AuthRefreshResponse>("/auth/refresh", { refreshToken });
   return data;

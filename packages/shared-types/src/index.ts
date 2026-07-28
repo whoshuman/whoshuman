@@ -47,6 +47,34 @@ export interface LoginPayload {
   password: string;
 }
 
+export type OAuthProvider = "google" | "42";
+
+export interface OAuthStartPayload {
+  provider: OAuthProvider;
+  state: string;
+}
+
+export interface OAuthStartResponse {
+  authorizationUrl: string;
+}
+
+export interface OAuthCallbackPayload {
+  provider: OAuthProvider;
+  code: string;
+}
+
+export interface OAuthCallbackResponse {
+  ticket: string;
+  requiresDesignation: boolean;
+  suggestedDesignation?: string;
+}
+
+export interface OAuthCompletePayload {
+  ticket: string;
+  username?: string;
+  language?: string;
+}
+
 export interface RefreshPayload {
   refreshToken: string;
 }

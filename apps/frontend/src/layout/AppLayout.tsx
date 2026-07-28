@@ -21,6 +21,7 @@ import { AUTH_UNAUTHORIZED_EVENT } from "../shared/api/httpClient";
 const ROUTES_WITH_BACKGROUND = new Set([
   "/login",
   "/register",
+  "/oauth/callback",
   "/lobby",
   "/profile",
   "/friends",
@@ -37,6 +38,7 @@ const KNOWN_ROUTES = new Set([
   "/",
   "/login",
   "/register",
+  "/oauth/callback",
   "/lobby",
   "/game",
   "/profile",

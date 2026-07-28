@@ -1,6 +1,9 @@
 export const AuthSubjects = {
   register: "auth.register",
   login: "auth.login",
+  oauthStart: "auth.oauth.start",
+  oauthCallback: "auth.oauth.callback",
+  oauthComplete: "auth.oauth.complete",
   logout: "auth.logout",
   refresh: "auth.refresh",
   verify: "auth.verify",

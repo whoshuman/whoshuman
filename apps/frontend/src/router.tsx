@@ -16,6 +16,7 @@ import Faq from "./pages/Faq";
 import Support from "./pages/Support";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import OAuthCallback from "./pages/OAuthCallback";
 import DesignSystem from "./pages/DesignSystem";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +40,12 @@ const registerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/register",
   component: Register
+});
+
+const oauthCallbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/oauth/callback",
+  component: OAuthCallback
 });
 
 const lobbyRoute = createRoute({
@@ -117,6 +124,7 @@ const routeTree = rootRoute.addChildren([
   homeRoute,
   loginRoute,
   registerRoute,
+  oauthCallbackRoute,
   lobbyRoute,
   gameRoute,
   profileRoute,
