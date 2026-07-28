@@ -31,10 +31,14 @@ const REQUEST_TIMEOUT_MS = 3000;
 export class MessagingService {
   constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
 
-  async request<TResult>(pattern: string, data: unknown): Promise<TResult> {
+  async request<TResult>(
+    pattern: string,
+    data: unknown,
+    timeoutMs = REQUEST_TIMEOUT_MS
+  ): Promise<TResult> {
     try {
       return await firstValueFrom(
-        this.client.send<TResult>(pattern, data).pipe(timeout(REQUEST_TIMEOUT_MS))
+        this.client.send<TResult>(pattern, data).pipe(timeout(timeoutMs))
       );
     } catch (error) {
       throw this.toHttpException(error);

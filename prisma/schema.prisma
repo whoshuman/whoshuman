@@ -38,10 +38,24 @@ model User {
   sentFriendRequests     Friendship[]   @relation("SentFriendRequests")
   receivedFriendRequests Friendship[]   @relation("ReceivedFriendRequests")
   notifications          Notification[]
+  oauthAccounts          OAuthAccount[]
   createdAt              DateTime       @default(now())
   updatedAt              DateTime       @updatedAt
 
   @@map("users")
+}
+
+model OAuthAccount {
+  id                String   @id @default(uuid())
+  provider          String
+  providerAccountId String
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("oauth_accounts")
 }
 
 model Notification {

@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
 function startOAuth(provider: "google" | "42") {
-  window.location.href = `${API_BASE}/api/auth/${provider}`;
+  window.location.assign(`${API_BASE.replace(/\/$/, "")}/auth/oauth/${provider}`);
 }
 
 // Logo de Google (G multicolor oficial, simplificado).

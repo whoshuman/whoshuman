@@ -21,6 +21,7 @@ import { RpcException } from "@nestjs/microservices";
 import { Test } from "@nestjs/testing";
 import { AuthService } from "./auth.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { OAuthProviderService, type OAuthIdentity } from "./oauth-provider.service";
 
 // Tipo del mock de Prisma: solo los métodos que AuthService usa realmente.
 interface PrismaMock {
@@ -34,6 +35,15 @@ interface PrismaMock {
     findUnique: jest.Mock;
     delete: jest.Mock;
   };
+  oAuthAccount: {
+    findUnique: jest.Mock;
+    create: jest.Mock;
+  };
+}
+
+interface OAuthProviderMock {
+  authorizationUrl: jest.Mock;
+  exchangeCode: jest.Mock;
 }
 
 // Lee, tipado, el primer argumento de la primera llamada a un mock de Prisma create.
@@ -63,6 +73,7 @@ function buildDbUser(overrides: Partial<Record<string, unknown>> = {}) {
     avatar: null,
     bio: null,
     language: "en",
+    deletedAt: null,
     createdAt: new Date("2026-01-01"),
     updatedAt: new Date("2026-01-01"),
     ...overrides
@@ -72,6 +83,7 @@ function buildDbUser(overrides: Partial<Record<string, unknown>> = {}) {
 describe("AuthService", () => {
   let service: AuthService;
   let prisma: PrismaMock;
+  let oauthProvider: OAuthProviderMock;
 
   beforeEach(async () => {
     prisma = {
@@ -84,14 +96,92 @@ describe("AuthService", () => {
         create: jest.fn(),
         findUnique: jest.fn(),
         delete: jest.fn()
+      },
+      oAuthAccount: {
+        findUnique: jest.fn(),
+        create: jest.fn()
       }
+    };
+    oauthProvider = {
+      authorizationUrl: jest.fn(),
+      exchangeCode: jest.fn()
     };
 
     const moduleRef = await Test.createTestingModule({
-      providers: [AuthService, JwtService, { provide: PrismaService, useValue: prisma }]
+      providers: [
+        AuthService,
+        JwtService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: OAuthProviderService, useValue: oauthProvider }
+      ]
     }).compile();
 
     service = moduleRef.get(AuthService);
+  });
+
+  describe("OAuth", () => {
+    const identity: OAuthIdentity = {
+      provider: "google",
+      providerAccountId: "google-123",
+      email: "alice@test.com",
+      avatar: "https://example.com/avatar.png",
+      suggestedDesignation: "alice"
+    };
+
+    it("solicita la Designación de unidad para una identidad nueva", async () => {
+      oauthProvider.exchangeCode.mockResolvedValue(identity);
+      prisma.oAuthAccount.findUnique.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      const result = await service.oauthCallback({ provider: "google", code: "code" });
+
+      expect(result.requiresDesignation).toBe(true);
+      expect(result.suggestedDesignation).toBe("alice");
+      expect(result.ticket).toBeDefined();
+    });
+
+    it("completa el primer acceso y crea la identidad vinculada", async () => {
+      oauthProvider.exchangeCode.mockResolvedValue(identity);
+      prisma.oAuthAccount.findUnique.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve(buildDbUser(data))
+      );
+      prisma.session.create.mockResolvedValue({});
+
+      const callback = await service.oauthCallback({ provider: "google", code: "code" });
+      const result = await service.oauthComplete({
+        ticket: callback.ticket,
+        username: "ALICE_42",
+        language: "es"
+      });
+
+      expect(result.user.username).toBe("ALICE_42");
+      expect(result.user.language).toBe("es");
+      const createArg = firstCreateArgFull(prisma.user.create);
+      expect(createArg.data.oauthAccounts).toEqual({
+        create: { provider: "google", providerAccountId: "google-123" }
+      });
+      expect(result.tokens.accessToken).toBeDefined();
+    });
+
+    it("entra directamente cuando la identidad ya está vinculada", async () => {
+      const user = buildDbUser();
+      oauthProvider.exchangeCode.mockResolvedValue(identity);
+      prisma.oAuthAccount.findUnique.mockResolvedValue({
+        provider: "google",
+        providerAccountId: "google-123",
+        user
+      });
+      prisma.session.create.mockResolvedValue({});
+
+      const callback = await service.oauthCallback({ provider: "google", code: "code" });
+      const result = await service.oauthComplete({ ticket: callback.ticket });
+
+      expect(callback.requiresDesignation).toBe(false);
+      expect(result.user.id).toBe(user.id);
+      expect(prisma.user.create).not.toHaveBeenCalled();
+    });
   });
 
   // ─── REGISTER ──────────────────────────────────────────────────────────────────
