@@ -2,55 +2,66 @@ import { Crosshair, ScanSearch } from "lucide-react";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 
-import { moveTouchSeeker, shootTouchSeeker } from "../input/touchInput";
+import { normalizeJoystick, setTouchCamera, shootTouchSeeker } from "../input/touchInput";
 import { useGameStore } from "../store/gameStore";
 
 const DEAD_ZONE = 0.12;
+const BASE_RADIUS = 56;
+const KNOB_RADIUS = 40;
 
-function MobileJoystick() {
-  const { t } = useTranslation();
-  const sendInput = useGameStore((state) => state.sendInput);
-  const baseRef = useRef<HTMLDivElement>(null);
+interface VirtualJoystickProps {
+  label: string;
+  side: "left" | "right";
+  onChange: (x: number, y: number) => void;
+}
+
+function VirtualJoystick({ label, side, onChange }: VirtualJoystickProps) {
+  const zoneRef = useRef<HTMLDivElement>(null);
   const activePointer = useRef<number | null>(null);
-  const lastInput = useRef({ forward: 0, turn: 0 });
+  const origin = useRef({ x: 0, y: 0 });
+  const onChangeRef = useRef(onChange);
+  const lastVector = useRef({ x: 0, y: 0 });
+  const [base, setBase] = useState<{ x: number; y: number } | null>(null);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
+  onChangeRef.current = onChange;
 
   function update(clientX: number, clientY: number) {
-    const rect = baseRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const rawX = clientX - origin.current.x;
+    const rawY = clientY - origin.current.y;
+    const { knobX, knobY, x, y } = normalizeJoystick(rawX, rawY, KNOB_RADIUS, DEAD_ZONE);
 
-    const radius = rect.width * 0.31;
-    const rawX = clientX - (rect.left + rect.width / 2);
-    const rawY = clientY - (rect.top + rect.height / 2);
-    const distance = Math.hypot(rawX, rawY);
-    const scale = distance > radius ? radius / distance : 1;
-    const x = rawX * scale;
-    const y = rawY * scale;
-    const forward = Math.abs(y / radius) < DEAD_ZONE ? 0 : -y / radius;
-    const turn = Math.abs(x / radius) < DEAD_ZONE ? 0 : -x / radius;
-
-    setKnob({ x, y });
-    if (
-      Math.abs(forward - lastInput.current.forward) > 0.02 ||
-      Math.abs(turn - lastInput.current.turn) > 0.02
-    ) {
-      lastInput.current = { forward, turn };
-      sendInput(forward, turn);
+    setKnob({ x: knobX, y: knobY });
+    if (Math.abs(x - lastVector.current.x) > 0.02 || Math.abs(y - lastVector.current.y) > 0.02) {
+      lastVector.current = { x, y };
+      onChangeRef.current(x, y);
     }
   }
 
   function reset() {
+    if (activePointer.current === null) return;
     activePointer.current = null;
+    setBase(null);
     setKnob({ x: 0, y: 0 });
-    if (lastInput.current.forward !== 0 || lastInput.current.turn !== 0) {
-      lastInput.current = { forward: 0, turn: 0 };
-      sendInput(0, 0);
+    if (lastVector.current.x !== 0 || lastVector.current.y !== 0) {
+      lastVector.current = { x: 0, y: 0 };
+      onChangeRef.current(0, 0);
     }
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (activePointer.current !== null) return;
     event.preventDefault();
+    const rect = zoneRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const padding = BASE_RADIUS + 8;
+    const minY = padding;
+    const maxY = Math.max(minY, rect.height - padding);
+    const centerX = Math.min(Math.max(event.clientX - rect.left, padding), rect.width - padding);
+    const centerY = Math.min(Math.max(event.clientY - rect.top, minY), maxY);
+
     activePointer.current = event.pointerId;
+    origin.current = { x: rect.left + centerX, y: rect.top + centerY };
+    setBase({ x: centerX, y: centerY });
     event.currentTarget.setPointerCapture(event.pointerId);
     update(event.clientX, event.clientY);
   }
@@ -66,30 +77,70 @@ function MobileJoystick() {
     reset();
   }
 
-  useEffect(() => () => sendInput(0, 0), [sendInput]);
+  useEffect(() => {
+    const stop = () => {
+      if (activePointer.current !== null) reset();
+    };
+    const stopWhenHidden = () => {
+      if (document.hidden) stop();
+    };
+    window.addEventListener("blur", stop);
+    window.addEventListener("pagehide", stop);
+    document.addEventListener("visibilitychange", stopWhenHidden);
+    return () => {
+      window.removeEventListener("blur", stop);
+      window.removeEventListener("pagehide", stop);
+      document.removeEventListener("visibilitychange", stopWhenHidden);
+      if (activePointer.current !== null) {
+        activePointer.current = null;
+        onChangeRef.current(0, 0);
+      }
+    };
+  }, []);
 
   return (
     <div
-      ref={baseRef}
+      ref={zoneRef}
       role="group"
-      aria-label={t("game.move")}
-      className="pointer-events-auto absolute z-20 flex h-32 w-32 touch-none select-none items-center justify-center rounded-full border border-neon-cyan/60 bg-bg/45 shadow-[0_0_24px_rgba(36,245,255,0.18)] backdrop-blur-sm"
-      style={{
-        bottom: "max(1rem, env(safe-area-inset-bottom))",
-        left: "max(1rem, env(safe-area-inset-left))"
-      }}
+      aria-label={label}
+      className={`pointer-events-auto absolute bottom-0 top-20 z-[15] w-1/2 touch-none select-none ${side === "left" ? "left-0" : "right-0"}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}
       onPointerCancel={handlePointerEnd}
     >
-      <span className="pointer-events-none absolute h-px w-20 bg-neon-cyan/20" />
-      <span className="pointer-events-none absolute h-20 w-px bg-neon-cyan/20" />
-      <span
-        className="pointer-events-none h-12 w-12 rounded-full border-2 border-neon-cyan bg-bg/85 shadow-[0_0_18px_rgba(36,245,255,0.55)]"
-        style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }}
-      />
+      {!base && (
+        <span
+          className={`pointer-events-none absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] font-display text-[0.5rem] font-bold uppercase tracking-[0.18em] text-neon-cyan/55 ${side === "left" ? "left-[max(1rem,env(safe-area-inset-left))]" : "right-[max(1rem,env(safe-area-inset-right))]"}`}
+        >
+          {label}
+        </span>
+      )}
+      {base && (
+        <div
+          className="pointer-events-none absolute flex h-28 w-28 items-center justify-center rounded-full border-2 border-neon-cyan/70 bg-bg/55 shadow-[0_0_28px_rgba(36,245,255,0.24)] backdrop-blur-sm"
+          style={{ left: base.x - BASE_RADIUS, top: base.y - BASE_RADIUS }}
+        >
+          <span className="absolute h-px w-20 bg-neon-cyan/20" />
+          <span className="absolute h-20 w-px bg-neon-cyan/20" />
+          <span
+            className="h-12 w-12 rounded-full border-2 border-neon-cyan bg-bg/90 shadow-[0_0_20px_rgba(36,245,255,0.65)]"
+            style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }}
+          />
+        </div>
+      )}
     </div>
+  );
+}
+
+function MobileHiderControls() {
+  const { t } = useTranslation();
+  const sendInput = useGameStore((state) => state.sendInput);
+  return (
+    <>
+      <VirtualJoystick label={t("game.move")} side="left" onChange={(x, y) => sendInput(-y, -x)} />
+      <VirtualJoystick label={t("game.camera")} side="right" onChange={setTouchCamera} />
+    </>
   );
 }
 
@@ -97,26 +148,6 @@ function MobileSeekerControls() {
   const { t } = useTranslation();
   const aiming = useGameStore((state) => state.aiming);
   const setAiming = useGameStore((state) => state.setAiming);
-  const activePointer = useRef<number | null>(null);
-  const lastPosition = useRef({ x: 0, y: 0 });
-
-  function handleLookStart(event: ReactPointerEvent<HTMLDivElement>) {
-    event.preventDefault();
-    activePointer.current = event.pointerId;
-    lastPosition.current = { x: event.clientX, y: event.clientY };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  function handleLookMove(event: ReactPointerEvent<HTMLDivElement>) {
-    if (activePointer.current !== event.pointerId) return;
-    event.preventDefault();
-    moveTouchSeeker(event.clientX - lastPosition.current.x, event.clientY - lastPosition.current.y);
-    lastPosition.current = { x: event.clientX, y: event.clientY };
-  }
-
-  function handleLookEnd(event: ReactPointerEvent<HTMLDivElement>) {
-    if (activePointer.current === event.pointerId) activePointer.current = null;
-  }
 
   function handleShoot() {
     if (!aiming) return;
@@ -133,14 +164,7 @@ function MobileSeekerControls() {
 
   return (
     <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-auto absolute bottom-0 right-0 top-16 z-[6] block w-[58%] touch-none"
-        onPointerDown={handleLookStart}
-        onPointerMove={handleLookMove}
-        onPointerUp={handleLookEnd}
-        onPointerCancel={handleLookEnd}
-      />
+      <VirtualJoystick label={t("game.camera")} side="left" onChange={setTouchCamera} />
 
       <div
         className="pointer-events-auto absolute z-20 flex touch-none select-none items-end gap-3"
@@ -203,5 +227,5 @@ export default function MobileGameControls({ enabled }: MobileGameControlsProps)
     () => navigator.maxTouchPoints > 0 || window.matchMedia("(any-pointer: coarse)").matches
   );
   if (!enabled || !selfRole || !touchAvailable) return null;
-  return selfRole === "seeker" ? <MobileSeekerControls /> : <MobileJoystick />;
+  return selfRole === "seeker" ? <MobileSeekerControls /> : <MobileHiderControls />;
 }
