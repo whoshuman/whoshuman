@@ -14,7 +14,11 @@
     "underConstruction": "MODULE EN CONSTRUCTION",
     "underConstructionDesc": "Cette section n'est pas encore disponible dans le système. Reviens plus tard.",
     "back": "RETOUR À L'ACCUEIL",
-    "backShort": "RETOUR"
+    "backShort": "RETOUR",
+    "confirmationRequired": "CONFIRMATION REQUISE",
+    "cancel": "ANNULER",
+    "logoutTitle": "SE DÉCONNECTER ?",
+    "logoutMessage": "Ta session sera fermée sur cet appareil. Tu devras te reconnecter pour revenir."
   },
   "settings": {
     "title": "PARAMÈTRES",
@@ -36,7 +40,9 @@
       "logout": "Quitter",
       "about": "À propos du projet",
       "faq": "FAQ",
-      "support": "Support"
+      "support": "Support",
+      "privacy": "Confidentialité",
+      "terms": "Conditions"
     },
     "login": "Se connecter",
     "register": "S'inscrire",
@@ -173,6 +179,8 @@
     "searchHint": "Minimum 2 caractères. Recherche par indicatif, insensible à la casse.",
     "statusLinked": "LIÉ",
     "statusBlocked": "BLOQUÉ",
+    "online": "En ligne",
+    "offline": "Hors ligne",
     "accept": "ACCEPTER",
     "decline": "REFUSER",
     "remove": "SUPPRIMER",
@@ -289,6 +297,70 @@
       }
     },
     "note": "Si le problème persiste, notez le message d'erreur et les étapes qui l'ont provoqué avant de redémarrer la session."
+  },
+  "privacy": {
+    "eyebrow": "PROTOCOLE DE DONNÉES",
+    "title": "POLITIQUE DE CONFIDENTIALITÉ",
+    "subtitle": "Quelles données Who's Human conserve, à quoi elles servent et quel contrôle tu as sur elles.",
+    "lastUpdated": "Dernière mise à jour : juillet 2026",
+    "items": {
+      "collect": {
+        "title": "QUELLES DONNÉES NOUS COLLECTONS",
+        "body": "Lors de la création d'un compte, nous conservons ton adresse email et ton nom d'utilisateur. Tu peux ajouter en option une biographie, un avatar et ta langue préférée. Pendant le jeu, des statistiques de partie (manches jouées et score) et ta liste de contacts sont enregistrées."
+      },
+      "purpose": {
+        "title": "À QUOI ELLES SERVENT",
+        "body": "Uniquement pour authentifier ton compte, afficher ton profil aux autres joueurs et faire fonctionner les parties. Nous n'utilisons pas tes données à des fins publicitaires, nous ne les vendons pas et nous ne les cédons pas à des tiers."
+      },
+      "storage": {
+        "title": "OÙ ELLES SONT CONSERVÉES",
+        "body": "Dans la base de données PostgreSQL propre au projet, hébergée avec le reste des services. Ton mot de passe n'est jamais conservé en clair : nous stockons uniquement son hash chiffré avec bcrypt."
+      },
+      "cookies": {
+        "title": "SESSION ET NAVIGATEUR",
+        "body": "Nous n'utilisons pas de cookies de suivi ni d'analyse tierce. Lors de la connexion, nous conservons un jeton d'accès dans le stockage local de ton navigateur pour maintenir la session ouverte ; il est supprimé à la déconnexion."
+      },
+      "rights": {
+        "title": "TES DROITS",
+        "body": "Tu peux consulter et modifier tes données depuis ton profil à tout moment, et supprimer ton compte quand tu le souhaites. Une fois supprimé, tes données personnelles sont anonymisées de façon permanente."
+      },
+      "academic": {
+        "title": "PROJET ACADÉMIQUE",
+        "body": "Who's Human est un projet éducatif développé à 42 School, sans but lucratif ni exploitation commerciale des données. Le service peut être arrêté une fois son évaluation terminée."
+      }
+    }
+  },
+  "terms": {
+    "eyebrow": "PROTOCOLE D'UTILISATION",
+    "title": "CONDITIONS D'UTILISATION",
+    "subtitle": "Les conditions dans lesquelles tu peux utiliser Who's Human.",
+    "lastUpdated": "Dernière mise à jour : juillet 2026",
+    "items": {
+      "acceptance": {
+        "title": "ACCEPTATION",
+        "body": "En créant un compte et en utilisant le service, tu acceptes ces conditions. Si tu n'es pas d'accord avec elles, n'utilise pas la plateforme."
+      },
+      "nature": {
+        "title": "NATURE DU SERVICE",
+        "body": "Who's Human est un projet éducatif de 42 School. Le service est fourni tel quel, sans garantie de disponibilité, de conservation des données ni d'absence d'erreurs."
+      },
+      "accounts": {
+        "title": "TON COMPTE",
+        "body": "Tu es responsable de la protection de ton mot de passe et de l'activité effectuée depuis ton compte. Un seul compte par personne est autorisé et il est interdit d'usurper l'identité d'autres utilisateurs."
+      },
+      "conduct": {
+        "title": "RÈGLES DE CONDUITE",
+        "body": "Il est interdit de harceler, insulter ou discriminer d'autres joueurs, de tricher ou de modifier le client pour obtenir un avantage, ou de tenter de perturber ou de surcharger le service."
+      },
+      "enforcement": {
+        "title": "NON-RESPECT",
+        "body": "Nous pouvons suspendre ou supprimer les comptes qui enfreignent ces règles, sans préavis et sans droit à compensation."
+      },
+      "availability": {
+        "title": "DISPONIBILITÉ ET CHANGEMENTS",
+        "body": "S'agissant d'un environnement de formation, le service peut être interrompu, redémarré ou modifié à tout moment. Les parties en cours peuvent être perdues lors d'un redémarrage."
+      }
+    }
   },
   "game": {
     "role": "Rôle",

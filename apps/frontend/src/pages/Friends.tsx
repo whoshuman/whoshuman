@@ -19,6 +19,7 @@ import {
 import { searchUsers } from "../shared/api/users";
 import { useAuthStore } from "../shared/authStore";
 import CornerBrackets from "../shared/CornerBrackets";
+import { usePresenceStore } from "../shared/presenceStore";
 import { useHologramSound } from "../shared/useHologramSound";
 
 type FriendsTab = "contacts" | "requests" | "search" | "blocked";
@@ -40,13 +41,16 @@ function RegistryRow({
   username,
   meta,
   onOpen,
+  online,
   children
 }: {
   username: string;
   meta: string;
   onOpen?: () => void;
+  online?: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-3 border border-neon-cyan/20 bg-white/3 px-4 py-3 transition hover:border-neon-cyan/40 hover:bg-white/5 sm:flex-row sm:items-center sm:justify-between">
       <button
@@ -59,7 +63,18 @@ function RegistryRow({
           {initialsOf(username)}
         </span>
         <span className="min-w-0">
-          <span className="font-display block truncate text-sm font-bold text-text-main">
+          <span className="font-display flex items-center gap-2 truncate text-sm font-bold text-text-main">
+            {online !== undefined && (
+              <span
+                title={online ? t("friends.online") : t("friends.offline")}
+                aria-label={online ? t("friends.online") : t("friends.offline")}
+                className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                  online
+                    ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
+                    : "bg-text-muted/30"
+                }`}
+              />
+            )}
             {username}
           </span>
           <span className="block text-xs text-text-muted/80">{meta}</span>
@@ -330,6 +345,7 @@ function Friends() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
   const [pendingAction, setPendingAction] = useState<PendingFriendAction | null>(null);
+  const onlineIds = usePresenceStore((state) => state.online);
   useHologramSound();
 
   // Debounce: la query de red usa el texto "asentado" 300ms después de teclear,
@@ -509,6 +525,7 @@ function Friends() {
                   key={friendship.id}
                   username={friendship.user.username}
                   meta={sinceOf(friendship)}
+                  online={onlineIds.has(friendship.user.id)}
                   onOpen={() =>
                     setDossier({
                       profile: friendship.user,

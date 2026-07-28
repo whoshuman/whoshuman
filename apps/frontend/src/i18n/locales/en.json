@@ -14,7 +14,11 @@
     "underConstruction": "MODULE UNDER CONSTRUCTION",
     "underConstructionDesc": "This section is not available in the system yet. Come back later.",
     "back": "BACK TO HOME",
-    "backShort": "BACK"
+    "backShort": "BACK",
+    "confirmationRequired": "CONFIRMATION REQUIRED",
+    "cancel": "CANCEL",
+    "logoutTitle": "LOG OUT?",
+    "logoutMessage": "You will be signed out on this device. You will need to log in again to get back in."
   },
   "settings": {
     "title": "SETTINGS",
@@ -36,7 +40,9 @@
       "logout": "Log out",
       "about": "About the project",
       "faq": "FAQ",
-      "support": "Support"
+      "support": "Support",
+      "privacy": "Privacy",
+      "terms": "Terms"
     },
     "login": "Log in",
     "register": "Sign up",
@@ -173,6 +179,8 @@
     "searchHint": "Minimum 2 characters. Searches by callsign, case-insensitive.",
     "statusLinked": "LINKED",
     "statusBlocked": "BLOCKED",
+    "online": "Online",
+    "offline": "Offline",
     "accept": "ACCEPT",
     "decline": "DECLINE",
     "remove": "REMOVE",
@@ -289,6 +297,70 @@
       }
     },
     "note": "If the problem continues, record the error message and the steps that caused it before restarting the session."
+  },
+  "privacy": {
+    "eyebrow": "DATA PROTOCOL",
+    "title": "PRIVACY POLICY",
+    "subtitle": "What data Who's Human stores, what it is used for, and what control you have over it.",
+    "lastUpdated": "Last updated: July 2026",
+    "items": {
+      "collect": {
+        "title": "WHAT DATA WE COLLECT",
+        "body": "When you create an account we store your email address and your username. You may optionally add a bio, an avatar and your preferred language. During gameplay we record match statistics (rounds played and score) and your contact list."
+      },
+      "purpose": {
+        "title": "WHAT WE USE IT FOR",
+        "body": "Solely to authenticate your account, show your profile to other players and run matches. We do not use your data for advertising, we do not sell it and we do not share it with third parties."
+      },
+      "storage": {
+        "title": "WHERE IT IS STORED",
+        "body": "In the project's own PostgreSQL database, hosted alongside the rest of the services. Your password is never stored in plain text: we only store its hash encrypted with bcrypt."
+      },
+      "cookies": {
+        "title": "SESSION AND BROWSER",
+        "body": "We do not use tracking cookies or third-party analytics. When you log in we store an access token in your browser's local storage to keep the session open; it is removed when you log out."
+      },
+      "rights": {
+        "title": "YOUR RIGHTS",
+        "body": "You can view and modify your data from your profile at any time, and delete your account whenever you want. When you delete it, your personal data is permanently anonymized."
+      },
+      "academic": {
+        "title": "ACADEMIC PROJECT",
+        "body": "Who's Human is an educational project developed at 42 School, with no profit motive or commercial exploitation of the data. The service may be shut down once its evaluation is complete."
+      }
+    }
+  },
+  "terms": {
+    "eyebrow": "USAGE PROTOCOL",
+    "title": "TERMS OF SERVICE",
+    "subtitle": "The conditions under which you may use Who's Human.",
+    "lastUpdated": "Last updated: July 2026",
+    "items": {
+      "acceptance": {
+        "title": "ACCEPTANCE",
+        "body": "By creating an account and using the service you accept these conditions. If you do not agree with them, do not use the platform."
+      },
+      "nature": {
+        "title": "NATURE OF THE SERVICE",
+        "body": "Who's Human is an educational project of 42 School. The service is provided as is, with no guarantee of availability, data retention or absence of errors."
+      },
+      "accounts": {
+        "title": "YOUR ACCOUNT",
+        "body": "You are responsible for keeping your password safe and for the activity carried out from your account. One account per person is allowed and impersonating other users is not permitted."
+      },
+      "conduct": {
+        "title": "RULES OF CONDUCT",
+        "body": "It is not permitted to harass, insult or discriminate against other players, to cheat or modify the client to gain an advantage, or to attempt to disrupt or overload the service."
+      },
+      "enforcement": {
+        "title": "NON-COMPLIANCE",
+        "body": "We may suspend or delete accounts that breach these rules, without prior notice and without right to compensation."
+      },
+      "availability": {
+        "title": "AVAILABILITY AND CHANGES",
+        "body": "As this is a training environment, the service may be interrupted, restarted or changed at any time. Matches in progress may be lost during a restart."
+      }
+    }
   },
   "game": {
     "role": "Role",

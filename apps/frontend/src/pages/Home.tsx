@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import skyHome3d from "../assets/sky-home-3d.png";
 import HomeScene from "../features/home-3d/HomeScene";
+import ConfirmDialog from "../shared/ConfirmDialog";
 import SettingsMenu from "../shared/SettingsMenu";
 import NotificationCenter from "../shared/NotificationCenter";
 import ManualPanel from "../shared/ManualPanel";
@@ -38,7 +39,9 @@ const footerLinks = [
   { to: "/about", key: "about" },
   { to: "/manual", key: "manual" },
   { to: "/faq", key: "faq" },
-  { to: "/support", key: "support" }
+  { to: "/support", key: "support" },
+  { to: "/privacy", key: "privacy" },
+  { to: "/terms", key: "terms" }
 ] as const;
 
 // Estilo comun de los enlaces del pie.
@@ -57,6 +60,8 @@ function Home() {
   const [aboutOpen, setAboutOpen] = useState(false);
   // Modal-broma del boton "Manual".
   const [manualOpen, setManualOpen] = useState(false);
+  // Cerrar sesión pide confirmación: es fácil pulsarlo sin querer.
+  const [logoutOpen, setLogoutOpen] = useState(false);
   // Tras completarse el giro, la camara baja a vista cenital sobre el coche.
   const [carFocus, setCarFocus] = useState(false);
   // Las tarjetas del equipo solo aparecen cuando la camara ya llego (no durante el movimiento).
@@ -172,7 +177,7 @@ function Home() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => void signOut()}
+                  onClick={() => setLogoutOpen(true)}
                   data-sfx="silent"
                   className="border-2 border-neon-magenta bg-neon-magenta/15 px-7 py-3 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)] sm:px-9 sm:py-3.5"
                 >
@@ -283,6 +288,20 @@ function Home() {
 
       {/* Modal-broma del boton Manual. */}
       {manualOpen && <ManualPanel onClose={() => setManualOpen(false)} />}
+
+      {logoutOpen && (
+        <ConfirmDialog
+          title={t("common.logoutTitle")}
+          message={t("common.logoutMessage")}
+          confirmLabel={t("profilePage.logout")}
+          danger
+          onConfirm={() => {
+            setLogoutOpen(false);
+            void signOut();
+          }}
+          onCancel={() => setLogoutOpen(false)}
+        />
+      )}
     </main>
   );
 }

@@ -554,6 +554,19 @@ importers:
       socket.io:
         specifier: ^4.8.1
         version: 4.8.3
+    devDependencies:
+      "@types/jest":
+        specifier: ^30.0.0
+        version: 30.0.0
+      jest:
+        specifier: ^30.4.2
+        version: 30.4.2(@types/node@24.12.4)(ts-node@10.9.2(@types/node@24.12.4)(typescript@5.9.3))
+      ts-jest:
+        specifier: ^29.4.11
+        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(jest-util@30.4.1)(jest@30.4.2(@types/node@24.12.4)(ts-node@10.9.2(@types/node@24.12.4)(typescript@5.9.3)))(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   apps/user-service:
     dependencies:

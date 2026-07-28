@@ -14,6 +14,8 @@ import Manual from "./pages/Manual";
 import About from "./pages/About";
 import Faq from "./pages/Faq";
 import Support from "./pages/Support";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import DesignSystem from "./pages/DesignSystem";
 import NotFound from "./pages/NotFound";
 
@@ -93,6 +95,18 @@ const supportRoute = createRoute({
   component: Support
 });
 
+const privacyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/privacy",
+  component: Privacy
+});
+
+const termsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/terms",
+  component: Terms
+});
+
 const designSystemRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/design-system",
@@ -112,6 +126,8 @@ const routeTree = rootRoute.addChildren([
   aboutRoute,
   faqRoute,
   supportRoute,
+  privacyRoute,
+  termsRoute,
   designSystemRoute
 ]);
 

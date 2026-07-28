@@ -1,7 +1,10 @@
 import { useQueries } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { getServiceHealth, MONITORED_SERVICES } from "../shared/api/system";
+import { useAuthStore } from "../shared/authStore";
 import { useHologramSound } from "../shared/useHologramSound";
 
 // Estado de la red de microservicios: un ping por servicio vía gateway → NATS.
@@ -9,6 +12,8 @@ import { useHologramSound } from "../shared/useHologramSound";
 // un servicio caído (504) no bloquea a los demás.
 function SystemStatus() {
   const { t, i18n } = useTranslation();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const backTo = isAuthenticated ? "/lobby" : "/";
   useHologramSound();
 
   const checks = useQueries({
@@ -30,15 +35,24 @@ function SystemStatus() {
           <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-cyan">
             // {t("status.eyebrow")}
           </p>
-          <span
-            className={
-              allChecked && online === checks.length
-                ? "inline-flex border border-current bg-success/10 px-3 py-1 text-xs font-bold text-success"
-                : "inline-flex border border-current bg-sun-orange/15 px-3 py-1 text-xs font-bold text-sun-orange"
-            }
-          >
-            {online}/{checks.length} {t("status.online")}
-          </span>
+          <div className="flex items-center gap-3">
+            <span
+              className={
+                allChecked && online === checks.length
+                  ? "inline-flex border border-current bg-success/10 px-3 py-1 text-xs font-bold text-success"
+                  : "inline-flex border border-current bg-sun-orange/15 px-3 py-1 text-xs font-bold text-sun-orange"
+              }
+            >
+              {online}/{checks.length} {t("status.online")}
+            </span>
+            <Link
+              to={backTo}
+              aria-label={t("common.back")}
+              className="flex h-8 w-8 shrink-0 items-center justify-center border border-neon-cyan/40 text-neon-cyan transition hover:bg-neon-cyan/10"
+            >
+              <ArrowLeft aria-hidden="true" size={16} />
+            </Link>
+          </div>
         </div>
         <span className="absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-neon-magenta" />
         <span className="absolute right-0 top-0 h-4 w-4 border-r-2 border-t-2 border-neon-magenta" />
