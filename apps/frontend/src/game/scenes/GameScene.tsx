@@ -30,21 +30,17 @@ const MAX_OTHER_ENTITIES = 71; // 64 NPC + hasta 7 jugadores distintos del clien
 const SPRINT_FRAME_COUNT = 8;
 const SPRINT_FPS = 16;
 const MOVEMENT_EPSILON_SQ = 0.000001;
+// Debe coincidir con CHARACTER_SKIN_COUNT del game-service: el server manda skinId
+// y aquí se indexa este array directamente.
 const CHARACTER_MODEL_URLS: string[] = [
-  "/models/personajes/character-female-a.glb",
-  "/models/personajes/character-female-b.glb",
-  "/models/personajes/character-female-c.glb",
-  "/models/personajes/character-female-d.glb",
-  "/models/personajes/character-female-e.glb",
-  "/models/personajes/character-female-f.glb",
-  "/models/personajes/character-male-a.glb",
-  "/models/personajes/character-male-b.glb",
-  "/models/personajes/character-male-c.glb",
-  "/models/personajes/character-male-d.glb",
-  "/models/personajes/character-male-e.glb",
-  "/models/personajes/character-male-f.glb"
+  "/models/personajes/neon-vixen.glb",
+  "/models/personajes/cubist-warrior.glb",
+  "/models/personajes/purple-visor.glb",
+  "/models/personajes/pixel-voyager.glb"
 ];
-const CHARACTER_SCALE = 0.48;
+// Los modelos miden ~1.69 unidades de alto; esto los deja en ~0.33, la altura que
+// tenían los personajes anteriores respecto al mapa.
+const CHARACTER_SCALE = 0.194;
 const SEEKER_AIM_DISTANCE = Math.max(MAP_W, MAP_D) * 0.7;
 const SEEKER_OVERVIEW_DISTANCE = Math.max(MAP_W, MAP_D) * 1.35;
 const SEEKER_AIM_SENSITIVITY = 0.002;
@@ -53,6 +49,18 @@ const TOUCH_SEEKER_AIM_SPEED = 0.65;
 const HIDER_CAMERA_DISTANCE = 1.8;
 const CITY_MODEL_URL = "/models/beta-city-new.glb";
 const CITY_OFFSET: [number, number, number] = [-8.5, 0, -0.3];
+const CELL_MODEL_URL = "/models/energy-cell.glb";
+// El modelo mide 0.12 de alto; x1.7 lo deja en ~0.2, el mismo bulto que tenía el
+// octaedro que hacía de marcador y algo más de medio personaje.
+const CELL_SCALE = 1.7;
+const CHASER_MODEL_URL = "/models/chaser.glb";
+// El modelo mide 1 unidad de largo; el mapa entero mide ~5, así que a 1:1 sería
+// gigante. 0.55 lo deja en algo menos de dos veces la altura de un personaje.
+const CHASER_SCALE = 0.55;
+// Va detrás de la cámara (y algo por debajo): así el cazador no se tapa su propia
+// vista, pero desde el suelo la nave sí queda a la vista.
+const CHASER_BACK_OFFSET = 1.15;
+const CHASER_DOWN_OFFSET = 0.3;
 
 function CityMap() {
   const { scene } = useGLTF(CITY_MODEL_URL);
@@ -105,18 +113,27 @@ function Floor() {
 function Collectibles() {
   const collectibles = useGameStore((state) => state.collectibles);
   const group = useRef<THREE.Group>(null);
-  const geometry = useMemo(() => new THREE.OctahedronGeometry(0.11, 0), []);
-  const material = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: "#ffe66d",
-        emissive: "#ff9f1c",
-        emissiveIntensity: 1.4,
-        metalness: 0.15,
-        roughness: 0.25
-      }),
-    []
-  );
+  const { scene } = useGLTF(CELL_MODEL_URL);
+  // Una sola geometría y un solo material para las 8 células: el GLB se carga una vez
+  // y cada célula es un mesh que los reutiliza.
+  const { geometry, material } = useMemo(() => {
+    scene.updateMatrixWorld(true);
+    let source: THREE.Mesh | null = null;
+    scene.traverse((object) => {
+      if (!source && (object as THREE.Mesh).isMesh) source = object as THREE.Mesh;
+    });
+    if (!source) throw new Error("El modelo de célula no tiene malla");
+    const mesh = source as THREE.Mesh;
+    const cellGeometry = mesh.geometry.clone();
+    cellGeometry.applyMatrix4(mesh.matrixWorld);
+    cellGeometry.scale(CELL_SCALE, CELL_SCALE, CELL_SCALE);
+    // El modelo se apoya en y=0; centrarlo hace que gire sobre sí mismo y no en órbita.
+    cellGeometry.computeBoundingBox();
+    const center = cellGeometry.boundingBox!.getCenter(new THREE.Vector3());
+    cellGeometry.translate(-center.x, -center.y, -center.z);
+    cellGeometry.computeBoundingSphere();
+    return { geometry: cellGeometry, material: mesh.material as THREE.Material };
+  }, [scene]);
 
   useFrame((_, delta) => {
     for (const item of group.current?.children ?? []) {
@@ -125,13 +142,8 @@ function Collectibles() {
     }
   });
 
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      material.dispose();
-    },
-    [geometry, material]
-  );
+  // El material lo gestiona la caché de useGLTF; aquí solo es nuestra la geometría.
+  useEffect(() => () => geometry.dispose(), [geometry]);
 
   return (
     <group ref={group}>
@@ -239,8 +251,8 @@ function Units() {
         material.roughness = 0.8;
         if (material.map) {
           material.map.colorSpace = THREE.SRGBColorSpace;
-          material.map.magFilter = THREE.NearestFilter;
-          material.map.minFilter = THREE.NearestMipmapLinearFilter;
+          material.map.magFilter = THREE.LinearFilter;
+          material.map.minFilter = THREE.LinearMipmapLinearFilter;
           material.map.anisotropy = Math.min(4, gl.capabilities.getMaxAnisotropy());
           material.map.needsUpdate = true;
         }
@@ -424,6 +436,37 @@ function Units() {
       ))}
     </group>
   );
+}
+
+// La nave del cazador. No tiene lógica de vuelo propia: se cuelga de la cámara que
+// ya sobrevuela el mapa, siempre con el morro (+Z del modelo, igual que el rotationY
+// del resto de entidades) mirando adonde apunta la cámara.
+function ChaserShip() {
+  const { scene } = useGLTF(CHASER_MODEL_URL);
+  const ref = useRef<THREE.Group>(null);
+  const direction = useMemo(() => new THREE.Vector3(), []);
+
+  // El disparo lanza un raycast contra toda la escena: la nave no debe entrar
+  // siquiera en el test de intersección.
+  useEffect(() => {
+    scene.traverse((object) => {
+      object.raycast = () => {};
+    });
+  }, [scene]);
+
+  useFrame(({ camera }) => {
+    const ship = ref.current;
+    if (!ship) return;
+    camera.getWorldDirection(direction);
+    ship.position
+      .copy(camera.position)
+      .addScaledVector(direction, -CHASER_BACK_OFFSET)
+      .setY(camera.position.y - CHASER_DOWN_OFFSET);
+    // Solo yaw: la nave vuela siempre nivelada aunque la cámara mire hacia abajo.
+    ship.rotation.y = Math.atan2(direction.x, direction.z);
+  });
+
+  return <primitive ref={ref} object={scene} scale={CHASER_SCALE} />;
 }
 
 function SeekerCamera() {
@@ -626,6 +669,11 @@ function GameScene() {
           <Collectibles />
           <Units />
           <SeekerCamera />
+          {selfRole === "seeker" && (
+            <Suspense fallback={null}>
+              <ChaserShip />
+            </Suspense>
+          )}
         </PerformanceMonitor>
       </Canvas>
       {selfRole === "seeker" && aiming && <ScopeOverlay />}

@@ -70,7 +70,8 @@ interface SessionNpc extends MovableState {
 
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v);
 const NPC_SEPARATION = 0.28;
-const CHARACTER_SKIN_COUNT = 12;
+// Nº de modelos en apps/frontend/public/models/personajes: el cliente indexa por skinId.
+const CHARACTER_SKIN_COUNT = 4;
 const COLLECTIBLE_SEPARATION = 0.4;
 
 export const GAME_RULES = {
