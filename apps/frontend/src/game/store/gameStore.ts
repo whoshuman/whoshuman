@@ -11,6 +11,7 @@ import type {
 import type { Socket } from "socket.io-client";
 import { create } from "zustand";
 
+import { playSfx, preloadGameSfx } from "../../shared/sfx";
 import { connectSocket } from "../network/socket";
 import { clearSnapshots, pushSnapshot } from "../systems/interpolation";
 import { useLobbyStore } from "./lobbyStore";
@@ -51,10 +52,14 @@ const ACTIVE_GAME_KEY = "activeGameId";
 const AIM_POSE_INTERVAL_MS = 50;
 let lastPose: SeekerPose | null = null;
 let lastPoseSentAt = 0;
+// El sonido de inicio suena una sola vez por partida: el primer snapshot que llega ya en
+// juego. Sin esta marca volveria a sonar en cada ronda tras cada intermedio.
+let matchStartPlayed = false;
 
 function forgetActiveGame() {
   sessionStorage.removeItem(ACTIVE_GAME_KEY);
   lastUiSignature = "";
+  matchStartPlayed = false;
   // Si no, al entrar en la siguiente partida el primer game:aim iría con la pose de la
   // anterior y la nave aparecería un instante donde estaba en aquella.
   lastPose = null;
@@ -76,6 +81,9 @@ function bindListeners() {
 
   socket.on(ServerSocketEvents.gameJoined, (payload: GameJoinResponse) => {
     sessionStorage.setItem(ACTIVE_GAME_KEY, payload.gameId);
+    // Descarga los mp3 de partida ahora, para que el primer disparo o la primera celula
+    // no se pierdan esperando la red.
+    preloadGameSfx();
     set({
       phase: "playing",
       gameId: payload.gameId,
@@ -121,6 +129,27 @@ function bindListeners() {
     if (signature === lastUiSignature) return;
     lastUiSignature = signature;
     const roleChanged = !!self && self.role !== current.selfRole;
+
+    // Sonidos derivados del snapshot: el servidor no manda eventos sueltos, asi que el
+    // cliente los deduce comparando con lo que ya tenia. Va antes del set() porque
+    // `current` es todavia el estado anterior.
+    if (!matchStartPlayed && payload.round.phase === "playing") {
+      matchStartPlayed = true;
+      playSfx("matchStart");
+    }
+    if (payload.round.phase === "finished" && current.round?.phase !== "finished") {
+      playSfx("matchEnd");
+    }
+    // Un hider solo suma puntos recogiendo celulas, asi que subir de marcador es
+    // exactamente eso. Se comprueba el rol nuevo para no confundirlo con el disparo
+    // acertado del cazador cuando los roles rotan.
+    const previousScore = current.scores.find(
+      (entry) => entry.userId === current.selfUserId
+    )?.score;
+    if (self?.role === "hider" && previousScore !== undefined && self.score > previousScore) {
+      playSfx("collect");
+    }
+
     set({
       presentCount,
       round: payload.round,
@@ -194,6 +223,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     bindListeners();
     const socket = connectSocket();
     sessionStorage.setItem(ACTIVE_GAME_KEY, gameId);
+    // Partida nueva: el sonido de inicio vuelve a estar pendiente.
+    matchStartPlayed = false;
     clearSnapshots();
     set({
       phase: "joining",
@@ -311,6 +342,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       return;
     }
     connectSocket().emit(ClientSocketEvents.gameShoot, { gameId, targetEntityId });
+    // Suena en local sin esperar respuesta: el arma es del cazador y el feedback tiene
+    // que ser inmediato (el servidor no difunde el disparo, solo su resultado).
+    playSfx("shot");
   },
 
   sendInput: (forward, turn) => {

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { playUiSound } from "./clickSound";
+import { playSfx } from "./sfx";
 
 // Reproduce el sonido de aparicion holografica cuando el componente se monta, sincronizado
 // con el arranque de su animacion. delayMs permite cuadrarlo con animaciones escalonadas
@@ -8,10 +8,10 @@ import { playUiSound } from "./clickSound";
 export function useHologramSound(delayMs = 0) {
   useEffect(() => {
     if (delayMs <= 0) {
-      playUiSound("hologram");
+      playSfx("hologram");
       return;
     }
-    const timer = setTimeout(() => playUiSound("hologram"), delayMs);
+    const timer = setTimeout(() => playSfx("hologram"), delayMs);
     return () => clearTimeout(timer);
   }, [delayMs]);
 }
