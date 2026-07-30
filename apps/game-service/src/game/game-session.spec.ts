@@ -1,4 +1,4 @@
-import { GAME_RULES, GameSession } from "./game-session";
+﻿import { GAME_RULES, GameSession } from "./game-session";
 import { loadMap, type Heightmap } from "./map";
 
 // construye un heightmap sobre [minX,maxX]×[minZ,maxZ] con altura dada por f(x,z)
@@ -21,11 +21,10 @@ const flatHM = makeHM(-10, -5, 10, 5, 5, () => 0);
 
 const config = {
   bounds: { minX: -10, minZ: -5, maxX: 10, maxZ: 5 },
-  speed: 5,
   turnSpeed: 2,
   obstacles: [],
   heightmap: flatHM,
-  maxStep: 1,
+  maxSlope: 1,
   npcCount: 0,
   npcSpeed: 1.2
 };
@@ -35,36 +34,79 @@ const members = [
 ];
 const find = (s: GameSession, id: string) => s.playerSnapshot().find((p) => p.userId === id)!;
 
+// Tras N ticks andando de frente, el jugador ha recorrido esto en +z. No es
+// velocidad × tiempo: arranca por rampa, igual que un NPC.
+const walkForward = (s: GameSession, ticks: number) => {
+  const before = find(s, "u1");
+  s.setInput("u1", 1, 0);
+  for (let i = 0; i < ticks; i += 1) s.tick(0.05);
+  const after = find(s, "u1");
+  return { dx: after.x - before.x, dz: after.z - before.z };
+};
+
 describe("GameSession", () => {
   it("avanza hacia donde mira (heading 0 → +z)", () => {
     const s = new GameSession("g1", members, config);
     s.markPresent("u1");
-    const before = find(s, "u1");
-    s.setInput("u1", 1, 0);
-    s.tick(0.05);
-    expect(find(s, "u1").z - before.z).toBeCloseTo(0.25, 5);
-    expect(find(s, "u1").x - before.x).toBeCloseTo(0, 5);
+    const { dx, dz } = walkForward(s, 40);
+    expect(dz).toBeGreaterThan(0.5);
+    expect(dx).toBeCloseTo(0, 5);
   });
 
-  it("girar cambia la rotación SIN mover (girar en el sitio)", () => {
+  it("arranca por rampa, no de golpe: no delata al humano entre la multitud", () => {
+    const s = new GameSession("g1", members, config);
+    s.markPresent("u1");
+    const first = walkForward(s, 1).dz;
+    // Sin rampa el primer tick ya iba a velocidad de crucero (1.2 × 0.05 = 0.06).
+    expect(first).toBeGreaterThan(0);
+    expect(first).toBeLessThan(1.2 * 0.05 * 0.5);
+  });
+
+  it("no supera la velocidad de la multitud", () => {
+    const s = new GameSession("g1", members, config);
+    s.markPresent("u1");
+    // Ya a plena marcha: ni el tick más largo pasa del crucero + su variación.
+    walkForward(s, 60);
+    const step = walkForward(s, 1).dz;
+    expect(step).toBeLessThanOrEqual(1.2 * 1.25 * 0.05 + 1e-9);
+  });
+
+  it("girar parado no cambia la rotación (no se pivota en el sitio)", () => {
     const s = new GameSession("g1", members, config);
     s.markPresent("u1");
     const before = find(s, "u1");
     s.setInput("u1", 0, 1);
     s.tick(0.05);
     const after = find(s, "u1");
-    expect(after.rotationY).toBeCloseTo(0.1, 5);
+    expect(after.rotationY).toBe(before.rotationY);
     expect(after.x).toBe(before.x);
     expect(after.z).toBe(before.z);
+  });
+
+  it("girar mientras se avanza sí cambia la rotación", () => {
+    const s = new GameSession("g1", members, config);
+    s.markPresent("u1");
+    const before = find(s, "u1");
+    s.setInput("u1", 1, 1);
+    for (let i = 0; i < 10; i += 1) s.tick(0.05);
+    const after = find(s, "u1");
+    expect(after.z - before.z).toBeGreaterThan(0);
+    expect(after.rotationY).toBeGreaterThan(0);
   });
 
   it("recorta forward/turn a [-1,1] (no acelera)", () => {
     const s = new GameSession("g1", members, config);
     s.markPresent("u1");
-    const before = find(s, "u1");
+    const normal = new GameSession("g1", members, config);
+    normal.markPresent("u1");
+
     s.setInput("u1", 10, 0);
-    s.tick(0.05);
-    expect(find(s, "u1").z - before.z).toBeCloseTo(0.25, 5);
+    normal.setInput("u1", 1, 0);
+    for (let i = 0; i < 40; i += 1) {
+      s.tick(0.05);
+      normal.tick(0.05);
+    }
+    expect(find(s, "u1").z).toBeCloseTo(find(normal, "u1").z, 5);
   });
 
   it("recorta la posición al fondo del mapa (depth/2)", () => {
@@ -85,6 +127,125 @@ describe("GameSession", () => {
     expect(after.x).toBe(before.x);
     expect(after.z).toBe(before.z);
     expect(after.rotationY).toBe(before.rotationY);
+  });
+
+  // El juego consiste en no saber quién es humano. Cualquier diferencia mecánica entre
+  // un jugador y un NPC sería un atajo para cazarlos sin observarles la conducta.
+  describe("el humano se mueve como la multitud", () => {
+    const crowdMap = () => {
+      const map = loadMap("beta-city");
+      return new GameSession("mimetismo", members, {
+        bounds: map.bounds,
+        turnSpeed: 3,
+        obstacles: map.obstacles,
+        heightmap: map.heightmap,
+        maxSlope: 1.5,
+        npcCount: 32,
+        npcSpeed: 0.36
+      });
+    };
+
+    it("no anda más rápido que un NPC", () => {
+      const s = crowdMap();
+      s.markPresent("u1");
+      s.setInput("u1", 1, 0);
+
+      let fastestPlayer = 0;
+      let fastestNpc = 0;
+      let previousPlayer = find(s, "u1");
+      let previousNpcs = new Map(s.npcSnapshot().map((n) => [n.entityId, n]));
+
+      for (let tick = 0; tick < 400; tick += 1) {
+        s.tick(0.05);
+        const player = find(s, "u1");
+        fastestPlayer = Math.max(
+          fastestPlayer,
+          Math.hypot(player.x - previousPlayer.x, player.z - previousPlayer.z) / 0.05
+        );
+        previousPlayer = player;
+        const npcs = s.npcSnapshot();
+        for (const npc of npcs) {
+          const before = previousNpcs.get(npc.entityId)!;
+          fastestNpc = Math.max(
+            fastestNpc,
+            Math.hypot(npc.x - before.x, npc.z - before.z) / 0.05
+          );
+        }
+        previousNpcs = new Map(npcs.map((n) => [n.entityId, n]));
+      }
+
+      expect(fastestPlayer).toBeGreaterThan(0);
+      expect(fastestPlayer).toBeLessThanOrEqual(fastestNpc + 1e-9);
+    });
+
+    it("no atraviesa a los NPC: respeta su espacio como uno más", () => {
+      const s = crowdMap();
+      s.markPresent("u1");
+      s.setInput("u1", 1, 1); // dar vueltas por el mapa, cruzándose con la multitud
+      let closest = Infinity;
+
+      for (let tick = 0; tick < 600; tick += 1) {
+        s.tick(0.05);
+        const player = find(s, "u1");
+        for (const npc of s.npcSnapshot()) {
+          closest = Math.min(closest, Math.hypot(npc.x - player.x, npc.z - player.z));
+        }
+      }
+
+      // Antes el jugador los atravesaba de lado a lado y la distancia bajaba a ~0.
+      expect(closest).toBeGreaterThan(0.2);
+    });
+  });
+
+  describe("nave del cazador", () => {
+    const pose = {
+      x: 6.4,
+      y: 2.2,
+      z: 1.1,
+      dirX: 0,
+      dirY: -0.4,
+      dirZ: 0.9,
+      aimX: 6.4,
+      aimY: 0,
+      aimZ: 6.05
+    };
+
+    it("publica la pose para que el resto la vea, con el estado de la mira", () => {
+      const s = new GameSession("g1", members, config);
+      s.markPresent("u2");
+      expect(s.seekerSnapshot()).toBeNull(); // sin pose todavía no hay nada que pintar
+
+      s.setAiming("u2", true, pose);
+      expect(s.seekerSnapshot()).toEqual({ ...pose, aiming: true });
+
+      // Soltar la mira no hace desaparecer la nave: sigue sobrevolando el mapa.
+      s.setAiming("u2", false);
+      expect(s.seekerSnapshot()).toEqual({ ...pose, aiming: false });
+    });
+
+    it("no filtra al cazador entre las entidades", () => {
+      const s = new GameSession("g1", members, config);
+      s.markPresent("u1");
+      s.markPresent("u2");
+      s.setAiming("u2", true, pose);
+      const seekerEntityId = s.playerSnapshot().find((p) => p.userId === "u2")?.entityId;
+      expect(s.snapshot().some((e) => e.entityId === seekerEntityId)).toBe(false);
+    });
+
+    it("olvida la nave cuando el cazador se va", () => {
+      const s = new GameSession("g1", members, config);
+      s.markPresent("u2");
+      s.setAiming("u2", true, pose);
+      s.markDisconnected("u2");
+      expect(s.seekerSnapshot()).toBeNull();
+    });
+
+    it("ignora la pose de quien no es cazador", () => {
+      const s = new GameSession("g1", members, config);
+      s.markPresent("u1");
+      expect(s.setAiming("u1", true, pose)).toBe(false);
+      expect(s.seekerSnapshot()).toBeNull();
+    });
   });
 
   it("solo incluye en el snapshot a jugadores presentes", () => {
@@ -222,11 +383,10 @@ describe("GameSession", () => {
   describe("colisión", () => {
     const cfgWithWall = (obstacles: import("./map").Obstacle[]) => ({
       bounds: { minX: -10, minZ: -5, maxX: 10, maxZ: 5 },
-      speed: 5,
       turnSpeed: 2,
       obstacles,
       heightmap: flatHM,
-      maxStep: 1,
+      maxSlope: 1,
       npcCount: 0,
       npcSpeed: 1.2
     });
@@ -287,18 +447,17 @@ describe("GameSession", () => {
 
   describe("altura (rampas/escalones)", () => {
     // spawn en (radius,0) mirando +z; radius=min(8,8)*0.3=2.4 → (2.4,0). Camina hacia +z.
-    const cfgH = (f: (x: number, z: number) => number | null, maxStep: number) => ({
+    const cfgH = (f: (x: number, z: number) => number | null, maxSlope: number) => ({
       bounds: { minX: -4, minZ: -4, maxX: 4, maxZ: 4 },
-      speed: 5,
       turnSpeed: 2,
       obstacles: [],
       heightmap: makeHM(-4, -4, 4, 4, 1, f),
-      maxStep,
+      maxSlope,
       npcCount: 0,
       npcSpeed: 1.2
     });
-    const walk = (f: (x: number, z: number) => number | null, maxStep: number) => {
-      const s = new GameSession("g", [{ userId: "u", role: "hider" }], cfgH(f, maxStep));
+    const walk = (f: (x: number, z: number) => number | null, maxSlope: number) => {
+      const s = new GameSession("g", [{ userId: "u", role: "hider" }], cfgH(f, maxSlope));
       s.markPresent("u");
       s.setInput("u", 1, 0);
       for (let i = 0; i < 40; i++) s.tick(0.05);
@@ -332,11 +491,10 @@ describe("GameSession", () => {
       const map = loadMap("beta-city");
       const session = new GameSession("npc-test", members, {
         bounds: map.bounds,
-        speed: 3,
         turnSpeed: 3,
         obstacles: map.obstacles,
         heightmap: map.heightmap,
-        maxStep: 0.11,
+        maxSlope: 1.5,
         npcCount: 8,
         npcSpeed: 1.2
       });
@@ -350,8 +508,10 @@ describe("GameSession", () => {
         for (const npc of frame) {
           modes.add(npc.mode);
           const before = previous.get(npc.entityId)!;
+          // Cada NPC anda a su ritmo, hasta un 25% por encima del configurado: la cota
+          // es esa, no la velocidad base. Sigue garantizando que nadie se teletransporta.
           expect(Math.hypot(npc.x - before.x, npc.z - before.z)).toBeLessThanOrEqual(
-            1.2 * 0.05 + 1e-9
+            1.2 * 1.25 * 0.05 + 1e-9
           );
           previous.set(npc.entityId, npc);
           expect(Number.isFinite(npc.x) && Number.isFinite(npc.y) && Number.isFinite(npc.z)).toBe(
@@ -382,7 +542,142 @@ describe("GameSession", () => {
       expect(
         final.some((npc, index) => npc.x !== initial[index].x || npc.z !== initial[index].z)
       ).toBe(true);
-      expect(modes).toEqual(new Set(["idle", "turning", "walking"]));
+      expect(modes).toEqual(new Set(["idle", "walking"]));
+    });
+
+    // Con la multitud al completo y a la velocidad real de juego, que es donde
+    // aparecen los atascos entre NPC.
+    const crowd = () => {
+      const map = loadMap("beta-city");
+      return new GameSession("npc-crowd", members, {
+        bounds: map.bounds,
+        turnSpeed: 3,
+        obstacles: map.obstacles,
+        heightmap: map.heightmap,
+        maxSlope: 1.5,
+        npcCount: 32,
+        npcSpeed: 0.36
+      });
+    };
+
+    it("gira sobre todo en marcha, no plantado", () => {
+      const session = crowd();
+      let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
+      let curva = 0;
+      let plantado = 0;
+
+      for (let tick = 0; tick < 1200; tick += 1) {
+        session.tick(0.05);
+        const frame = session.npcSnapshot();
+        for (const npc of frame) {
+          const before = previous.get(npc.entityId)!;
+          if (npc.rotationY === before.rotationY) continue;
+          if (npc.x !== before.x || npc.z !== before.z) curva += 1;
+          else plantado += 1;
+        }
+        previous = new Map(frame.map((npc) => [npc.entityId, npc]));
+      }
+
+      expect(curva).toBeGreaterThan(0);
+      // Girar plantado es solo la válvula de desatasco. Si pasa de un tercio, es que
+      // ha vuelto a ser la forma normal de cambiar de rumbo (medido: ~20%).
+      expect(plantado / (curva + plantado)).toBeLessThan(1 / 3);
+    });
+
+    it("cada uno anda a su ritmo y arranca por rampa, sin tirones", () => {
+      const session = crowd();
+      let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
+      const peakSpeed = new Map<string, number>();
+      const wasStopped = new Map<string, boolean>();
+      const firstSteps: number[] = [];
+
+      for (let tick = 0; tick < 600; tick += 1) {
+        session.tick(0.05);
+        const frame = session.npcSnapshot();
+        for (const npc of frame) {
+          const before = previous.get(npc.entityId)!;
+          const speed = Math.hypot(npc.x - before.x, npc.z - before.z) / 0.05;
+          // Primer tick tras estar parado: es donde se ve si arranca por rampa o de
+          // golpe. Medirlo en cualquier otro momento confundiría la rampa con el
+          // frenazo de rozar una pared, que sí es abrupto a propósito.
+          if (speed > 0 && wasStopped.get(npc.entityId)) firstSteps.push(speed);
+          wasStopped.set(npc.entityId, speed === 0);
+          peakSpeed.set(npc.entityId, Math.max(peakSpeed.get(npc.entityId) ?? 0, speed));
+        }
+        previous = new Map(frame.map((npc) => [npc.entityId, npc]));
+      }
+
+      // Velocidades punta distintas entre sí: si fueran todas iguales, la multitud se
+      // movería en bloque.
+      const peaks = [...peakSpeed.values()].filter((v) => v > 0);
+      expect(Math.max(...peaks) / Math.min(...peaks)).toBeGreaterThan(1.15);
+
+      // Sin rampa, el primer tick ya iba a velocidad de crucero (0.36). Con ella
+      // arranca en torno al 9% de esa velocidad.
+      expect(firstSteps.length).toBeGreaterThan(20);
+      const worstStart = Math.max(...firstSteps);
+      expect(worstStart).toBeLessThan(0.36 * 0.5);
+    });
+
+    it("no se quedan empotrados contra muros ni contra otros", () => {
+      const session = crowd();
+      let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
+      const streak = new Map<string, number>();
+      let stalled = 0;
+      let walking = 0;
+      let worst = 0;
+
+      for (let tick = 0; tick < 1200; tick += 1) {
+        session.tick(0.05);
+        const frame = session.npcSnapshot();
+        for (const npc of frame) {
+          const before = previous.get(npc.entityId)!;
+          if (npc.mode !== "walking") {
+            streak.set(npc.entityId, 0);
+            continue;
+          }
+          walking += 1;
+          // Quiere andar pero no avanza = está empotrado contra algo.
+          if (npc.x === before.x && npc.z === before.z) {
+            stalled += 1;
+            const run = (streak.get(npc.entityId) ?? 0) + 1;
+            streak.set(npc.entityId, run);
+            worst = Math.max(worst, run);
+          } else {
+            streak.set(npc.entityId, 0);
+          }
+        }
+        previous = new Map(frame.map((npc) => [npc.entityId, npc]));
+      }
+
+      // Antes de escurrirse de lado: 12.5% del tiempo y rachas de 6.4s plantado
+      // contra la pared. Ahora ~2%, lo mismo que un NPC solo en el mapa.
+      expect(stalled / walking).toBeLessThan(0.05);
+      expect(worst).toBeLessThan(20); // 1s
+    });
+
+    it("la multitud no se congela: nadie se queda clavado", () => {
+      const session = crowd();
+      let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
+      const streak = new Map<string, number>();
+      let worst = 0;
+
+      for (let tick = 0; tick < 1200; tick += 1) {
+        session.tick(0.05);
+        const frame = session.npcSnapshot();
+        for (const npc of frame) {
+          const before = previous.get(npc.entityId)!;
+          const quieto = npc.x === before.x && npc.z === before.z;
+          const run = quieto ? (streak.get(npc.entityId) ?? 0) + 1 : 0;
+          streak.set(npc.entityId, run);
+          if (run > worst) worst = run;
+        }
+        previous = new Map(frame.map((npc) => [npc.entityId, npc]));
+      }
+
+      // Antes de la válvula, un NPC encajonado no volvía a moverse nunca y en un
+      // minuto se paraban los 32. 200 ticks = 10 s parado seguidos.
+      expect(worst).toBeLessThan(200);
     });
   });
 });

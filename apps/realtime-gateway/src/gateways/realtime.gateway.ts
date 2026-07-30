@@ -23,7 +23,8 @@ import type {
   GameShootPayload,
   LobbyJoinPayload,
   LobbyLeavePayload,
-  PlayerInputPayload
+  PlayerInputPayload,
+  SeekerPose
 } from "@whoshuman/shared-types";
 import { MessagingService } from "../common/messaging.service";
 import { envs } from "../config";
@@ -370,13 +371,41 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       socket.emit(ServerSocketEvents.gatewayError, { message: "Invalid aiming state" });
       return;
     }
+    // La pose es opcional, pero si viene tiene que ser numérica: el game-service la
+    // reenvía a todos en el snapshot, así que un NaN les rompería el render.
+    const pose = this.readSeekerPose(payload.pose);
+    if (payload.pose !== undefined && !pose) {
+      socket.emit(ServerSocketEvents.gatewayError, { message: "Invalid seeker pose" });
+      return;
+    }
 
     await this.publishToNats(GameSubjects.aim, {
       userId: user.sub,
       gameId,
       aiming: payload.aiming,
+      ...(pose ? { pose } : {}),
       socketId: socket.id
     });
+  }
+
+  private readSeekerPose(value: unknown): SeekerPose | null {
+    if (typeof value !== "object" || value === null) return null;
+    const pose = value as Record<string, unknown>;
+    const keys = ["x", "y", "z", "dirX", "dirY", "dirZ", "aimX", "aimY", "aimZ"] as const;
+    if (!keys.every((key) => typeof pose[key] === "number" && Number.isFinite(pose[key]))) {
+      return null;
+    }
+    return {
+      x: pose.x as number,
+      y: pose.y as number,
+      z: pose.z as number,
+      dirX: pose.dirX as number,
+      dirY: pose.dirY as number,
+      dirZ: pose.dirZ as number,
+      aimX: pose.aimX as number,
+      aimY: pose.aimY as number,
+      aimZ: pose.aimZ as number
+    };
   }
 
   @SubscribeMessage(ClientSocketEvents.presenceList)

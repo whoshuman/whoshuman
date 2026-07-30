@@ -4,7 +4,8 @@ import type {
   GameJoinResponse,
   GameScoreState,
   GameStateSnapshotPayload,
-  MatchFoundPayload
+  MatchFoundPayload,
+  SeekerPose
 } from "@whoshuman/shared-types";
 import { MessagingService } from "../common/messaging.service";
 import { envs } from "../config";
@@ -53,11 +54,10 @@ export class GameService {
 
     const session = new GameSession(payload.gameId, payload.players, {
       bounds: map.bounds,
-      speed: envs.gameSpeed,
       turnSpeed: envs.gameTurnSpeed,
       obstacles: map.obstacles,
       heightmap: map.heightmap,
-      maxStep: envs.gameMaxStep,
+      maxSlope: envs.gameMaxSlope,
       npcCount: envs.gameNpcCount,
       npcSpeed: envs.gameNpcSpeed
     });
@@ -120,7 +120,9 @@ export class GameService {
   aim(payload: unknown): boolean {
     if (!this.isAimRef(payload)) return false;
     return (
-      this.games.get(payload.gameId)?.session.setAiming(payload.userId, payload.aiming) ?? false
+      this.games
+        .get(payload.gameId)
+        ?.session.setAiming(payload.userId, payload.aiming, payload.pose) ?? false
     );
   }
 
@@ -230,7 +232,8 @@ export class GameService {
       entities: session.snapshot(),
       collectibles: session.collectibleSnapshot(),
       round: session.roundSnapshot(),
-      scores: session.scoreSnapshot()
+      scores: session.scoreSnapshot(),
+      seeker: session.seekerSnapshot()
     };
     try {
       await this.messaging.publish(GameSubjects.stateSnapshot, event);
@@ -266,7 +269,21 @@ export class GameService {
     return typeof targetEntityId === "string" && targetEntityId.trim().length > 0;
   }
 
-  private isAimRef(p: unknown): p is { userId: string; gameId: string; aiming: boolean } {
-    return this.isPlayerRef(p) && typeof (p as { aiming?: unknown }).aiming === "boolean";
+  private isAimRef(
+    p: unknown
+  ): p is { userId: string; gameId: string; aiming: boolean; pose?: SeekerPose } {
+    if (!this.isPlayerRef(p) || typeof (p as { aiming?: unknown }).aiming !== "boolean") {
+      return false;
+    }
+    const pose = (p as { pose?: unknown }).pose;
+    return pose === undefined || this.isSeekerPose(pose);
+  }
+
+  // La pose llega del cliente: un NaN o un Infinity aquí se propagaría en el snapshot
+  // a todos los jugadores y les rompería el render.
+  private isSeekerPose(p: unknown): p is SeekerPose {
+    if (!isRecord(p)) return false;
+    const axes = [p.x, p.y, p.z, p.dirX, p.dirY, p.dirZ, p.aimX, p.aimY, p.aimZ];
+    return axes.every((value) => typeof value === "number" && Number.isFinite(value));
   }
 }

@@ -148,9 +148,33 @@ export interface GameShootPayload {
   targetEntityId: string;
 }
 
+/** Dónde vuela la nave del cazador y hacia dónde mira. La dirección es unitaria. */
+export interface SeekerPose {
+  x: number;
+  y: number;
+  z: number;
+  dirX: number;
+  dirY: number;
+  dirZ: number;
+  // Punto al que apunta la mira. Va explícito y no se deriva de la dirección: el haz
+  // sale del cañón, que está desplazado respecto a la cámara, así que solo el cazador
+  // sabe dónde convergen los dos. Mandarlo garantiza que todos vean el mismo rayo.
+  aimX: number;
+  aimY: number;
+  aimZ: number;
+}
+
+/** Lo que el resto de jugadores sabe del cazador: su nave y si está apuntando. */
+export interface SeekerState extends SeekerPose {
+  aiming: boolean;
+}
+
 export interface GameAimPayload {
   gameId: string;
   aiming: boolean;
+  // La nave la mueve el cliente (orbita con su cámara), así que su pose solo puede
+  // venir de él. Si falta, el servidor conserva la última conocida.
+  pose?: SeekerPose;
 }
 
 export interface GameStateSnapshotPayload {
@@ -160,6 +184,9 @@ export interface GameStateSnapshotPayload {
   collectibles: GameCollectibleState[];
   round: GameRoundState;
   scores: GameScoreState[];
+  // Aparte de `entities` a propósito: esa lista es deliberadamente uniforme para que
+  // no se distinga humano de NPC, y el cazador no juega a esconderse.
+  seeker: SeekerState | null;
 }
 
 export type PlayerRole = "hider" | "seeker";
