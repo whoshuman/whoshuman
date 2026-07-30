@@ -5,7 +5,8 @@ import type {
   GameRoundState,
   GameScoreState,
   GameStateSnapshotPayload,
-  PlayerRole
+  PlayerRole,
+  SeekerPose
 } from "@whoshuman/shared-types";
 import type { Socket } from "socket.io-client";
 import { create } from "zustand";
@@ -38,6 +39,7 @@ interface GameState {
   leave: () => void;
   reset: () => void;
   setAiming: (aiming: boolean) => void;
+  sendAimPose: (pose: SeekerPose) => void;
   shoot: (targetEntityId: string) => void;
   sendInput: (forward: number, turn: number) => void;
 }
@@ -45,10 +47,18 @@ interface GameState {
 let boundSocket: Socket | null = null;
 let lastUiSignature = "";
 const ACTIVE_GAME_KEY = "activeGameId";
+// El servidor difunde a 20 Hz: mandar la pose más a menudo no la haría llegar antes.
+const AIM_POSE_INTERVAL_MS = 50;
+let lastPose: SeekerPose | null = null;
+let lastPoseSentAt = 0;
 
 function forgetActiveGame() {
   sessionStorage.removeItem(ACTIVE_GAME_KEY);
   lastUiSignature = "";
+  // Si no, al entrar en la siguiente partida el primer game:aim iría con la pose de la
+  // anterior y la nave aparecería un instante donde estaba en aquella.
+  lastPose = null;
+  lastPoseSentAt = 0;
 }
 
 function bindListeners() {
@@ -263,8 +273,30 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     set({ aiming });
     if (state.phase === "playing" && state.gameId) {
-      connectSocket().emit(ClientSocketEvents.gameAim, { gameId: state.gameId, aiming });
+      // Va con la última pose conocida para que el cambio de mira se vea al instante,
+      // sin esperar al siguiente envío periódico.
+      connectSocket().emit(ClientSocketEvents.gameAim, {
+        gameId: state.gameId,
+        aiming,
+        ...(lastPose ? { pose: lastPose } : {})
+      });
+      lastPoseSentAt = performance.now();
     }
+  },
+
+  // La nave la mueve la cámara del cliente, así que su pose solo puede salir de aquí.
+  // Se manda al ritmo del snapshot (20 Hz): más sería malgastar red, porque los demás
+  // no la van a ver actualizarse más rápido de lo que reciben.
+  sendAimPose: (pose) => {
+    const { phase, selfRole, gameId, aiming, round } = get();
+    lastPose = pose;
+    if (phase !== "playing" || !gameId || selfRole !== "seeker" || round?.phase !== "playing") {
+      return;
+    }
+    const now = performance.now();
+    if (now - lastPoseSentAt < AIM_POSE_INTERVAL_MS) return;
+    lastPoseSentAt = now;
+    connectSocket().emit(ClientSocketEvents.gameAim, { gameId, aiming, pose });
   },
 
   shoot: (targetEntityId) => {
