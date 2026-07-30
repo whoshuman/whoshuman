@@ -712,12 +712,7 @@ export class GameSession {
    * un obstáculo hacía que el NPC virase sin parar. La gente se resuelve al llegar,
    * escurriéndose por el eje libre, que es como se esquiva de verdad al caminar.
    */
-  private wayAhead(
-    npc: SessionNpc,
-    heading: number,
-    distance: number,
-    crowd: boolean
-  ): boolean {
+  private wayAhead(npc: SessionNpc, heading: number, distance: number, crowd: boolean): boolean {
     const step = Math.max(this.config.heightmap.cell / 2, 0.1);
     const sin = Math.sin(heading);
     const cos = Math.cos(heading);

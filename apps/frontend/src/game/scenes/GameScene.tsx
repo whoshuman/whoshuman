@@ -23,11 +23,7 @@ import {
 } from "../input/touchInput";
 import betaCity from "../maps/beta-city.json";
 import { useGameStore } from "../store/gameStore";
-import {
-  AIM_LOCK_RADIUS,
-  WORLD_UNITS_TO_METERS,
-  aimTelemetry
-} from "../systems/aimTelemetry";
+import { AIM_LOCK_RADIUS, WORLD_UNITS_TO_METERS, aimTelemetry } from "../systems/aimTelemetry";
 import { sampleSeeker, sampleWorld } from "../systems/interpolation";
 
 // COPIA del mapa lógico del servidor (game-service/src/game/maps/beta-city.json).
@@ -121,10 +117,7 @@ function advanceMotion(
   previous.moving = distanceSq > MOVEMENT_EPSILON_SQ || turn > ROTATION_EPSILON;
   if (previous.moving) {
     const travelled = Math.sqrt(distanceSq) + turn * TURN_STEP_RADIUS;
-    const step = Math.min(
-      travelled / SPRINT_CYCLE_DISTANCE,
-      SPRINT_MAX_CYCLES_PER_SECOND * delta
-    );
+    const step = Math.min(travelled / SPRINT_CYCLE_DISTANCE, SPRINT_MAX_CYCLES_PER_SECOND * delta);
     previous.phase = (previous.phase + step) % 1;
   }
   return previous;
@@ -592,9 +585,7 @@ function Units() {
 
       if (checkingAim && !locked) {
         // A media altura del personaje, que es donde apunta quien dispara al cuerpo.
-        aimOffset
-          .set(entity.x, entity.y + PLAYER_HEIGHT / 2, entity.z)
-          .sub(camera.position);
+        aimOffset.set(entity.x, entity.y + PLAYER_HEIGHT / 2, entity.z).sub(camera.position);
         const along = aimOffset.dot(aimRay);
         // Detrás de la cámara o más lejos que el impacto del haz: tapado, no cuenta.
         // El láser publica la distancia después de este bucle, así que en el primer
@@ -1373,7 +1364,7 @@ function ScopeOverlay({ visible }: { visible: boolean }) {
       }
       if (altitudeRef.current) altitudeRef.current.textContent = `${meters(altitude)} M`;
       if (headingRef.current) {
-        const degrees = Math.round((((heading * 180) / Math.PI) % 360 + 360) % 360);
+        const degrees = Math.round(((((heading * 180) / Math.PI) % 360) + 360) % 360);
         headingRef.current.textContent = `${String(degrees).padStart(3, "0")}°`;
       }
       if (targetRef.current) {

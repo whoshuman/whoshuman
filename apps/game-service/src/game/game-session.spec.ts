@@ -166,10 +166,7 @@ describe("GameSession", () => {
         const npcs = s.npcSnapshot();
         for (const npc of npcs) {
           const before = previousNpcs.get(npc.entityId)!;
-          fastestNpc = Math.max(
-            fastestNpc,
-            Math.hypot(npc.x - before.x, npc.z - before.z) / 0.05
-          );
+          fastestNpc = Math.max(fastestNpc, Math.hypot(npc.x - before.x, npc.z - before.z) / 0.05);
         }
         previousNpcs = new Map(npcs.map((n) => [n.entityId, n]));
       }
