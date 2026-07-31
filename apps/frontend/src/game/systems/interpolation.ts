@@ -1,4 +1,8 @@
-import type { GameEntityState, GameStateSnapshotPayload } from "@whoshuman/shared-types";
+import type {
+  GameEntityState,
+  GameStateSnapshotPayload,
+  SeekerState
+} from "@whoshuman/shared-types";
 
 // El servidor emite snapshots a 20 Hz (cada 50 ms). Renderizar el último tal cual
 // daría movimiento a saltos; en su lugar renderizamos ~100 ms EN EL PASADO,
@@ -11,6 +15,7 @@ const MAX_BUFFER = 10;
 interface TimedSnapshot {
   receivedAt: number;
   entities: GameEntityState[];
+  seeker: SeekerState | null;
 }
 
 // Buffer a nivel de módulo, FUERA de React y de Zustand: llega a 20 Hz y
@@ -19,7 +24,11 @@ interface TimedSnapshot {
 let buffer: TimedSnapshot[] = [];
 
 export function pushSnapshot(snapshot: GameStateSnapshotPayload): void {
-  buffer.push({ receivedAt: performance.now(), entities: snapshot.entities });
+  buffer.push({
+    receivedAt: performance.now(),
+    entities: snapshot.entities,
+    seeker: snapshot.seeker ?? null
+  });
   if (buffer.length > MAX_BUFFER) buffer = buffer.slice(-MAX_BUFFER);
 }
 
@@ -58,11 +67,13 @@ function interpolateEntities(
   });
 }
 
-export function sampleWorld(): GameEntityState[] {
-  if (buffer.length === 0) return [];
+// Busca el par de snapshots [prev, next] que rodea el instante que toca pintar, y
+// cuánto hay que interpolar entre ellos. t === null = sin posterior (red parada o
+// retardo aún no cumplido): se usa prev tal cual.
+function samplePair(): { prev: TimedSnapshot; next: TimedSnapshot | null; t: number } | null {
+  if (buffer.length === 0) return null;
   const renderTime = performance.now() - RENDER_DELAY_MS;
 
-  // Busca el par de snapshots [prev, next] que rodea renderTime.
   let prev = buffer[0];
   let next: TimedSnapshot | null = null;
   for (const snap of buffer) {
@@ -74,11 +85,36 @@ export function sampleWorld(): GameEntityState[] {
     }
   }
 
-  // Sin snapshot posterior (red parada o retardo aún no cumplido): último conocido.
-  if (!next || next.receivedAt === prev.receivedAt) {
-    return prev.entities;
-  }
+  if (!next || next.receivedAt === prev.receivedAt) return { prev, next: null, t: 0 };
+  return { prev, next, t: (renderTime - prev.receivedAt) / (next.receivedAt - prev.receivedAt) };
+}
 
-  const t = (renderTime - prev.receivedAt) / (next.receivedAt - prev.receivedAt);
-  return interpolateEntities(prev.entities, next.entities, t);
+export function sampleWorld(): GameEntityState[] {
+  const pair = samplePair();
+  if (!pair) return [];
+  if (!pair.next) return pair.prev.entities;
+  return interpolateEntities(pair.prev.entities, pair.next.entities, pair.t);
+}
+
+/** La nave del cazador, suavizada igual que el resto: llega a 20 Hz. */
+export function sampleSeeker(): SeekerState | null {
+  const pair = samplePair();
+  if (!pair) return null;
+  const source = pair.prev.seeker;
+  if (!source) return null;
+  const target = pair.next?.seeker;
+  if (!target) return source;
+  return {
+    x: lerp(source.x, target.x, pair.t),
+    y: lerp(source.y, target.y, pair.t),
+    z: lerp(source.z, target.z, pair.t),
+    dirX: lerp(source.dirX, target.dirX, pair.t),
+    dirY: lerp(source.dirY, target.dirY, pair.t),
+    dirZ: lerp(source.dirZ, target.dirZ, pair.t),
+    aimX: lerp(source.aimX, target.aimX, pair.t),
+    aimY: lerp(source.aimY, target.aimY, pair.t),
+    aimZ: lerp(source.aimZ, target.aimZ, pair.t),
+    // Es un booleano: interpolarlo no significa nada, manda el snapshot más reciente.
+    aiming: target.aiming
+  };
 }

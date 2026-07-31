@@ -22,6 +22,9 @@
   --animate-hud-in: hud-in 0.6s ease-out forwards;
   --animate-unfold-down: unfold-down 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in: fade-in 0.4s ease-out forwards;
+  --animate-scope-flash: scope-flash 0.28s ease-out forwards;
+  --animate-scope-sweep: scope-sweep 3.2s linear infinite;
+  --animate-scope-pulse: scope-pulse 1.1s ease-in-out infinite;
 }
 
 /* Define fuentes, colores y estilos base para toda la aplicacion. */
@@ -283,6 +286,52 @@ body {
     text-shadow:
       0 0 30px rgb(36 245 255 / 1),
       0 0 66px rgb(36 245 255 / 0.6);
+  }
+}
+
+/* Barrido de radar que recorre la mira de arriba abajo, como un tubo escaneando.
+   El recorrido va en vmin, no en %, porque la linea mide 1px de alto y un porcentaje
+   se mide sobre su propia altura: avanzaria 40px en vez de cruzar el visor. */
+@keyframes scope-sweep {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.55;
+  }
+  88% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(56vmin);
+    opacity: 0;
+  }
+}
+
+/* Latido del marcador cuando hay una unidad encarada. */
+@keyframes scope-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+/* Destello al entrar y salir de la mira: cubre el salto de camara del zoom. */
+@keyframes scope-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
   }
 }
 
