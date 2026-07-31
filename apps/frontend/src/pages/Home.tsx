@@ -20,8 +20,8 @@ import { useAuthStore } from "../shared/authStore";
 // Vistas que se montan como overlay sobre la home sin cambiar de ruta.
 type HomeView = "home" | "login" | "register" | "lobby";
 
-// Duracion del zoom de camara antes de mostrar la zona de despliegue (lobby).
-const ZOOM_TO_LOBBY_MS = 1100;
+// Funcionalidad futura: duración del acceso al lobby como invitado.
+// const ZOOM_TO_LOBBY_MS = 1100;
 
 // El logo combina el encendido de neon (una vez) con una respiracion del glow en bucle.
 const titleWhoStyle: CSSProperties = {
@@ -68,7 +68,8 @@ function Home() {
   const [teamReady, setTeamReady] = useState(false);
   // Carril del coche: se desliza bajo la tarjeta del equipo seleccionada.
   const [carX, setCarX] = useState(0);
-  const startMusic = useMusic((state) => state.start);
+  // Funcionalidad futura: música iniciada al desplegarse como invitado.
+  // const startMusic = useMusic((state) => state.start);
   const stopMusic = useMusic((state) => state.stop);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const currentUser = useAuthStore((s) => s.user);
@@ -104,6 +105,8 @@ function Home() {
     closeAbout();
   }
 
+  // Funcionalidad futura: permitir entrar al lobby sin una cuenta autenticada.
+  /*
   function handlePlay() {
     if (isZoomed) return;
     // El clic es un gesto de usuario valido para arrancar el audio (autoplay permitido).
@@ -112,6 +115,7 @@ function Home() {
     setIsZoomed(true);
     setTimeout(() => setView("lobby"), ZOOM_TO_LOBBY_MS);
   }
+  */
 
   // La interfaz de la landing se desvanece cuando hay zoom, vuelta al equipo o vista abierta.
   const dimmed = isZoomed || aboutOpen || view !== "home";
@@ -205,7 +209,8 @@ function Home() {
               </>
             )}
           </div>
-          {/* Despliegue sin identificar (invitado). */}
+          {/* Funcionalidad futura: despliegue sin identificar como invitado. */}
+          {/*
           <button
             type="button"
             onClick={handlePlay}
@@ -214,6 +219,7 @@ function Home() {
           >
             {t("home.playGuest")} <span className="text-neon-cyan">→</span>
           </button>
+          */}
         </div>
       </div>
 
