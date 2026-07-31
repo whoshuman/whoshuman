@@ -23,7 +23,7 @@ function Profile() {
 
   // Server state con React Query: el store da render instantáneo (initialData) y
   // la query revalida contra el backend en segundo plano.
-  const { data: user } = useQuery({
+  const { data: serverUser } = useQuery({
     queryKey: ["me"],
     queryFn: getMe,
     enabled: isAuthenticated,
@@ -43,10 +43,15 @@ function Profile() {
   // Sincroniza el store cuando el servidor trae datos más recientes (p. ej. el
   // perfil se editó desde otro dispositivo). updatedAt evita re-persistir en bucle.
   useEffect(() => {
-    if (user && user.updatedAt !== storedUser?.updatedAt) {
-      updateUser(user);
+    if (
+      serverUser &&
+      (!storedUser || new Date(serverUser.updatedAt) > new Date(storedUser.updatedAt))
+    ) {
+      updateUser(serverUser);
     }
-  }, [user, storedUser?.updatedAt, updateUser]);
+  }, [serverUser, storedUser, updateUser]);
+
+  const user = storedUser ?? serverUser;
 
   if (!isAuthenticated) {
     // Sin refresh token no hay sesión que restaurar: fuera.

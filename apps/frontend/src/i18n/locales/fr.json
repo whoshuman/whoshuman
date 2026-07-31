@@ -23,6 +23,7 @@
   "settings": {
     "title": "PARAMÈTRES",
     "language": "LANGUE",
+    "languageSaveError": "La langue n'a pas pu être enregistrée.",
     "dev": "OUTILS DEV",
     "audio": "AUDIO",
     "music": "MUSIQUE"

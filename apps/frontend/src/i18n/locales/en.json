@@ -23,6 +23,7 @@
   "settings": {
     "title": "SETTINGS",
     "language": "LANGUAGE",
+    "languageSaveError": "The language could not be saved.",
     "dev": "DEV TOOLS",
     "audio": "AUDIO",
     "music": "MUSIC"

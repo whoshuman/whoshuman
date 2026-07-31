@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -34,6 +34,10 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
   const [lang, setLang] = useState<string>(user?.language ?? i18n.language);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.language) setLang(user.language);
+  }, [user?.language]);
 
   const initials =
     callsign
