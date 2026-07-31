@@ -23,6 +23,7 @@
   "settings": {
     "title": "AJUSTES",
     "language": "IDIOMA",
+    "languageSaveError": "No se pudo guardar el idioma.",
     "dev": "HERRAMIENTAS DEV",
     "audio": "AUDIO",
     "music": "MÚSICA"
