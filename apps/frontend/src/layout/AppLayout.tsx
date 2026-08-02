@@ -8,6 +8,7 @@ import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
 import { useAuthStore } from "../shared/authStore";
 import ConfirmDialog from "../shared/ConfirmDialog";
+import DirectChatDialog from "../shared/DirectChatDialog";
 import { initNotifications } from "../shared/notifications";
 import NotificationCenter from "../shared/NotificationCenter";
 import NotificationToasts from "../shared/NotificationToasts";
@@ -142,6 +143,7 @@ function AppLayout() {
     <div>
       {showBackground && <SceneBackground />}
       <NotificationToasts />
+      {isAuthenticated && <DirectChatDialog />}
 
       {logoutOpen && (
         <ConfirmDialog

@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useLobbyStore } from "../game/store/lobbyStore";
 import { useAuthStore } from "../shared/authStore";
 import CornerBrackets from "../shared/CornerBrackets";
+import GroupChatDock from "../shared/GroupChatDock";
 import SettingsMenu from "../shared/SettingsMenu";
 import { useHologramSound } from "../shared/useHologramSound";
 import RoomModal, { type RoomModalMode } from "./RoomModal";
@@ -166,6 +167,7 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
   const username = user?.username ?? "";
   const initials = username.slice(0, 2).toUpperCase() || "--";
   const lobbyStatus = useLobbyStore((s) => s.status);
+  const lobbyId = useLobbyStore((s) => s.lobbyId);
   const match = useLobbyStore((s) => s.match);
   const error = useLobbyStore((s) => s.error);
   const clearError = useLobbyStore((s) => s.clearError);
@@ -302,6 +304,8 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
       ) : (
         <RoomModal mode={mode} onBack={() => setMode("menu")} />
       )}
+
+      {lobbyStatus === "inLobby" && lobbyId && <GroupChatDock scope="lobby" channelId={lobbyId} />}
     </main>
   );
 }

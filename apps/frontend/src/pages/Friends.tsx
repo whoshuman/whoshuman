@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -19,6 +19,7 @@ import {
 import { searchUsers } from "../shared/api/users";
 import { useAuthStore } from "../shared/authStore";
 import ConfirmDialog from "../shared/ConfirmDialog";
+import { useChatDialogStore } from "../shared/chatStore";
 import CornerBrackets from "../shared/CornerBrackets";
 import { usePresenceStore } from "../shared/presenceStore";
 import { useHologramSound } from "../shared/useHologramSound";
@@ -292,6 +293,7 @@ function Friends() {
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
   const [pendingAction, setPendingAction] = useState<PendingFriendAction | null>(null);
   const onlineIds = usePresenceStore((state) => state.online);
+  const openDirectChat = useChatDialogStore((state) => state.openDirect);
   useHologramSound();
 
   // Debounce: la query de red usa el texto "asentado" 300ms después de teclear,
@@ -479,6 +481,16 @@ function Friends() {
                     })
                   }
                 >
+                  <button
+                    type="button"
+                    onClick={() => openDirectChat(friendship.user)}
+                    title={t("chat.openWith", { username: friendship.user.username })}
+                    aria-label={t("chat.openWith", { username: friendship.user.username })}
+                    className={ghostButton}
+                  >
+                    <MessageSquare aria-hidden="true" className="mr-1.5 inline" size={14} />
+                    {t("chat.message")}
+                  </button>
                   <span className="inline-flex border border-current bg-success/10 px-3 py-1 text-xs font-bold text-success">
                     {t("friends.statusLinked")}
                   </span>

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ServerSocketEvents } from "@whoshuman/shared-events";
 import type {
+  ChatMessage,
   GameStateSnapshotPayload,
   LobbyStatePayload,
   MatchFoundPayload,
@@ -61,6 +62,27 @@ export class RealtimeRoomsService {
     this.server
       .to(this.userRoom(payload.recipientId))
       .emit(ServerSocketEvents.notification, payload);
+  }
+
+  broadcastChatMessage(payload: ChatMessage) {
+    if (!this.server) {
+      this.logger.warn("Cannot broadcast chat message: Socket.IO server is not ready");
+      return;
+    }
+
+    if (payload.scope === "direct" && payload.recipientId) {
+      this.server
+        .to(this.userRoom(payload.sender.id))
+        .to(this.userRoom(payload.recipientId))
+        .emit(ServerSocketEvents.chatMessage, payload);
+      return;
+    }
+
+    const room =
+      payload.scope === "lobby"
+        ? this.lobbyRoom(payload.channelId)
+        : this.gameRoom(payload.channelId);
+    this.server.to(room).emit(ServerSocketEvents.chatMessage, payload);
   }
 
   broadcastGameState(payload: GameStateSnapshotPayload) {

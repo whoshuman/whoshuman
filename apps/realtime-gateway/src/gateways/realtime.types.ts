@@ -2,6 +2,11 @@ import type { Server, Socket } from "socket.io";
 import { ClientSocketEvents, ServerSocketEvents } from "@whoshuman/shared-events";
 import type {
   AuthTokenPayload,
+  ChatClientHistoryPayload,
+  ChatClientSendPayload,
+  ChatHistoryResponse,
+  ChatMessage,
+  ChatSocketResponse,
   GameAimPayload,
   GameJoinPayload,
   GameJoinResponse,
@@ -39,6 +44,7 @@ export interface ServerToClientEvents {
   [ServerSocketEvents.gameState]: (payload: GameStateSnapshotPayload) => void;
   [ServerSocketEvents.presenceState]: (payload: { userIds: string[] }) => void;
   [ServerSocketEvents.presenceChanged]: (payload: { userId: string; online: boolean }) => void;
+  [ServerSocketEvents.chatMessage]: (payload: ChatMessage) => void;
 }
 
 export interface ClientToServerEvents {
@@ -51,6 +57,14 @@ export interface ClientToServerEvents {
   [ClientSocketEvents.gameShoot]: (payload: GameShootPayload) => void;
   [ClientSocketEvents.playerInput]: (payload: PlayerInputPayload) => void;
   [ClientSocketEvents.presenceList]: () => void;
+  [ClientSocketEvents.chatSend]: (
+    payload: ChatClientSendPayload,
+    callback: (response: ChatSocketResponse<ChatMessage>) => void
+  ) => void;
+  [ClientSocketEvents.chatHistory]: (
+    payload: ChatClientHistoryPayload,
+    callback: (response: ChatSocketResponse<ChatHistoryResponse>) => void
+  ) => void;
 }
 
 export type RealtimeSocket = Socket<ClientToServerEvents, ServerToClientEvents, object, SocketData>;

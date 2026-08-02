@@ -10,6 +10,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead
 } from "./api/notifications";
+import { useChatDialogStore } from "./chatStore";
 
 function NotificationCenter() {
   const { t, i18n } = useTranslation();
@@ -124,6 +125,7 @@ function NotificationCenter() {
               )}
             {notifications.map((notification) => {
               const accepted = notification.type === "friend.request.accepted";
+              const chatMessage = notification.type === "chat.message.received";
               const date = new Intl.DateTimeFormat(i18n.language, {
                 day: "2-digit",
                 month: "short",
@@ -138,6 +140,10 @@ function NotificationCenter() {
                   onClick={() => {
                     if (!notification.readAt) markOne.mutate(notification.id);
                     setOpen(false);
+                    if (chatMessage) {
+                      useChatDialogStore.getState().openDirect(notification.from);
+                      return;
+                    }
                     void navigate({ to: "/friends" });
                   }}
                   className={`flex w-full gap-3 border-b border-neon-cyan/15 px-4 py-3 text-left transition hover:bg-neon-cyan/7 ${
@@ -150,12 +156,18 @@ function NotificationCenter() {
                   <span className="min-w-0 flex-1">
                     <span
                       className={`font-display block text-[0.65rem] font-bold uppercase tracking-wider ${
-                        accepted ? "text-success" : "text-neon-magenta"
+                        accepted
+                          ? "text-success"
+                          : chatMessage
+                            ? "text-neon-cyan"
+                            : "text-neon-magenta"
                       }`}
                     >
-                      {accepted
-                        ? t("notifications.requestAccepted")
-                        : t("notifications.requestReceived")}
+                      {chatMessage
+                        ? t("notifications.chatMessage")
+                        : accepted
+                          ? t("notifications.requestAccepted")
+                          : t("notifications.requestReceived")}
                     </span>
                     <span className="mt-1 block truncate text-sm font-bold text-text-main">
                       {notification.from.username}

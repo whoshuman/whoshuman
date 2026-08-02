@@ -240,7 +240,26 @@
     "markAllRead": "Mark all as read",
     "loadError": "The signal log could not be loaded.",
     "requestReceived": "INCOMING LINK REQUEST",
-    "requestAccepted": "LINK ACCEPTED"
+    "requestAccepted": "LINK ACCEPTED",
+    "chatMessage": "NEW PRIVATE MESSAGE"
+  },
+  "chat": {
+    "message": "MESSAGE",
+    "open": "OPEN CHAT",
+    "openWith": "Open chat with {{username}}",
+    "with": "CHANNEL: {{username}}",
+    "roomTitle": "ROOM CHANNEL",
+    "operationTitle": "OPERATION CHANNEL",
+    "directChannel": "Encrypted private link",
+    "squadChannel": "Squad communications",
+    "loading": "RETRIEVING TRANSMISSIONS...",
+    "empty": "NO MESSAGES RECORDED",
+    "placeholder": "Write a message...",
+    "send": "SEND MESSAGE",
+    "close": "CLOSE CHAT",
+    "you": "YOU",
+    "loadError": "The message history could not be loaded.",
+    "sendError": "The message could not be sent. Check the link and try again."
   },
   "about": {
     "eyebrow": "PROJECT PERSONNEL",
