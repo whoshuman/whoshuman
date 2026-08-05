@@ -30,10 +30,6 @@ export function connectSocket(): Socket {
   return socket;
 }
 
-export function getSocket(): Socket | null {
-  return socket;
-}
-
 export function disconnectSocket(): void {
   socket?.disconnect();
   socket = null;

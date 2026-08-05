@@ -1,8 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { AuthSubjects } from "@whoshuman/shared-events";
 import type { AuthVerifyResponse } from "@whoshuman/shared-types";
-import { I18nContext } from "nestjs-i18n";
-import { MessagingService } from "../../common";
+import { MessagingService, translateError } from "../../common";
 import type { AuthenticatedRequest } from "../auth-user.types";
 
 /**
@@ -27,7 +26,7 @@ export class JwtAuthGuard implements CanActivate {
     const result = await this.messaging.request<AuthVerifyResponse>(AuthSubjects.verify, { token });
 
     if (!result.valid || !result.payload) {
-      throw new UnauthorizedException(this.translate("tokenInvalidOrExpired"));
+      throw new UnauthorizedException(translateError("tokenInvalidOrExpired"));
     }
 
     // Dejamos el usuario disponible para el controller (vía @CurrentUser()).
@@ -40,16 +39,9 @@ export class JwtAuthGuard implements CanActivate {
     const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
 
     if (scheme !== "Bearer" || !token) {
-      throw new UnauthorizedException(this.translate("tokenMissing"));
+      throw new UnauthorizedException(translateError("tokenMissing"));
     }
 
     return token;
-  }
-
-  /** Traduce una clave de error al idioma de la petición actual. */
-  private translate(key: string): string {
-    const i18n = I18nContext.current();
-    if (!i18n) return key;
-    return i18n.t(`errors.${key}`, { defaultValue: key });
   }
 }

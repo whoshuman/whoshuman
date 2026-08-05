@@ -32,6 +32,18 @@ const members = [
   { userId: "u1", role: "hider" as const },
   { userId: "u2", role: "seeker" as const }
 ];
+const crowdSession = (gameId: string) => {
+  const map = loadMap("beta-city");
+  return new GameSession(gameId, members, {
+    bounds: map.bounds,
+    turnSpeed: 3,
+    obstacles: map.obstacles,
+    heightmap: map.heightmap,
+    maxSlope: 1.5,
+    npcCount: 32,
+    npcSpeed: 0.36
+  });
+};
 const find = (s: GameSession, id: string) => s.playerSnapshot().find((p) => p.userId === id)!;
 
 // Tras N ticks andando de frente, el jugador ha recorrido esto en +z. No es
@@ -132,21 +144,8 @@ describe("GameSession", () => {
   // El juego consiste en no saber quién es humano. Cualquier diferencia mecánica entre
   // un jugador y un NPC sería un atajo para cazarlos sin observarles la conducta.
   describe("el humano se mueve como la multitud", () => {
-    const crowdMap = () => {
-      const map = loadMap("beta-city");
-      return new GameSession("mimetismo", members, {
-        bounds: map.bounds,
-        turnSpeed: 3,
-        obstacles: map.obstacles,
-        heightmap: map.heightmap,
-        maxSlope: 1.5,
-        npcCount: 32,
-        npcSpeed: 0.36
-      });
-    };
-
     it("no anda más rápido que un NPC", () => {
-      const s = crowdMap();
+      const s = crowdSession("mimetismo");
       s.markPresent("u1");
       s.setInput("u1", 1, 0);
 
@@ -176,7 +175,7 @@ describe("GameSession", () => {
     });
 
     it("no atraviesa a los NPC: respeta su espacio como uno más", () => {
-      const s = crowdMap();
+      const s = crowdSession("mimetismo");
       s.markPresent("u1");
       s.setInput("u1", 1, 1); // dar vueltas por el mapa, cruzándose con la multitud
       let closest = Infinity;
@@ -542,23 +541,8 @@ describe("GameSession", () => {
       expect(modes).toEqual(new Set(["idle", "walking"]));
     });
 
-    // Con la multitud al completo y a la velocidad real de juego, que es donde
-    // aparecen los atascos entre NPC.
-    const crowd = () => {
-      const map = loadMap("beta-city");
-      return new GameSession("npc-crowd", members, {
-        bounds: map.bounds,
-        turnSpeed: 3,
-        obstacles: map.obstacles,
-        heightmap: map.heightmap,
-        maxSlope: 1.5,
-        npcCount: 32,
-        npcSpeed: 0.36
-      });
-    };
-
     it("gira sobre todo en marcha, no plantado", () => {
-      const session = crowd();
+      const session = crowdSession("npc-crowd");
       let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
       let curva = 0;
       let plantado = 0;
@@ -582,7 +566,7 @@ describe("GameSession", () => {
     });
 
     it("cada uno anda a su ritmo y arranca por rampa, sin tirones", () => {
-      const session = crowd();
+      const session = crowdSession("npc-crowd");
       let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
       const peakSpeed = new Map<string, number>();
       const wasStopped = new Map<string, boolean>();
@@ -617,7 +601,7 @@ describe("GameSession", () => {
     });
 
     it("no se quedan empotrados contra muros ni contra otros", () => {
-      const session = crowd();
+      const session = crowdSession("npc-crowd");
       let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
       const streak = new Map<string, number>();
       let stalled = 0;
@@ -654,7 +638,7 @@ describe("GameSession", () => {
     });
 
     it("la multitud no se congela: nadie se queda clavado", () => {
-      const session = crowd();
+      const session = crowdSession("npc-crowd");
       let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
       const streak = new Map<string, number>();
       let worst = 0;

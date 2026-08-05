@@ -7,9 +7,9 @@ import {
   InternalServerErrorException
 } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
-import { I18nContext } from "nestjs-i18n";
 import { firstValueFrom, TimeoutError, timeout } from "rxjs";
 import { NATS_SERVICE } from "../config";
+import { translateError } from "./translate-error";
 
 // Tiempo máximo que esperamos la respuesta de un microservicio antes de cortar.
 const REQUEST_TIMEOUT_MS = 3000;
@@ -49,7 +49,7 @@ export class MessagingService {
   private toHttpException(error: unknown): HttpException {
     // El microservicio no respondió a tiempo.
     if (error instanceof TimeoutError) {
-      return new GatewayTimeoutException(this.translate("serviceUnavailable"));
+      return new GatewayTimeoutException(translateError("serviceUnavailable"));
     }
 
     // Ya es una excepción HTTP (p. ej. lanzada por nosotros mismos): la dejamos pasar.
@@ -62,23 +62,10 @@ export class MessagingService {
     if (typeof error === "object" && error !== null) {
       const { statusCode, message } = error as { statusCode?: number; message?: string };
       const status = typeof statusCode === "number" ? statusCode : HttpStatus.INTERNAL_SERVER_ERROR;
-      return new HttpException(this.translate(message ?? "unexpected"), status);
+      return new HttpException(translateError(message ?? "unexpected"), status);
     }
 
     // Cualquier otra cosa inesperada.
-    return new InternalServerErrorException(this.translate("unexpected"));
-  }
-
-  /**
-   * Traduce una clave (ej. "invalidCredentials") al idioma de la petición actual.
-   *
-   * I18nContext.current() obtiene el idioma de la petición en curso (Accept-Language o
-   * ?lang) sin tener que pasarlo a mano. Si la clave no existe en los archivos de
-   * traducción, devuelve la propia clave (así un mensaje literal nunca rompe nada).
-   */
-  private translate(key: string): string {
-    const i18n = I18nContext.current();
-    if (!i18n) return key;
-    return i18n.t(`errors.${key}`, { defaultValue: key });
+    return new InternalServerErrorException(translateError("unexpected"));
   }
 }

@@ -99,6 +99,23 @@ describe("ChatService", () => {
     expect(prisma.chatMessage.create).not.toHaveBeenCalled();
   });
 
+  it("rejects direct chat with oneself", async () => {
+    await expect(
+      service.send({
+        senderId: "alice",
+        recipientId: "alice",
+        scope: "direct",
+        content: "Hola"
+      })
+    ).rejects.toThrow("invalidChatRecipient");
+
+    await expect(
+      service.history({ userId: "alice", recipientId: "alice", scope: "direct" })
+    ).rejects.toThrow("invalidChatRecipient");
+    expect(prisma.friendship.findFirst).not.toHaveBeenCalled();
+    expect(prisma.chatMessage.create).not.toHaveBeenCalled();
+  });
+
   it("stores lobby messages without creating private notifications", async () => {
     const message = await service.send({
       senderId: "alice",
