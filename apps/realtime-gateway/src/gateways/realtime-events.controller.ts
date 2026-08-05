@@ -1,7 +1,13 @@
 import { Controller, Logger } from "@nestjs/common";
 import { EventPattern, Payload } from "@nestjs/microservices";
-import { GameSubjects, MatchmakingSubjects, NotificationSubjects } from "@whoshuman/shared-events";
+import {
+  ChatSubjects,
+  GameSubjects,
+  MatchmakingSubjects,
+  NotificationSubjects
+} from "@whoshuman/shared-events";
 import type {
+  ChatMessage,
   GameStateSnapshotPayload,
   LobbyStatePayload,
   MatchFoundPayload,
@@ -52,5 +58,14 @@ export class RealtimeEventsController {
       return;
     }
     this.rooms.deliverNotification(payload);
+  }
+
+  @EventPattern(ChatSubjects.messageSent)
+  handleChatMessage(@Payload() payload: ChatMessage) {
+    if (!payload?.id || !payload.channelId) {
+      this.logger.warn("Ignoring invalid chat message event");
+      return;
+    }
+    this.rooms.broadcastChatMessage(payload);
   }
 }

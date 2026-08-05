@@ -7,6 +7,7 @@ import { useKeyboardInput } from "../game/hooks/useKeyboardInput";
 import GameScene from "../game/scenes/GameScene";
 import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
+import GroupChatDock from "../shared/GroupChatDock";
 
 type LockableOrientation = Partial<Pick<ScreenOrientation, "lock" | "unlock">>;
 
@@ -291,6 +292,7 @@ function Game() {
 
       <MobileGameControls enabled={playing && selfAlive} />
       <MobileGameGate enabled={playing} />
+      {gameId && <GroupChatDock scope="game" channelId={gameId} game />}
 
       {/* Controles. */}
       {round?.phase === "playing" && selfAlive && (

@@ -24,6 +24,12 @@ enum FriendshipStatus {
   BLOCKED
 }
 
+enum ChatScope {
+  DIRECT
+  LOBBY
+  GAME
+}
+
 model User {
   id                     String         @id @default(uuid())
   email                  String         @unique
@@ -39,10 +45,28 @@ model User {
   receivedFriendRequests Friendship[]   @relation("ReceivedFriendRequests")
   notifications          Notification[]
   oauthAccounts          OAuthAccount[]
+  sentChatMessages       ChatMessage[]  @relation("ChatSender")
+  receivedChatMessages   ChatMessage[]  @relation("ChatRecipient")
   createdAt              DateTime       @default(now())
   updatedAt              DateTime       @updatedAt
 
   @@map("users")
+}
+
+model ChatMessage {
+  id          String    @id @default(uuid())
+  scope       ChatScope
+  channelId   String
+  senderId    String
+  recipientId String?
+  content     String
+  createdAt   DateTime  @default(now())
+  sender      User      @relation("ChatSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   User?     @relation("ChatRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([scope, channelId, createdAt])
+  @@index([recipientId, createdAt])
+  @@map("chat_messages")
 }
 
 model OAuthAccount {

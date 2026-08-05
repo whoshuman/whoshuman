@@ -326,7 +326,66 @@ export interface NotificationActor {
   avatar: string | null;
 }
 
-export type NotificationType = "friend.request.received" | "friend.request.accepted";
+export type ChatScope = "direct" | "lobby" | "game";
+
+export interface ChatAuthor {
+  id: string;
+  username: string;
+  avatar: string | null;
+}
+
+export interface ChatMessage {
+  id: string;
+  scope: ChatScope;
+  channelId: string;
+  sender: ChatAuthor;
+  recipientId: string | null;
+  content: string;
+  createdAt: string;
+}
+
+/** Payload interno gateway -> chat-service. El gateway deriva el canal del socket. */
+export interface ChatSendMessagePayload {
+  senderId: string;
+  scope: ChatScope;
+  channelId?: string;
+  recipientId?: string;
+  content: string;
+}
+
+export interface ChatFindHistoryPayload {
+  userId: string;
+  scope: ChatScope;
+  channelId?: string;
+  recipientId?: string;
+}
+
+/** Payloads públicos Socket.IO: el cliente nunca elige el id de sala o partida. */
+export interface ChatClientSendPayload {
+  scope: ChatScope;
+  recipientId?: string;
+  content: string;
+}
+
+export interface ChatClientHistoryPayload {
+  scope: ChatScope;
+  recipientId?: string;
+}
+
+export interface ChatHistoryResponse {
+  messages: ChatMessage[];
+}
+
+export interface ChatSocketResponse<T> {
+  ok: boolean;
+  data?: T;
+  error?: string;
+}
+
+export type NotificationType =
+  | "friend.request.received"
+  | "friend.request.accepted"
+  | "chat.message.received";
 
 export interface NotificationEnvelope {
   recipientId: string; // who should receive it

@@ -240,7 +240,26 @@
     "markAllRead": "Marcar todas como leídas",
     "loadError": "No se pudo cargar el registro de señales.",
     "requestReceived": "SOLICITUD DE ENLACE ENTRANTE",
-    "requestAccepted": "ENLACE ACEPTADO"
+    "requestAccepted": "ENLACE ACEPTADO",
+    "chatMessage": "NUEVO MENSAJE PRIVADO"
+  },
+  "chat": {
+    "message": "MENSAJE",
+    "open": "ABRIR CHAT",
+    "openWith": "Abrir chat con {{username}}",
+    "with": "CANAL: {{username}}",
+    "roomTitle": "CANAL DE SALA",
+    "operationTitle": "CANAL DE OPERACIÓN",
+    "directChannel": "Enlace privado cifrado",
+    "squadChannel": "Comunicaciones del escuadrón",
+    "loading": "RECUPERANDO TRANSMISIONES...",
+    "empty": "SIN MENSAJES REGISTRADOS",
+    "placeholder": "Escribe un mensaje...",
+    "send": "ENVIAR MENSAJE",
+    "close": "CERRAR CHAT",
+    "you": "TÚ",
+    "loadError": "No se pudo recuperar el historial.",
+    "sendError": "No se pudo enviar el mensaje. Comprueba el enlace e inténtalo de nuevo."
   },
   "about": {
     "eyebrow": "PERSONAL DEL PROYECTO",

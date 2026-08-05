@@ -10,12 +10,21 @@ import {
   WebSocketServer
 } from "@nestjs/websockets";
 import {
+  ChatSubjects,
   ClientSocketEvents,
   GameSubjects,
   MatchmakingSubjects,
   ServerSocketEvents
 } from "@whoshuman/shared-events";
 import type {
+  ChatClientHistoryPayload,
+  ChatClientSendPayload,
+  ChatFindHistoryPayload,
+  ChatHistoryResponse,
+  ChatMessage,
+  ChatScope,
+  ChatSendMessagePayload,
+  ChatSocketResponse,
   GameAimPayload,
   GameJoinPayload,
   GameJoinResponse,
@@ -412,6 +421,75 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   handlePresenceList(@ConnectedSocket() socket: RealtimeSocket) {
     this.requireUser(socket); // ignora sockets no autenticados, igual que el resto
     socket.emit(ServerSocketEvents.presenceState, { userIds: this.presence.list() });
+  }
+
+  @SubscribeMessage(ClientSocketEvents.chatSend)
+  async handleChatSend(
+    @ConnectedSocket() socket: RealtimeSocket,
+    @MessageBody() payload: ChatClientSendPayload
+  ): Promise<ChatSocketResponse<ChatMessage>> {
+    try {
+      const user = this.requireUser(socket);
+      const request: ChatSendMessagePayload = {
+        senderId: user.sub,
+        scope: this.requireChatScope(payload?.scope),
+        content: typeof payload?.content === "string" ? payload.content : "",
+        ...this.chatDestination(socket, payload?.scope, payload?.recipientId)
+      };
+      const data = await this.messaging.request<ChatMessage>(ChatSubjects.sendMessage, request);
+      return { ok: true, data };
+    } catch (error) {
+      return { ok: false, error: this.errorMessage(error) };
+    }
+  }
+
+  @SubscribeMessage(ClientSocketEvents.chatHistory)
+  async handleChatHistory(
+    @ConnectedSocket() socket: RealtimeSocket,
+    @MessageBody() payload: ChatClientHistoryPayload
+  ): Promise<ChatSocketResponse<ChatHistoryResponse>> {
+    try {
+      const user = this.requireUser(socket);
+      const request: ChatFindHistoryPayload = {
+        userId: user.sub,
+        scope: this.requireChatScope(payload?.scope),
+        ...this.chatDestination(socket, payload?.scope, payload?.recipientId)
+      };
+      const data = await this.messaging.request<ChatHistoryResponse>(
+        ChatSubjects.findHistory,
+        request
+      );
+      return { ok: true, data };
+    } catch (error) {
+      return { ok: false, error: this.errorMessage(error) };
+    }
+  }
+
+  private chatDestination(
+    socket: RealtimeSocket,
+    scope: ChatScope,
+    recipientId?: string
+  ): Pick<ChatSendMessagePayload, "channelId" | "recipientId"> {
+    if (scope === "direct") {
+      return { recipientId: this.requireId(socket, recipientId, "recipientId") };
+    }
+    if (scope === "lobby") {
+      return { channelId: this.requireId(socket, socket.data.lobbyId, "lobbyId") };
+    }
+    return { channelId: this.requireId(socket, socket.data.gameId, "gameId") };
+  }
+
+  private requireChatScope(value: unknown): ChatScope {
+    if (value !== "direct" && value !== "lobby" && value !== "game") {
+      throw new Error("Invalid chat scope");
+    }
+    return value;
+  }
+
+  private errorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    if (this.isRecord(error) && typeof error.message === "string") return error.message;
+    return "Chat service unavailable";
   }
 
   private requireUser(socket: RealtimeSocket) {

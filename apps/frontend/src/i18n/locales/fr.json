@@ -240,7 +240,26 @@
     "markAllRead": "Tout marquer comme lu",
     "loadError": "Impossible de charger le journal des signaux.",
     "requestReceived": "DEMANDE DE LIAISON ENTRANTE",
-    "requestAccepted": "LIAISON ACCEPTÉE"
+    "requestAccepted": "LIAISON ACCEPTÉE",
+    "chatMessage": "NOUVEAU MESSAGE PRIVÉ"
+  },
+  "chat": {
+    "message": "MESSAGE",
+    "open": "OUVRIR LE CHAT",
+    "openWith": "Ouvrir le chat avec {{username}}",
+    "with": "CANAL : {{username}}",
+    "roomTitle": "CANAL DE SALLE",
+    "operationTitle": "CANAL D'OPÉRATION",
+    "directChannel": "Liaison privée chiffrée",
+    "squadChannel": "Communications de l'escouade",
+    "loading": "RÉCUPÉRATION DES TRANSMISSIONS...",
+    "empty": "AUCUN MESSAGE ENREGISTRÉ",
+    "placeholder": "Écrivez un message...",
+    "send": "ENVOYER LE MESSAGE",
+    "close": "FERMER LE CHAT",
+    "you": "VOUS",
+    "loadError": "Impossible de récupérer l'historique.",
+    "sendError": "Impossible d'envoyer le message. Vérifiez la liaison et réessayez."
   },
   "about": {
     "eyebrow": "PERSONNEL DU PROJET",

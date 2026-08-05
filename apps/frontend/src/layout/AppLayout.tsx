@@ -7,7 +7,9 @@ import { connectSocket, disconnectSocket } from "../game/network/socket";
 import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
 import { useAuthStore } from "../shared/authStore";
+import { useChatDialogStore } from "../shared/chatStore";
 import ConfirmDialog from "../shared/ConfirmDialog";
+import DirectChatDialog from "../shared/DirectChatDialog";
 import { initNotifications } from "../shared/notifications";
 import NotificationCenter from "../shared/NotificationCenter";
 import NotificationToasts from "../shared/NotificationToasts";
@@ -108,6 +110,10 @@ function AppLayout() {
     void navigate({ to: "/", replace: true });
   }, [authRestored, clearSession, hasAccessToken, isAuthenticated, isProtectedRoute, navigate]);
 
+  useEffect(() => {
+    if (pathname === "/game") useChatDialogStore.setState({ peers: [] });
+  }, [pathname]);
+
   // El socket vive ligado a la sesión, no al lobby: el room personal user:<id>
   // (donde llegan las notificaciones) se une al conectar. Logout → desconexión.
   useEffect(() => {
@@ -142,6 +148,7 @@ function AppLayout() {
     <div>
       {showBackground && <SceneBackground />}
       <NotificationToasts />
+      {isAuthenticated && <DirectChatDialog />}
 
       {logoutOpen && (
         <ConfirmDialog

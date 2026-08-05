@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 
+import { useChatDialogStore } from "./chatStore";
 import { useNotificationStore } from "./notificationStore";
 
 // Stack de avisos del sistema, arriba a la derecha, visible en cualquier pantalla.
@@ -18,26 +19,40 @@ function NotificationToasts() {
     >
       {toasts.map(({ id, envelope }) => {
         const accepted = envelope.type === "friend.request.accepted";
+        const chatMessage = envelope.type === "chat.message.received";
         return (
           <button
             key={id}
             type="button"
-            onClick={() => dismiss(id)}
+            onClick={() => {
+              if (chatMessage) {
+                useChatDialogStore.getState().openDirect(envelope.from);
+              }
+              dismiss(id);
+            }}
             className={
               accepted
                 ? "animate-unfold-down origin-top border border-success bg-surface px-4 py-3 text-left shadow-[0_0_24px_rgba(57,255,136,0.2)]"
-                : "animate-unfold-down origin-top border border-neon-magenta bg-surface px-4 py-3 text-left shadow-[0_0_24px_rgba(255,43,214,0.2)]"
+                : chatMessage
+                  ? "animate-unfold-down origin-top border border-neon-cyan bg-surface px-4 py-3 text-left shadow-[0_0_24px_rgba(36,245,255,0.2)]"
+                  : "animate-unfold-down origin-top border border-neon-magenta bg-surface px-4 py-3 text-left shadow-[0_0_24px_rgba(255,43,214,0.2)]"
             }
           >
             <p
               className={
                 accepted
                   ? "font-display text-[0.65rem] font-bold uppercase tracking-[0.25em] text-success"
-                  : "font-display text-[0.65rem] font-bold uppercase tracking-[0.25em] text-neon-magenta"
+                  : chatMessage
+                    ? "font-display text-[0.65rem] font-bold uppercase tracking-[0.25em] text-neon-cyan"
+                    : "font-display text-[0.65rem] font-bold uppercase tracking-[0.25em] text-neon-magenta"
               }
             >
               //{" "}
-              {accepted ? t("notifications.requestAccepted") : t("notifications.requestReceived")}
+              {chatMessage
+                ? t("notifications.chatMessage")
+                : accepted
+                  ? t("notifications.requestAccepted")
+                  : t("notifications.requestReceived")}
             </p>
             <p className="font-display mt-1 truncate text-sm font-black text-text-main">
               {envelope.from.username}
