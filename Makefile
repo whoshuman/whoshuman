@@ -76,8 +76,8 @@ shell: ## Entrar en la shell de un contenedor (uso: make shell s=auth-service)
 
 # ─── Base de datos ────────────────────────────────────────────────────────────
 
-migrate: ## Ejecuta las migraciones de Prisma (requiere BD corriendo)
-	pnpm db:migrate
+migrate: ## Ejecuta las migraciones pendientes dentro de Docker
+	docker compose run --rm migrate
 
 generate: ## Genera el cliente de Prisma
 	pnpm db:generate

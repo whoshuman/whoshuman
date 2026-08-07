@@ -9,7 +9,11 @@ import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
 import GroupChatDock from "../shared/GroupChatDock";
 
-type LockableOrientation = Partial<Pick<ScreenOrientation, "lock" | "unlock">>;
+// lock/unlock no estan en lib.dom (siguen siendo experimentales), asi que se declaran aparte.
+type LockableOrientation = ScreenOrientation & {
+  lock?: (orientation: "landscape") => Promise<void>;
+  unlock?: () => void;
+};
 
 function MobileGameGate({ enabled }: { enabled: boolean }) {
   const { t } = useTranslation();

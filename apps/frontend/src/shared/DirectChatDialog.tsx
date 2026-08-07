@@ -17,6 +17,7 @@ function DirectChatDialog() {
           className="h-[min(28rem,calc(100dvh-5rem))] w-[min(22rem,calc(100vw-1.5rem))] shrink-0"
         >
           <ChatWindow
+            key={peer.id}
             scope="direct"
             title={t("chat.with", { username: peer.username })}
             peer={peer}

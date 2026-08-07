@@ -206,10 +206,44 @@ function Profile() {
             )}
             {!statsLoading && !statsError && combatStats && combatStats.totalGames > 0 && (
               <>
-                <dl className="grid grid-cols-2 gap-px border border-neon-cyan/20 bg-neon-cyan/20 sm:grid-cols-5">
+                <div className="mb-5">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-display text-sm font-black uppercase text-neon-cyan">
+                      {t("profilePage.statsLevel", {
+                        level: combatStats.progression.level
+                      })}
+                    </p>
+                    <p className="font-display text-xs font-bold uppercase text-neon-magenta">
+                      {combatStats.globalRank
+                        ? t("profilePage.statsGlobalRank", { rank: combatStats.globalRank })
+                        : t("profilePage.statsUnranked")}
+                    </p>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={combatStats.progression.progressPercent}
+                    className="h-2 overflow-hidden bg-neon-cyan/15"
+                  >
+                    <div
+                      className="h-full bg-neon-cyan shadow-[0_0_12px_rgba(36,245,255,0.8)]"
+                      style={{ width: `${combatStats.progression.progressPercent}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-right text-xs text-text-muted">
+                    {t("profilePage.statsXp", {
+                      current: combatStats.progression.currentLevelExperience,
+                      required: combatStats.progression.experienceForNextLevel
+                    })}
+                  </p>
+                </div>
+
+                <dl className="grid grid-cols-2 gap-px border border-neon-cyan/20 bg-neon-cyan/20 sm:grid-cols-3">
                   {[
                     ["statsGames", combatStats.totalGames],
                     ["statsWins", combatStats.wins],
+                    ["statsLosses", combatStats.losses],
                     ["statsTotalPoints", combatStats.totalPoints],
                     ["statsBestScore", combatStats.bestScore],
                     ["statsAverage", combatStats.averagePoints]
@@ -238,12 +272,16 @@ function Profile() {
                         <div className="min-w-0">
                           <p className="font-display truncate text-xs font-bold uppercase text-text-main">
                             {t("profilePage.statsMatch", {
-                              id: match.gameId.slice(0, 8).toUpperCase()
+                              date: matchDateFormatter.format(new Date(match.playedAt))
                             })}
                           </p>
-                          <p className="mt-1 text-xs text-text-muted">
-                            {matchDateFormatter.format(new Date(match.playedAt))}
-                          </p>
+                          {match.opponents.length > 0 && (
+                            <p className="mt-1 truncate text-[0.65rem] text-text-muted/70">
+                              {t("profilePage.statsOpponents", {
+                                names: match.opponents.join(", ")
+                              })}
+                            </p>
+                          )}
                         </div>
                         <p className="hidden text-xs font-bold text-text-muted sm:block">
                           {t("profilePage.statsPlacement", {
@@ -257,6 +295,61 @@ function Profile() {
                         </p>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                  <div>
+                    <p className="font-display mb-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-neon-magenta">
+                      {t("profilePage.statsAchievements")}
+                    </p>
+                    <div className="space-y-px bg-neon-cyan/15">
+                      {combatStats.achievements.map((achievement) => (
+                        <div
+                          key={achievement.id}
+                          className="flex items-center justify-between gap-3 bg-surface px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <p
+                              className={`font-display truncate text-xs font-bold uppercase ${
+                                achievement.unlocked ? "text-neon-cyan" : "text-text-muted"
+                              }`}
+                            >
+                              {t(`profilePage.achievement.${achievement.id}`)}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-xs font-bold text-text-muted">
+                            {Math.min(achievement.current, achievement.target)}/{achievement.target}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="font-display mb-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-neon-magenta">
+                      {t("profilePage.statsLeaderboard")}
+                    </p>
+                    <ol className="space-y-px bg-neon-cyan/15">
+                      {combatStats.leaderboard.map((entry) => (
+                        <li
+                          key={entry.userId}
+                          className={`grid grid-cols-[2rem_1fr_auto] items-center gap-2 px-3 py-2 text-xs ${
+                            entry.userId === user.id ? "bg-neon-cyan/10" : "bg-surface"
+                          }`}
+                        >
+                          <span className="font-display font-black text-neon-cyan">
+                            #{entry.rank}
+                          </span>
+                          <span className="truncate font-bold text-text-main">
+                            {entry.username}
+                          </span>
+                          <span className="font-display font-black text-neon-magenta">
+                            {entry.totalPoints} {t("profilePage.statsPointsShort")}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
                   </div>
                 </div>
               </>

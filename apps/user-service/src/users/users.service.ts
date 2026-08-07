@@ -25,6 +25,30 @@ const PUBLIC_SELECT = {
   createdAt: true
 } as const;
 
+const BASE_LEVEL_XP = 200;
+const LEVEL_XP_GROWTH = 1.35;
+const MATCH_XP = 50;
+
+function progressionFromExperience(experiencePoints: number) {
+  let level = 1;
+  let currentLevelExperience = experiencePoints;
+  let experienceForNextLevel = BASE_LEVEL_XP;
+
+  while (currentLevelExperience >= experienceForNextLevel) {
+    currentLevelExperience -= experienceForNextLevel;
+    level += 1;
+    experienceForNextLevel = Math.round(BASE_LEVEL_XP * LEVEL_XP_GROWTH ** (level - 1));
+  }
+
+  return {
+    level,
+    experiencePoints,
+    currentLevelExperience,
+    experienceForNextLevel,
+    progressPercent: Math.floor((currentLevelExperience / experienceForNextLevel) * 100)
+  };
+}
+
 /**
  * UsersService concentra el CRUD de perfiles.
  *
@@ -71,21 +95,36 @@ export class UsersService {
     });
     if (!user) this.fail(404, "userNotFound");
 
-    const scores = await this.prisma.score.findMany({
-      where: { userId: payload.userId, game: { status: "ENDED" } },
-      orderBy: { createdAt: "desc" },
-      select: {
-        gameId: true,
-        points: true,
-        createdAt: true,
-        game: {
-          select: {
-            updatedAt: true,
-            scores: { select: { points: true } }
+    const [scores, rankingRows] = await Promise.all([
+      this.prisma.score.findMany({
+        where: { userId: payload.userId, game: { status: "ENDED" } },
+        orderBy: { createdAt: "desc" },
+        select: {
+          gameId: true,
+          points: true,
+          createdAt: true,
+          game: {
+            select: {
+              updatedAt: true,
+              scores: {
+                select: {
+                  userId: true,
+                  points: true,
+                  user: { select: { username: true } }
+                }
+              }
+            }
           }
         }
-      }
-    });
+      }),
+      this.prisma.score.groupBy({
+        by: ["userId"],
+        where: { game: { status: "ENDED" }, user: { deletedAt: null } },
+        _sum: { points: true },
+        _count: { _all: true },
+        orderBy: [{ _sum: { points: "desc" } }, { userId: "asc" }]
+      })
+    ]);
 
     const matches = scores.map((score) => {
       const placement = 1 + score.game.scores.filter((entry) => entry.points > score.points).length;
@@ -94,17 +133,63 @@ export class UsersService {
         points: score.points,
         placement,
         playerCount: score.game.scores.length,
-        playedAt: score.game.updatedAt.toISOString()
+        playedAt: score.game.updatedAt.toISOString(),
+        opponents: score.game.scores
+          .filter((entry) => entry.userId !== payload.userId)
+          .map((entry) => entry.user.username)
       };
     });
     const totalPoints = matches.reduce((total, match) => total + match.points, 0);
+    const wins = matches.filter((match) => match.placement === 1).length;
+    const positivePoints = matches.reduce((total, match) => total + Math.max(0, match.points), 0);
+    const experiencePoints = matches.length * MATCH_XP + positivePoints;
+    const topRankings = rankingRows.slice(0, 10);
+    const rankedUsers =
+      topRankings.length > 0
+        ? await this.prisma.user.findMany({
+            where: { id: { in: topRankings.map((entry) => entry.userId) }, deletedAt: null },
+            select: { id: true, username: true, avatar: true }
+          })
+        : [];
+    const rankedUsersById = new Map(rankedUsers.map((rankedUser) => [rankedUser.id, rankedUser]));
+    const leaderboard = topRankings.flatMap((entry, index) => {
+      const rankedUser = rankedUsersById.get(entry.userId);
+      return rankedUser
+        ? [
+            {
+              rank: index + 1,
+              userId: entry.userId,
+              username: rankedUser.username,
+              avatar: rankedUser.avatar,
+              totalPoints: entry._sum.points ?? 0,
+              totalGames: entry._count._all
+            }
+          ]
+        : [];
+    });
+    const globalRankIndex = rankingRows.findIndex((entry) => entry.userId === payload.userId);
 
     return {
       totalGames: matches.length,
-      wins: matches.filter((match) => match.placement === 1).length,
+      wins,
+      losses: matches.length - wins,
       totalPoints,
       bestScore: matches.length > 0 ? Math.max(...matches.map((match) => match.points)) : 0,
       averagePoints: matches.length > 0 ? Math.round(totalPoints / matches.length) : 0,
+      globalRank: globalRankIndex >= 0 ? globalRankIndex + 1 : null,
+      progression: progressionFromExperience(experiencePoints),
+      achievements: [
+        { id: "firstMatch", unlocked: matches.length >= 1, current: matches.length, target: 1 },
+        { id: "firstWin", unlocked: wins >= 1, current: wins, target: 1 },
+        { id: "veteran", unlocked: matches.length >= 10, current: matches.length, target: 10 },
+        {
+          id: "thousandPoints",
+          unlocked: positivePoints >= 1000,
+          current: positivePoints,
+          target: 1000
+        }
+      ],
+      leaderboard,
       recentMatches: matches.slice(0, 5)
     };
   }

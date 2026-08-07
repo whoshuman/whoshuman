@@ -23,7 +23,11 @@ function VirtualJoystick({ label, side, onChange }: VirtualJoystickProps) {
   const lastVector = useRef({ x: 0, y: 0 });
   const [base, setBase] = useState<{ x: number; y: number } | null>(null);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
-  onChangeRef.current = onChange;
+
+  // El ref guarda siempre el ultimo onChange; los handlers de puntero lo leen tras el commit.
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   function update(clientX: number, clientY: number) {
     const rawX = clientX - origin.current.x;
