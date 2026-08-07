@@ -10,7 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -22,6 +22,22 @@ services:
   nats:
     image: nats:2-alpine
     restart: unless-stopped
+    networks:
+      - internal
+
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/auth-service/Dockerfile.dev
+    command: ["pnpm", "exec", "prisma", "migrate", "deploy"]
+    working_dir: /app
+    restart: "no"
+    env_file:
+      - path: ./apps/auth-service/.env
+        required: false
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - internal
 
@@ -48,8 +64,8 @@ services:
       context: .
       dockerfile: apps/frontend/Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-https://localhost/api}
-        VITE_WS_URL: ${VITE_WS_URL:-https://localhost}
+        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_WS_URL: ${VITE_WS_URL-}
     restart: unless-stopped
     networks:
       - internal
@@ -103,6 +119,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_started
     networks:
@@ -121,6 +139,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_started
     networks:
@@ -139,6 +159,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_started
     networks:
@@ -172,6 +194,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_started
     networks:
@@ -188,7 +212,12 @@ services:
       - path: ./apps/notification-service/.env
         required: false
     depends_on:
-      - nats
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      nats:
+        condition: service_started
     networks:
       - internal
 

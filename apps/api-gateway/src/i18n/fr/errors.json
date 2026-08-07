@@ -1,0 +1,22 @@
+{
+  "invalidCredentials": "Identifiants invalides",
+  "emailInUse": "L'email est déjà utilisé",
+  "usernameTaken": "Le nom d'utilisateur est déjà pris",
+  "refreshInvalid": "Le refresh token a expiré ou n'est pas valide",
+  "sessionNotFound": "Session introuvable",
+  "invalidToken": "Token invalide",
+  "oauthProviderNotConfigured": "Le fournisseur de connexion n'est pas configuré",
+  "oauthProviderUnavailable": "Le fournisseur de connexion est indisponible",
+  "oauthIdentityInvalid": "Le fournisseur n'a pas renvoyé une identité valide",
+  "oauthTicketInvalid": "La connexion temporaire a expiré ou n'est pas valide",
+  "oauthDesignationRequired": "Une désignation d'unité valide est obligatoire",
+  "userNotFound": "Utilisateur introuvable",
+  "tokenMissing": "En-tête Authorization: Bearer <token> manquant",
+  "tokenInvalidOrExpired": "Token invalide ou expiré",
+  "serviceUnavailable": "Le service n'a pas répondu à temps",
+  "unexpected": "Erreur inattendue",
+  "cannotFriendYourself": "Vous ne pouvez pas vous envoyer une demande d'ami",
+  "alreadyFriends": "Une relation d'amitié existe déjà avec cet utilisateur",
+  "friendshipNotFound": "Demande d'ami introuvable",
+  "notAllowed": "Vous n'êtes pas autorisé à effectuer cette action"
+}

@@ -50,3 +50,14 @@ docker-compose.override.yml
 *.claude_memory
 CLAUDE.md.original
 CLAUDE.md
+
+#Codex
+AGENTS.md
+
+# specs/planes internos de diseño (no van al repo)
+docs/superpowers/
+
+# spike local de prueba del mapa (play.html, token, glb) — no va al repo
+entrega-mapa/
+
+

@@ -1,4 +1,4 @@
-.PHONY: help all clean fclean re install certs dev dev-d db down purge logs ps stats images prune shell migrate generate studio reset
+.PHONY: help all clean fclean re install build certs dev dev-d db down purge logs ps stats images prune shell migrate generate studio reset
 
 # ─── Colors ───────────────────────────────────────────────────────────────────
 CYAN  = \033[0;36m
@@ -31,6 +31,10 @@ re: fclean all ## Limpia todo y vuelve a construir desde cero
 
 install: ## Instala dependencias
 	pnpm install
+
+build: ## Compila paquetes y servicios (genera el cliente Prisma antes)
+	pnpm db:generate
+	pnpm build
 
 certs: ## Genera certificados SSL self-signed para desarrollo
 	./infrastructure/scripts/generate-certs.sh
@@ -72,8 +76,8 @@ shell: ## Entrar en la shell de un contenedor (uso: make shell s=auth-service)
 
 # ─── Base de datos ────────────────────────────────────────────────────────────
 
-migrate: ## Ejecuta las migraciones de Prisma (requiere BD corriendo)
-	pnpm db:migrate
+migrate: ## Ejecuta las migraciones pendientes dentro de Docker
+	docker compose run --rm migrate
 
 generate: ## Genera el cliente de Prisma
 	pnpm db:generate

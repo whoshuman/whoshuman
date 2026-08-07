@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Excepcion: el DeLorean es ligero (~750KB) y parte de la escena, asi que si va al repo.
+!public/models/delorean.glb

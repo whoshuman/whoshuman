@@ -18,19 +18,99 @@ enum RoundStatus {
   ENDED
 }
 
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+enum ChatScope {
+  DIRECT
+  LOBBY
+  GAME
+}
+
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  username     String    @unique
-  passwordHash String    @map("password")
-  avatar       String?
-  bio          String?
-  sessions     Session[]
-  scores       Score[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                     String         @id @default(uuid())
+  email                  String         @unique
+  username               String         @unique
+  passwordHash           String         @map("password")
+  avatar                 String?
+  bio                    String?
+  language               String         @default("en")
+  deletedAt              DateTime?
+  sessions               Session[]
+  scores                 Score[]
+  sentFriendRequests     Friendship[]   @relation("SentFriendRequests")
+  receivedFriendRequests Friendship[]   @relation("ReceivedFriendRequests")
+  notifications          Notification[]
+  oauthAccounts          OAuthAccount[]
+  sentChatMessages       ChatMessage[]  @relation("ChatSender")
+  receivedChatMessages   ChatMessage[]  @relation("ChatRecipient")
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
 
   @@map("users")
+}
+
+model ChatMessage {
+  id          String    @id @default(uuid())
+  scope       ChatScope
+  channelId   String
+  senderId    String
+  recipientId String?
+  content     String
+  createdAt   DateTime  @default(now())
+  sender      User      @relation("ChatSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   User?     @relation("ChatRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([scope, channelId, createdAt])
+  @@index([recipientId, createdAt])
+  @@map("chat_messages")
+}
+
+model OAuthAccount {
+  id                String   @id @default(uuid())
+  provider          String
+  providerAccountId String
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("oauth_accounts")
+}
+
+model Notification {
+  id            String    @id @default(uuid())
+  recipientId   String
+  type          String
+  actorId       String
+  actorUsername String
+  actorAvatar   String?
+  data          Json?
+  readAt        DateTime?
+  createdAt     DateTime  @default(now())
+  recipient     User      @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, createdAt])
+  @@index([recipientId, readAt])
+  @@map("notifications")
+}
+
+model Friendship {
+  id          String           @id @default(uuid())
+  requesterId String
+  addresseeId String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  requester   User             @relation("SentFriendRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee   User             @relation("ReceivedFriendRequests", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@map("friendships")
 }
 
 model Session {

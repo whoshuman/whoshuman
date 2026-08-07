@@ -10,10 +10,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@react-three/postprocessing": "^3.0.4",
     "@tanstack/react-query": "^5.100.14",
+    "@tanstack/react-router": "^1.170.10",
+    "@whoshuman/shared-events": "workspace:*",
+    "@whoshuman/shared-types": "workspace:*",
+    "@whoshuman/shared-validation": "workspace:*",
     "axios": "^1.16.1",
+    "i18next": "^26.3.1",
+    "lucide-react": "^0.468.0",
+    "postprocessing": "^6.39.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-i18next": "^17.0.8",
+    "socket.io-client": "^4.8.3",
+    "three": "0.182.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
@@ -22,6 +35,7 @@
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "0.182.0",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",

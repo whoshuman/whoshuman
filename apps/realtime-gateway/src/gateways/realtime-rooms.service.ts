@@ -1,0 +1,100 @@
+import { Injectable, Logger } from "@nestjs/common";
+import { ServerSocketEvents } from "@whoshuman/shared-events";
+import type {
+  ChatMessage,
+  GameStateSnapshotPayload,
+  LobbyStatePayload,
+  MatchFoundPayload,
+  NotificationEnvelope
+} from "@whoshuman/shared-types";
+import type { RealtimeServer } from "./realtime.types";
+
+const DEFAULT_LOBBY_ID = "main";
+
+@Injectable()
+export class RealtimeRoomsService {
+  private readonly logger = new Logger(RealtimeRoomsService.name);
+  private server?: RealtimeServer;
+
+  setServer(server: RealtimeServer) {
+    this.server = server;
+  }
+
+  lobbyId(lobbyId?: string) {
+    return this.normalizeId(lobbyId, DEFAULT_LOBBY_ID);
+  }
+
+  lobbyRoom(lobbyId?: string) {
+    return `lobby:${this.lobbyId(lobbyId)}`;
+  }
+
+  gameRoom(gameId: string) {
+    return `game:${gameId}`;
+  }
+
+  broadcastMatchFound(payload: MatchFoundPayload) {
+    if (!this.server) {
+      this.logger.warn("Cannot broadcast match found: Socket.IO server is not ready");
+      return;
+    }
+
+    this.server.to(this.lobbyRoom(payload.lobbyId)).emit(ServerSocketEvents.matchFound, payload);
+  }
+
+  broadcastLobbyState(payload: LobbyStatePayload) {
+    if (!this.server) {
+      this.logger.warn("Cannot broadcast lobby state: Socket.IO server is not ready");
+      return;
+    }
+
+    this.server.to(this.lobbyRoom(payload.lobbyId)).emit(ServerSocketEvents.lobbyState, payload);
+  }
+
+  userRoom(userId: string) {
+    return `user:${userId}`;
+  }
+
+  deliverNotification(payload: NotificationEnvelope) {
+    if (!this.server) {
+      this.logger.warn("Cannot deliver notification: Socket.IO server is not ready");
+      return;
+    }
+    this.server
+      .to(this.userRoom(payload.recipientId))
+      .emit(ServerSocketEvents.notification, payload);
+  }
+
+  broadcastChatMessage(payload: ChatMessage) {
+    if (!this.server) {
+      this.logger.warn("Cannot broadcast chat message: Socket.IO server is not ready");
+      return;
+    }
+
+    if (payload.scope === "direct" && payload.recipientId) {
+      this.server
+        .to(this.userRoom(payload.sender.id))
+        .to(this.userRoom(payload.recipientId))
+        .emit(ServerSocketEvents.chatMessage, payload);
+      return;
+    }
+
+    const room =
+      payload.scope === "lobby"
+        ? this.lobbyRoom(payload.channelId)
+        : this.gameRoom(payload.channelId);
+    this.server.to(room).emit(ServerSocketEvents.chatMessage, payload);
+  }
+
+  broadcastGameState(payload: GameStateSnapshotPayload) {
+    if (!this.server) {
+      this.logger.warn("Cannot broadcast game state snapshot: Socket.IO server is not ready");
+      return;
+    }
+
+    this.server.to(this.gameRoom(payload.gameId)).emit(ServerSocketEvents.gameState, payload);
+  }
+
+  private normalizeId(value: string | undefined, fallback: string) {
+    return value && value.trim().length > 0 ? value.trim() : fallback;
+  }
+}

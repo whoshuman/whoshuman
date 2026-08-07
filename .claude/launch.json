@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@whoshuman/frontend", "dev"],
+      "port": 5180,
+      "autoPort": false
+    }
+  ]
+}

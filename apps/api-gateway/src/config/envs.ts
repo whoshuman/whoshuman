@@ -7,6 +7,8 @@ interface EnvVars {
   RATE_LIMIT_TTL_MS: number;
   RATE_LIMIT_MAX_REQUESTS: number;
   JWT_SECRET?: string;
+  FRONTEND_URL: string;
+  OAUTH_COOKIE_SECURE: boolean;
 }
 
 const envSchema = joi
@@ -15,7 +17,9 @@ const envSchema = joi
     NATS_SERVERS: joi.array().items(joi.string().uri()).min(1).required(),
     RATE_LIMIT_TTL_MS: joi.number().integer().positive().default(60000),
     RATE_LIMIT_MAX_REQUESTS: joi.number().integer().positive().default(100),
-    JWT_SECRET: joi.string().allow("").optional()
+    JWT_SECRET: joi.string().allow("").optional(),
+    FRONTEND_URL: joi.string().uri().default("https://localhost"),
+    OAUTH_COOKIE_SECURE: joi.boolean().truthy("true").falsy("false").default(true)
   })
   .unknown(true);
 
@@ -44,5 +48,7 @@ export const envs = {
   natsServers: envVars.NATS_SERVERS,
   rateLimitTtlMs: envVars.RATE_LIMIT_TTL_MS,
   rateLimitMaxRequests: envVars.RATE_LIMIT_MAX_REQUESTS,
-  jwtSecret: envVars.JWT_SECRET || undefined
+  jwtSecret: envVars.JWT_SECRET || undefined,
+  frontendUrl: envVars.FRONTEND_URL,
+  oauthCookieSecure: envVars.OAUTH_COOKIE_SECURE
 };

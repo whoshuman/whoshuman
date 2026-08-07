@@ -1,0 +1,22 @@
+{
+  "invalidCredentials": "Credenciales inválidas",
+  "emailInUse": "El email ya está en uso",
+  "usernameTaken": "El nombre de usuario ya está cogido",
+  "refreshInvalid": "El refresh token ha caducado o no es válido",
+  "sessionNotFound": "Sesión no encontrada",
+  "invalidToken": "Token inválido",
+  "oauthProviderNotConfigured": "El proveedor de acceso no está configurado",
+  "oauthProviderUnavailable": "El proveedor de acceso no está disponible",
+  "oauthIdentityInvalid": "El proveedor no devolvió una identidad válida",
+  "oauthTicketInvalid": "El acceso temporal ha caducado o no es válido",
+  "oauthDesignationRequired": "Debes indicar una Designación de unidad válida",
+  "userNotFound": "Usuario no encontrado",
+  "tokenMissing": "Falta la cabecera Authorization: Bearer <token>",
+  "tokenInvalidOrExpired": "Token inválido o caducado",
+  "serviceUnavailable": "El servicio no respondió a tiempo",
+  "unexpected": "Error inesperado",
+  "cannotFriendYourself": "No puedes enviarte una solicitud de amistad a ti mismo",
+  "alreadyFriends": "Ya existe una relación de amistad con este usuario",
+  "friendshipNotFound": "Solicitud de amistad no encontrada",
+  "notAllowed": "No tienes permiso para realizar esta acción"
+}

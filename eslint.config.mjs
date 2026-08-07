@@ -1,11 +1,17 @@
 import js from "@eslint/js";
 import eslintConfigPrettier from "eslint-config-prettier";
-import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.turbo/**", "**/coverage/**"]
+    ignores: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/.turbo/**",
+      "**/coverage/**",
+      "docs/**" // specs/herramientas internas (gitignored)
+    ]
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -20,7 +26,13 @@ export default tseslint.config(
   },
   {
     files: ["**/*.{js,mjs,cjs}", "*.config.ts", "*.config.mts"],
-    extends: [tseslint.configs.disableTypeChecked]
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly"
+      }
+    }
   },
   eslintConfigPrettier
 );

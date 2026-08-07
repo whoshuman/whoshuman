@@ -233,6 +233,47 @@ Responsabilidades:
 
 ---
 
+## notification-service
+
+Responsabilidades:
+
+- hub de notificaciones: recibe peticiones de notificar de cualquier ms
+- persistencia del historial y estado leído/no leído
+- enruta al `realtime-gateway` para la entrega en vivo
+- (futuro) fan-out a otros canales (email, push)
+
+### Flujo de notificaciones
+
+```txt
+1. Un ms (p.ej. user-service) quiere notificar
+        ↓
+2. emit "notifications.send"  { recipientId, type, from, data }
+        ↓
+3. notification-service recibe (hub)
+        ↓
+4. guarda Notification en PostgreSQL
+        ↓
+5. emit "notifications.deliver" con id, createdAt y readAt
+        ↓
+6. realtime-gateway → server.to("user:<recipientId>").emit("notification", …)
+        ↓
+7. Frontend del destinatario lo recibe en vivo y actualiza la bandeja
+```
+
+**Principio — qué pasa por el hub y qué no:**
+
+- **Notificación durable** (solicitud de amistad, mención de chat…) → por el
+  `notification-service`.
+- **Señal transitoria** (estado de partida, presencia…) → **directa** al
+  `realtime-gateway` (el salto por el hub no aporta nada).
+
+Si el destinatario no está conectado se pierde únicamente el aviso WebSocket;
+el registro permanece en `notifications` y la bandeja lo recupera al cargar la
+app. Rechazar solicitudes y bloquear usuarios son acciones silenciosas: no
+generan registros ni eventos.
+
+---
+
 # 7. Authoritative Server Model
 
 El servidor controla el estado real del juego.

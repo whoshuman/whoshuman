@@ -1,0 +1,22 @@
+{
+  "invalidCredentials": "Invalid credentials",
+  "emailInUse": "Email already in use",
+  "usernameTaken": "Username already taken",
+  "refreshInvalid": "Refresh token expired or invalid",
+  "sessionNotFound": "Session not found",
+  "invalidToken": "Invalid token",
+  "oauthProviderNotConfigured": "The sign-in provider is not configured",
+  "oauthProviderUnavailable": "The sign-in provider is unavailable",
+  "oauthIdentityInvalid": "The provider did not return a valid identity",
+  "oauthTicketInvalid": "The temporary sign-in has expired or is invalid",
+  "oauthDesignationRequired": "A valid Unit designation is required",
+  "userNotFound": "User not found",
+  "tokenMissing": "Missing Authorization: Bearer <token> header",
+  "tokenInvalidOrExpired": "Invalid or expired token",
+  "serviceUnavailable": "The service did not respond in time",
+  "unexpected": "Unexpected error",
+  "cannotFriendYourself": "You cannot send a friend request to yourself",
+  "alreadyFriends": "A friend relationship already exists with this user",
+  "friendshipNotFound": "Friend request not found",
+  "notAllowed": "You are not allowed to perform this action"
+}

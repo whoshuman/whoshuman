@@ -1,0 +1,468 @@
+{
+  "nav": {
+    "home": "Home",
+    "login": "Access",
+    "register": "Register",
+    "lobby": "Lobby",
+    "game": "Game",
+    "designSystem": "Design System"
+  },
+  "footer": {
+    "system": "WHO'S HUMAN SURVEILLANCE SYSTEM // 42"
+  },
+  "common": {
+    "underConstruction": "MODULE UNDER CONSTRUCTION",
+    "underConstructionDesc": "This section is not available in the system yet. Come back later.",
+    "back": "BACK TO HOME",
+    "backShort": "BACK",
+    "confirmationRequired": "CONFIRMATION REQUIRED",
+    "cancel": "CANCEL",
+    "logoutTitle": "LOG OUT?",
+    "logoutMessage": "You will be signed out on this device. You will need to log in again to get back in."
+  },
+  "settings": {
+    "title": "SETTINGS",
+    "language": "LANGUAGE",
+    "languageSaveError": "The language could not be saved.",
+    "dev": "DEV TOOLS",
+    "audio": "AUDIO",
+    "music": "MUSIC"
+  },
+  "home": {
+    "title": "Who's Human",
+    "tagline": "Deceive. Observe. Survive.",
+    "claim": "Deceive · Observe · Survive",
+    "credits": "42 Final Project | Transcendence | Developed by: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
+    "play": "Play",
+    "menu": {
+      "play": "Play",
+      "profile": "Profile",
+      "manual": "Manual",
+      "logout": "Log out",
+      "about": "About the project",
+      "faq": "FAQ",
+      "support": "Support",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    },
+    "login": "Log in",
+    "register": "Sign up",
+    "playGuest": "DEPLOY AS GUEST",
+    "manualJoke": "You need a manual for this?"
+  },
+  "login": {
+    "protocol": "ACCESS PROTOCOL — HUNTER SYSTEM",
+    "title": "IDENTIFY",
+    "subtitle": "Are you a cyborg? The system will know.",
+    "emailLabel": "Unit ID (email)",
+    "emailPlaceholder": "unit@domain.com",
+    "passwordLabel": "Access key",
+    "keepSession": "Keep session active",
+    "recover": "Recover access",
+    "submit": "ACCESS SYSTEM",
+    "noAccount": "Unit not registered?",
+    "createProfile": "CREATE PROFILE"
+  },
+  "register": {
+    "protocol": "NEW UNIT REGISTRATION — DATABASE",
+    "title": "REGISTER",
+    "subtitle": "Enter your data. The system will verify your identity.",
+    "usernameLabel": "Unit designation",
+    "emailLabel": "Unit ID (email)",
+    "emailPlaceholder": "unit@domain.com",
+    "passwordLabel": "Access key",
+    "confirmLabel": "Confirm key",
+    "passwordMismatch": "Access keys do not match.",
+    "submit": "CREATE UNIT",
+    "haveAccount": "Unit already registered?",
+    "access": "ACCESS"
+  },
+  "oauth": {
+    "continueWith": "OR CONTINUE WITH",
+    "google": "Google",
+    "school": "42 School",
+    "protocol": "IDENTITY LINK",
+    "connectingTitle": "SYNCING UNIT",
+    "connecting": "VERIFYING CREDENTIALS...",
+    "designationTitle": "UNIT DESIGNATION",
+    "designationDescription": "This is your first access. Choose the identifier other players will see.",
+    "designationLabel": "Unit designation",
+    "designationHint": "Between 3 and 20 characters.",
+    "confirmDesignation": "CONFIRM DESIGNATION",
+    "backToLogin": "BACK TO ACCESS",
+    "errors": {
+      "oauthDenied": "You cancelled access with the provider.",
+      "oauthStateInvalid": "The access request has expired or is invalid.",
+      "oauthCodeMissing": "The provider did not return an access code.",
+      "oauthProviderInvalid": "Invalid access provider.",
+      "oauthProviderUnavailable": "Access could not be completed with the provider.",
+      "oauthFailed": "External authentication could not be completed."
+    }
+  },
+  "lobby": {
+    "eyebrow": "OPERATIONS TERMINAL",
+    "deployTitle": "DEPLOYMENT ZONE",
+    "deploySubtitle": "Deploy into the general queue or share a room with your squad.",
+    "statusActive": "SYSTEM ACTIVE",
+    "autoDeployTitle": "AUTOMATIC DEPLOYMENT",
+    "autoDeployText": "The system will assign you an operation and a role automatically.",
+    "units": "units",
+    "exit": "EXIT",
+    "createRoom": "CREATE ROOM",
+    "createRoomDesc": "Generate a code and recruit your squad.",
+    "joinRoom": "JOIN ROOM",
+    "joinRoomDesc": "Enter a room code to deploy with a squad."
+  },
+  "room": {
+    "createTitle": "CREATE ROOM",
+    "create": "DEPLOY ROOM",
+    "joinTitle": "JOIN ROOM",
+    "roomCode": "ROOM CODE",
+    "roomCodePlaceholder": "e.g. WH-7X2K",
+    "join": "JOIN",
+    "inRoomTitle": "ACTIVE ROOM",
+    "connecting": "LINKING TO NETWORK...",
+    "shareCode": "SHARE THIS CODE WITH YOUR SQUAD",
+    "playersConnected": "CONNECTED UNITS",
+    "ready": "READY",
+    "cancelReady": "CANCEL READY",
+    "leave": "ABANDON",
+    "waiting": "WAITING",
+    "back": "BACK"
+  },
+  "profile": {
+    "eyebrow": "UNIT CONFIGURATION",
+    "title": "EDIT PROFILE",
+    "subtitle": "Update your unit identity in the Hunter system.",
+    "callsign": "CALLSIGN",
+    "callsignHint": "Visible identifier in operations",
+    "bio": "BIO / NOTES",
+    "bioHint": "Optional · max 140 characters",
+    "avatar": "AVATAR",
+    "avatarUpload": "UPLOAD IMAGE",
+    "avatarRemove": "REMOVE",
+    "avatarProcessing": "PROCESSING...",
+    "avatarHint": "PNG, JPG or WebP · maximum 5 MB",
+    "avatarTypeError": "The avatar must be a PNG, JPG or WebP image.",
+    "avatarSizeError": "The avatar exceeds the allowed size.",
+    "avatarProcessError": "The avatar could not be processed.",
+    "save": "SAVE CHANGES",
+    "saveShort": "SAVE",
+    "cancel": "CANCEL",
+    "saved": "PROFILE UPDATED"
+  },
+  "profilePage": {
+    "eyebrow": "UNIT RECORD",
+    "title": "PROFILE",
+    "subtitle": "Identity record in the Hunter system.",
+    "emailLabel": "CONTACT CHANNEL",
+    "bioLabel": "BIO / NOTES",
+    "languageLabel": "LANGUAGE",
+    "sinceLabel": "SYSTEM ENROLLMENT",
+    "statsTitle": "COMBAT RECORD",
+    "statsEmpty": "NO DATA",
+    "statsPending": "The system has not logged any operations for this unit yet.",
+    "statsLoading": "QUERYING RECORD...",
+    "statsError": "COMBAT RECORD COULD NOT BE RETRIEVED",
+    "statsGames": "GAMES",
+    "statsWins": "WINS",
+    "statsLosses": "LOSSES",
+    "statsTotalPoints": "POINTS",
+    "statsBestScore": "BEST",
+    "statsAverage": "AVERAGE",
+    "statsLevel": "LEVEL {{level}}",
+    "statsGlobalRank": "GLOBAL RANK #{{rank}}",
+    "statsUnranked": "UNRANKED",
+    "statsXp": "{{current}} / {{required}} XP",
+    "statsRecent": "LATEST OPERATIONS",
+    "statsMatch": "MATCH · {{date}}",
+    "statsPlacement": "RANK #{{placement}} OF {{count}}",
+    "statsOpponents": "RIVALS: {{names}}",
+    "statsPointsShort": "PTS",
+    "statsAchievements": "ACHIEVEMENTS",
+    "statsLeaderboard": "LEADERBOARD",
+    "achievement": {
+      "firstMatch": "FIRST DEPLOYMENT",
+      "firstWin": "FIRST VICTORY",
+      "veteran": "VETERAN UNIT",
+      "thousandPoints": "1,000 COMBAT POINTS"
+    },
+    "edit": "EDIT",
+    "backToLobby": "RETURN TO LOBBY",
+    "logout": "LOG OUT",
+    "identifying": "IDENTIFYING UNIT...",
+    "contacts": "CONTACT NETWORK",
+    "dangerTitle": "DANGER ZONE",
+    "deleteAccount": "DECOMMISSION UNIT",
+    "deleteWarning": "Decommission is final: your identity, contacts and records are removed from the system. There is no restore.",
+    "deleteConfirm": "CONFIRM FINAL DECOMMISSION",
+    "deleteCancel": "CANCEL"
+  },
+  "friends": {
+    "eyebrow": "CONTACT NETWORK",
+    "title": "CONTACTS",
+    "subtitle": "Linked units, link requests and locating new units.",
+    "backToLobby": "BACK TO LOBBY",
+    "tabContacts": "CONTACTS",
+    "tabRequests": "REQUESTS",
+    "tabSearch": "SEARCH",
+    "tabBlocked": "BLOCKED",
+    "emptyContacts": "NO CONTACTS ON RECORD — LOCATE UNITS IN SEARCH",
+    "emptyRequests": "NO INCOMING REQUESTS",
+    "emptySearch": "NO UNIT MATCHES THE QUERY",
+    "emptyBlocked": "NO BLOCKED UNITS",
+    "loading": "QUERYING NETWORK...",
+    "loadError": "NETWORK QUERY FAILED",
+    "searchLabel": "CALLSIGN",
+    "searchPlaceholder": "UNIT CALLSIGN...",
+    "searchHint": "Minimum 2 characters. Searches by callsign, case-insensitive.",
+    "statusLinked": "LINKED",
+    "statusBlocked": "BLOCKED",
+    "online": "Online",
+    "offline": "Offline",
+    "accept": "ACCEPT",
+    "decline": "DECLINE",
+    "remove": "REMOVE",
+    "block": "BLOCK",
+    "confirmSendTitle": "SEND REQUEST",
+    "confirmRemoveTitle": "REMOVE CONTACT",
+    "confirmDeclineTitle": "DECLINE REQUEST",
+    "confirmBlockTitle": "BLOCK UNIT",
+    "confirmUnblockTitle": "UNBLOCK UNIT",
+    "confirmSend": "Do you want to send a contact request to {{username}}?",
+    "confirmRemove": "Are you sure you want to remove {{username}} from your contacts?",
+    "confirmDecline": "Do you want to decline {{username}}'s request?",
+    "confirmBlock": "Are you sure you want to block {{username}}? This unit will be removed from your contacts.",
+    "confirmUnblock": "Do you want to unblock {{username}}?",
+    "unblock": "UNBLOCK",
+    "sendRequest": "REQUEST LINK",
+    "requestSent": "REQUEST SENT",
+    "dossier": "UNIT RECORD",
+    "closeDossier": "CLOSE RECORD",
+    "since": "Enrolled:",
+    "loadMore": "LOAD MORE UNITS",
+    "loadingMore": "LOCATING..."
+  },
+  "status": {
+    "eyebrow": "NETWORK STATUS",
+    "online": "ONLINE",
+    "serviceOnline": "OPERATIONAL",
+    "serviceOffline": "NO RESPONSE",
+    "checking": "PROBING...",
+    "hint": "Automatic probe every 30 seconds via gateway → NATS."
+  },
+  "notifications": {
+    "title": "SIGNAL LOG",
+    "ariaLabel": "Notifications: {{count}} unread",
+    "unread": "{{count}} unread",
+    "empty": "NO SIGNALS RECORDED",
+    "loading": "RETRIEVING SIGNALS...",
+    "new": "New",
+    "markAllRead": "Mark all as read",
+    "loadError": "The signal log could not be loaded.",
+    "requestReceived": "INCOMING LINK REQUEST",
+    "requestAccepted": "LINK ACCEPTED",
+    "chatMessage": "NEW PRIVATE MESSAGE"
+  },
+  "chat": {
+    "message": "MESSAGE",
+    "open": "OPEN CHAT",
+    "openWith": "Open chat with {{username}}",
+    "with": "CHANNEL: {{username}}",
+    "roomTitle": "ROOM CHANNEL",
+    "operationTitle": "OPERATION CHANNEL",
+    "directChannel": "Encrypted private link",
+    "squadChannel": "Squad communications",
+    "loading": "RETRIEVING TRANSMISSIONS...",
+    "empty": "NO MESSAGES RECORDED",
+    "placeholder": "Write a message...",
+    "send": "SEND MESSAGE",
+    "close": "CLOSE CHAT",
+    "you": "YOU",
+    "loadError": "The message history could not be loaded.",
+    "sendError": "The message could not be sent. Check the link and try again."
+  },
+  "about": {
+    "eyebrow": "PROJECT PERSONNEL",
+    "title": "THE TEAM",
+    "subtitle": "Units behind the Hunter system.",
+    "storyTitle": "PROJECT ORIGIN",
+    "story": "Who's Human was born at 42 as the final ft_transcendence project. Five units joined forces to build a real-time multiplayer game inspired by Just Act Natural: cyborgs hiding among humans while a Hunter tries to expose them. What started as an academic challenge —microservices, WebSockets and in-browser 3D— turned into a cyberpunk world of its own."
+  },
+  "manual": {
+    "eyebrow": "FIELD PROTOCOL",
+    "intro": "Three rounds, rotating roles and one essential rule: looking human matters as much as scoring points.",
+    "sections": {
+      "objective": {
+        "title": "OBJECTIVE",
+        "description": "Finish the three rounds with the highest score. Every action counts and roles change between deployments."
+      },
+      "cyborg": {
+        "title": "CYBORG",
+        "description": "Blend in with NPCs, avoid suspicious movement and collect items without revealing your identity."
+      },
+      "hunter": {
+        "title": "HUNTER",
+        "description": "Watch the city and shoot hidden players. Correct hits score points; shooting an NPC removes them."
+      },
+      "rounds": {
+        "title": "ROUND END",
+        "description": "A round ends when time runs out or the Hunter finds every cyborg. Roles rotate before the next deployment."
+      }
+    }
+  },
+  "faq": {
+    "eyebrow": "QUERY ARCHIVE",
+    "title": "FREQUENTLY ASKED QUESTIONS",
+    "subtitle": "Quick answers before deploying a new operation.",
+    "items": {
+      "game": {
+        "question": "WHAT IS WHO'S HUMAN?",
+        "answer": "It is a social stealth multiplayer game inspired by Just Act Natural. Players hide among NPCs while another player tries to identify them."
+      },
+      "roles": {
+        "question": "HOW DO THE ROLES WORK?",
+        "answer": "The Hunter observes and shoots from an aerial view. Cyborgs move through the city, imitate NPCs and collect items."
+      },
+      "rounds": {
+        "question": "HOW LONG IS A MATCH?",
+        "answer": "Each match has three rounds. A round ends when time runs out or the Hunter finds every hidden player."
+      },
+      "friends": {
+        "question": "HOW DOES THE CONTACT NETWORK WORK?",
+        "answer": "You can search for units, send requests and manage contacts from the network icon. Received and accepted requests create notifications."
+      }
+    }
+  },
+  "support": {
+    "eyebrow": "ASSISTANCE CHANNEL",
+    "title": "SUPPORT",
+    "subtitle": "Diagnostic and help tools for restoring the operation.",
+    "links": {
+      "status": {
+        "title": "SYSTEM STATUS",
+        "description": "Check whether the main services are operational."
+      },
+      "faq": {
+        "title": "OPEN FAQ",
+        "description": "Review answers to the most common questions."
+      },
+      "manual": {
+        "title": "OPEN MANUAL",
+        "description": "Review objectives, roles, scoring and round endings."
+      }
+    },
+    "note": "If the problem continues, record the error message and the steps that caused it before restarting the session."
+  },
+  "privacy": {
+    "eyebrow": "DATA PROTOCOL",
+    "title": "PRIVACY POLICY",
+    "subtitle": "What data Who's Human stores, what it is used for, and what control you have over it.",
+    "lastUpdated": "Last updated: July 2026",
+    "items": {
+      "collect": {
+        "title": "WHAT DATA WE COLLECT",
+        "body": "When you create an account we store your email address and your username. You may optionally add a bio, an avatar and your preferred language. During gameplay we record match statistics (rounds played and score) and your contact list."
+      },
+      "purpose": {
+        "title": "WHAT WE USE IT FOR",
+        "body": "Solely to authenticate your account, show your profile to other players and run matches. We do not use your data for advertising, we do not sell it and we do not share it with third parties."
+      },
+      "storage": {
+        "title": "WHERE IT IS STORED",
+        "body": "In the project's own PostgreSQL database, hosted alongside the rest of the services. Your password is never stored in plain text: we only store its hash encrypted with bcrypt."
+      },
+      "cookies": {
+        "title": "SESSION AND BROWSER",
+        "body": "We do not use tracking cookies or third-party analytics. When you log in we store an access token in your browser's local storage to keep the session open; it is removed when you log out."
+      },
+      "rights": {
+        "title": "YOUR RIGHTS",
+        "body": "You can view and modify your data from your profile at any time, and delete your account whenever you want. When you delete it, your personal data is permanently anonymized."
+      },
+      "academic": {
+        "title": "ACADEMIC PROJECT",
+        "body": "Who's Human is an educational project developed at 42 School, with no profit motive or commercial exploitation of the data. The service may be shut down once its evaluation is complete."
+      }
+    }
+  },
+  "terms": {
+    "eyebrow": "USAGE PROTOCOL",
+    "title": "TERMS OF SERVICE",
+    "subtitle": "The conditions under which you may use Who's Human.",
+    "lastUpdated": "Last updated: July 2026",
+    "items": {
+      "acceptance": {
+        "title": "ACCEPTANCE",
+        "body": "By creating an account and using the service you accept these conditions. If you do not agree with them, do not use the platform."
+      },
+      "nature": {
+        "title": "NATURE OF THE SERVICE",
+        "body": "Who's Human is an educational project of 42 School. The service is provided as is, with no guarantee of availability, data retention or absence of errors."
+      },
+      "accounts": {
+        "title": "YOUR ACCOUNT",
+        "body": "You are responsible for keeping your password safe and for the activity carried out from your account. One account per person is allowed and impersonating other users is not permitted."
+      },
+      "conduct": {
+        "title": "RULES OF CONDUCT",
+        "body": "It is not permitted to harass, insult or discriminate against other players, to cheat or modify the client to gain an advantage, or to attempt to disrupt or overload the service."
+      },
+      "enforcement": {
+        "title": "NON-COMPLIANCE",
+        "body": "We may suspend or delete accounts that breach these rules, without prior notice and without right to compensation."
+      },
+      "availability": {
+        "title": "AVAILABILITY AND CHANGES",
+        "body": "As this is a training environment, the service may be interrupted, restarted or changed at any time. Matches in progress may be lost during a restart."
+      }
+    }
+  },
+  "game": {
+    "role": "Role",
+    "roleSeeker": "HUNTER",
+    "roleHider": "CYBORG",
+    "units": "Units",
+    "leave": "ABANDON",
+    "connecting": "LINKING TO OPERATION...",
+    "controls": "W/S move · A/D turn",
+    "controlsSeeker": "A/D or arrows to orbit · hold right click or press F to aim · left click to shoot",
+    "move": "Movement",
+    "camera": "Camera",
+    "aim": "Aim",
+    "shoot": "Fire",
+    "rotateTitle": "ROTATE YOUR PHONE",
+    "rotateText": "The match needs a landscape screen.",
+    "fullscreenTitle": "GAME MODE",
+    "fullscreenText": "Enable fullscreen to start.",
+    "enterFullscreen": "FULLSCREEN",
+    "score": "Score",
+    "scoreboard": "Leaderboard",
+    "round": "Round {{current}} / {{total}}",
+    "eliminated": "UNIT ELIMINATED",
+    "waitNextRound": "Wait for the next deployment.",
+    "roundComplete": "ROUND COMPLETE",
+    "reasonAllFound": "The Hunter found every cyborg.",
+    "reasonTime": "The round timer expired.",
+    "nextRound": "Next round in {{seconds}} s",
+    "scopeHeading": "Heading",
+    "scopeDistance": "Range",
+    "scopeAltitude": "Altitude",
+    "scopeTarget": "Target",
+    "scopeLocked": "LOCKED",
+    "scopeScanning": "SCANNING",
+    "scopeStatus": "TARGETING SYSTEM ONLINE",
+    "operationComplete": "OPERATION COMPLETE",
+    "winnerScore": "{{score}} points",
+    "noWinner": "NO WINNER",
+    "returnLobby": "RETURN TO LOBBY"
+  },
+  "notFound": {
+    "protocol": "SYSTEM ERROR — UNIT NOT LOCATED",
+    "errorCode": "ERROR CODE",
+    "notLocated": "LOCATION NOT FOUND",
+    "descLine1": "The requested address does not exist in this system.",
+    "descLine2": "Cyborg trying to escape?",
+    "back": "RETURN TO BASE"
+  }
+}

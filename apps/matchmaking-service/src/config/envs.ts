@@ -3,11 +3,19 @@ import * as joi from "joi";
 
 interface EnvVars {
   NATS_SERVERS: string[];
+  MATCHMAKING_MIN_PLAYERS: number;
+  MATCHMAKING_MAX_PLAYERS: number;
 }
 
 const envSchema = joi
   .object<EnvVars>({
-    NATS_SERVERS: joi.array().items(joi.string().uri()).min(1).required()
+    NATS_SERVERS: joi.array().items(joi.string().uri()).min(1).required(),
+    MATCHMAKING_MIN_PLAYERS: joi.number().integer().min(1).default(1),
+    MATCHMAKING_MAX_PLAYERS: joi
+      .number()
+      .integer()
+      .min(joi.ref("MATCHMAKING_MIN_PLAYERS"))
+      .default(8)
   })
   .unknown(true);
 
@@ -25,5 +33,7 @@ if (error) {
 const envVars = validationResult.value;
 
 export const envs = {
-  natsServers: envVars.NATS_SERVERS
+  natsServers: envVars.NATS_SERVERS,
+  matchmakingMinPlayers: envVars.MATCHMAKING_MIN_PLAYERS,
+  matchmakingMaxPlayers: envVars.MATCHMAKING_MAX_PLAYERS
 };

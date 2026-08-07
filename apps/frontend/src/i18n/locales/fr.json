@@ -1,0 +1,468 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "login": "Accès",
+    "register": "S'inscrire",
+    "lobby": "Lobby",
+    "game": "Partie",
+    "designSystem": "Design System"
+  },
+  "footer": {
+    "system": "SYSTÈME DE SURVEILLANCE WHO'S HUMAN // 42"
+  },
+  "common": {
+    "underConstruction": "MODULE EN CONSTRUCTION",
+    "underConstructionDesc": "Cette section n'est pas encore disponible dans le système. Reviens plus tard.",
+    "back": "RETOUR À L'ACCUEIL",
+    "backShort": "RETOUR",
+    "confirmationRequired": "CONFIRMATION REQUISE",
+    "cancel": "ANNULER",
+    "logoutTitle": "SE DÉCONNECTER ?",
+    "logoutMessage": "Ta session sera fermée sur cet appareil. Tu devras te reconnecter pour revenir."
+  },
+  "settings": {
+    "title": "PARAMÈTRES",
+    "language": "LANGUE",
+    "languageSaveError": "La langue n'a pas pu être enregistrée.",
+    "dev": "OUTILS DEV",
+    "audio": "AUDIO",
+    "music": "MUSIQUE"
+  },
+  "home": {
+    "title": "Who's Human",
+    "tagline": "Trompe. Observe. Survie.",
+    "claim": "Trompe · Observe · Survie",
+    "credits": "Projet final 42 | Transcendence | Développé par : Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
+    "play": "Jouer",
+    "menu": {
+      "play": "Jouer",
+      "profile": "Profil",
+      "manual": "Manuel",
+      "logout": "Quitter",
+      "about": "À propos du projet",
+      "faq": "FAQ",
+      "support": "Support",
+      "privacy": "Confidentialité",
+      "terms": "Conditions"
+    },
+    "login": "Se connecter",
+    "register": "S'inscrire",
+    "playGuest": "DÉPLOYER EN INVITÉ",
+    "manualJoke": "Tu as besoin d'un manuel pour ca ?"
+  },
+  "login": {
+    "protocol": "PROTOCOLE D'ACCÈS — SYSTÈME CHASSEUR",
+    "title": "IDENTIFIER",
+    "subtitle": "Es-tu un cyborg ? Le système le saura.",
+    "emailLabel": "ID d'unité (email)",
+    "emailPlaceholder": "unite@domaine.com",
+    "passwordLabel": "Clé d'accès",
+    "keepSession": "Garder la session active",
+    "recover": "Récupérer l'accès",
+    "submit": "ACCÉDER AU SYSTÈME",
+    "noAccount": "Unité non enregistrée ?",
+    "createProfile": "CRÉER UN PROFIL"
+  },
+  "register": {
+    "protocol": "ENREGISTREMENT NOUVELLE UNITÉ — BASE DE DONNÉES",
+    "title": "S'INSCRIRE",
+    "subtitle": "Saisis tes données. Le système vérifiera ton identité.",
+    "usernameLabel": "Désignation d'unité",
+    "emailLabel": "ID d'unité (email)",
+    "emailPlaceholder": "unite@domaine.com",
+    "passwordLabel": "Clé d'accès",
+    "confirmLabel": "Confirmer la clé",
+    "passwordMismatch": "Les clés d'accès ne correspondent pas.",
+    "submit": "CRÉER UNE UNITÉ",
+    "haveAccount": "Unité déjà enregistrée ?",
+    "access": "ACCÉDER"
+  },
+  "oauth": {
+    "continueWith": "OU CONTINUER AVEC",
+    "google": "Google",
+    "school": "42 School",
+    "protocol": "LIEN D'IDENTITÉ",
+    "connectingTitle": "SYNCHRONISATION DE L'UNITÉ",
+    "connecting": "VÉRIFICATION DES IDENTIFIANTS...",
+    "designationTitle": "DÉSIGNATION DE L'UNITÉ",
+    "designationDescription": "C'est votre premier accès. Choisissez l'identifiant visible par les autres joueurs.",
+    "designationLabel": "Désignation de l'unité",
+    "designationHint": "Entre 3 et 20 caractères.",
+    "confirmDesignation": "CONFIRMER LA DÉSIGNATION",
+    "backToLogin": "RETOUR À L'ACCÈS",
+    "errors": {
+      "oauthDenied": "Vous avez annulé l'accès avec le fournisseur.",
+      "oauthStateInvalid": "La demande d'accès a expiré ou n'est pas valide.",
+      "oauthCodeMissing": "Le fournisseur n'a pas renvoyé de code d'accès.",
+      "oauthProviderInvalid": "Fournisseur d'accès non valide.",
+      "oauthProviderUnavailable": "Impossible de terminer l'accès avec le fournisseur.",
+      "oauthFailed": "L'authentification externe n'a pas pu être terminée."
+    }
+  },
+  "lobby": {
+    "eyebrow": "TERMINAL D'OPÉRATIONS",
+    "deployTitle": "ZONE DE DÉPLOIEMENT",
+    "deploySubtitle": "Déploie-toi dans la file générale ou partage une salle avec ton escouade.",
+    "statusActive": "SYSTÈME ACTIF",
+    "autoDeployTitle": "DÉPLOIEMENT AUTOMATIQUE",
+    "autoDeployText": "Le système t'attribuera une opération et un rôle automatiquement.",
+    "units": "unités",
+    "exit": "QUITTER",
+    "createRoom": "CRÉER UNE SALLE",
+    "createRoomDesc": "Génère un code et recrute ton escouade.",
+    "joinRoom": "REJOINDRE",
+    "joinRoomDesc": "Entrez un code de salle pour vous déployer."
+  },
+  "room": {
+    "createTitle": "CRÉER UNE SALLE",
+    "create": "DÉPLOYER LA SALLE",
+    "joinTitle": "REJOINDRE",
+    "roomCode": "CODE DE SALLE",
+    "roomCodePlaceholder": "ex. WH-7X2K",
+    "join": "REJOINDRE",
+    "inRoomTitle": "SALLE ACTIVE",
+    "connecting": "LIAISON AU RÉSEAU...",
+    "shareCode": "PARTAGE CE CODE AVEC TON ESCOUADE",
+    "playersConnected": "UNITÉS CONNECTÉES",
+    "ready": "PRÊT",
+    "cancelReady": "ANNULER PRÊT",
+    "leave": "ABANDONNER",
+    "waiting": "EN ATTENTE",
+    "back": "RETOUR"
+  },
+  "profile": {
+    "eyebrow": "CONFIGURATION D'UNITÉ",
+    "title": "MODIFIER LE PROFIL",
+    "subtitle": "Mettez à jour l'identité de votre unité dans le système Chasseur.",
+    "callsign": "INDICATIF",
+    "callsignHint": "Identifiant visible en opérations",
+    "bio": "BIO / NOTES",
+    "bioHint": "Optionnel · max 140 caractères",
+    "avatar": "AVATAR",
+    "avatarUpload": "IMPORTER UNE IMAGE",
+    "avatarRemove": "SUPPRIMER",
+    "avatarProcessing": "TRAITEMENT...",
+    "avatarHint": "PNG, JPG ou WebP · maximum 5 Mo",
+    "avatarTypeError": "L'avatar doit être une image PNG, JPG ou WebP.",
+    "avatarSizeError": "L'avatar dépasse la taille autorisée.",
+    "avatarProcessError": "L'avatar n'a pas pu être traité.",
+    "save": "ENREGISTRER",
+    "saveShort": "ENREG.",
+    "cancel": "ANNULER",
+    "saved": "PROFIL MIS À JOUR"
+  },
+  "profilePage": {
+    "eyebrow": "FICHE D'UNITÉ",
+    "title": "PROFIL",
+    "subtitle": "Registre d'identité dans le système Chasseur.",
+    "emailLabel": "CANAL DE CONTACT",
+    "bioLabel": "BIO / NOTES",
+    "languageLabel": "LANGUE",
+    "sinceLabel": "ENREGISTREMENT SYSTÈME",
+    "statsTitle": "REGISTRE DE COMBAT",
+    "statsEmpty": "AUCUNE DONNÉE",
+    "statsPending": "Le système n'a encore enregistré aucune opération pour cette unité.",
+    "statsLoading": "CONSULTATION DU REGISTRE...",
+    "statsError": "IMPOSSIBLE DE RÉCUPÉRER LE REGISTRE",
+    "statsGames": "PARTIES",
+    "statsWins": "VICTOIRES",
+    "statsLosses": "DÉFAITES",
+    "statsTotalPoints": "POINTS",
+    "statsBestScore": "MEILLEUR",
+    "statsAverage": "MOYENNE",
+    "statsLevel": "NIVEAU {{level}}",
+    "statsGlobalRank": "RANG GLOBAL #{{rank}}",
+    "statsUnranked": "NON CLASSÉ",
+    "statsXp": "{{current}} / {{required}} XP",
+    "statsRecent": "DERNIÈRES OPÉRATIONS",
+    "statsMatch": "PARTIE · {{date}}",
+    "statsPlacement": "RANG #{{placement}} SUR {{count}}",
+    "statsOpponents": "RIVAUX : {{names}}",
+    "statsPointsShort": "PTS",
+    "statsAchievements": "SUCCÈS",
+    "statsLeaderboard": "CLASSEMENT",
+    "achievement": {
+      "firstMatch": "PREMIER DÉPLOIEMENT",
+      "firstWin": "PREMIÈRE VICTOIRE",
+      "veteran": "UNITÉ VÉTÉRAN",
+      "thousandPoints": "1 000 POINTS DE COMBAT"
+    },
+    "edit": "MODIFIER",
+    "backToLobby": "RETOUR AU LOBBY",
+    "logout": "DÉCONNEXION",
+    "identifying": "IDENTIFICATION DE L'UNITÉ...",
+    "contacts": "RÉSEAU DE CONTACTS",
+    "dangerTitle": "ZONE DE DANGER",
+    "deleteAccount": "DÉSACTIVER L'UNITÉ",
+    "deleteWarning": "La désactivation est définitive : ton identité, tes contacts et tes registres sont supprimés du système. Aucune restauration.",
+    "deleteConfirm": "CONFIRMER LA DÉSACTIVATION",
+    "deleteCancel": "ANNULER"
+  },
+  "friends": {
+    "eyebrow": "RÉSEAU DE CONTACTS",
+    "title": "CONTACTS",
+    "subtitle": "Unités liées, demandes de liaison et localisation de nouvelles unités.",
+    "backToLobby": "RETOUR AU LOBBY",
+    "tabContacts": "CONTACTS",
+    "tabRequests": "DEMANDES",
+    "tabSearch": "RECHERCHE",
+    "tabBlocked": "BLOQUÉS",
+    "emptyContacts": "AUCUN CONTACT ENREGISTRÉ — LOCALISE DES UNITÉS DANS RECHERCHE",
+    "emptyRequests": "AUCUNE DEMANDE ENTRANTE",
+    "emptySearch": "AUCUNE UNITÉ NE CORRESPOND À LA REQUÊTE",
+    "emptyBlocked": "AUCUNE UNITÉ BLOQUÉE",
+    "loading": "INTERROGATION DU RÉSEAU...",
+    "loadError": "ÉCHEC DE LA REQUÊTE RÉSEAU",
+    "searchLabel": "INDICATIF",
+    "searchPlaceholder": "INDICATIF D'UNITÉ...",
+    "searchHint": "Minimum 2 caractères. Recherche par indicatif, insensible à la casse.",
+    "statusLinked": "LIÉ",
+    "statusBlocked": "BLOQUÉ",
+    "online": "En ligne",
+    "offline": "Hors ligne",
+    "accept": "ACCEPTER",
+    "decline": "REFUSER",
+    "remove": "SUPPRIMER",
+    "block": "BLOQUER",
+    "confirmSendTitle": "ENVOYER LA DEMANDE",
+    "confirmRemoveTitle": "SUPPRIMER LE CONTACT",
+    "confirmDeclineTitle": "REFUSER LA DEMANDE",
+    "confirmBlockTitle": "BLOQUER L'UNITÉ",
+    "confirmUnblockTitle": "DÉBLOQUER L'UNITÉ",
+    "confirmSend": "Voulez-vous envoyer une demande de contact à {{username}} ?",
+    "confirmRemove": "Voulez-vous vraiment supprimer {{username}} de vos contacts ?",
+    "confirmDecline": "Voulez-vous refuser la demande de {{username}} ?",
+    "confirmBlock": "Voulez-vous vraiment bloquer {{username}} ? Cette unité sera retirée de vos contacts.",
+    "confirmUnblock": "Voulez-vous débloquer {{username}} ?",
+    "unblock": "DÉBLOQUER",
+    "sendRequest": "DEMANDER UNE LIAISON",
+    "requestSent": "DEMANDE ENVOYÉE",
+    "dossier": "FICHE D'UNITÉ",
+    "closeDossier": "FERMER LA FICHE",
+    "since": "Enregistré :",
+    "loadMore": "CHARGER PLUS D'UNITÉS",
+    "loadingMore": "LOCALISATION..."
+  },
+  "status": {
+    "eyebrow": "ÉTAT DU RÉSEAU",
+    "online": "EN LIGNE",
+    "serviceOnline": "OPÉRATIONNEL",
+    "serviceOffline": "SANS RÉPONSE",
+    "checking": "SONDAGE...",
+    "hint": "Sonde automatique toutes les 30 secondes via gateway → NATS."
+  },
+  "notifications": {
+    "title": "JOURNAL DES SIGNAUX",
+    "ariaLabel": "Notifications : {{count}} non lues",
+    "unread": "{{count}} non lues",
+    "empty": "AUCUN SIGNAL ENREGISTRÉ",
+    "loading": "RÉCUPÉRATION DES SIGNAUX...",
+    "new": "Nouvelle",
+    "markAllRead": "Tout marquer comme lu",
+    "loadError": "Impossible de charger le journal des signaux.",
+    "requestReceived": "DEMANDE DE LIAISON ENTRANTE",
+    "requestAccepted": "LIAISON ACCEPTÉE",
+    "chatMessage": "NOUVEAU MESSAGE PRIVÉ"
+  },
+  "chat": {
+    "message": "MESSAGE",
+    "open": "OUVRIR LE CHAT",
+    "openWith": "Ouvrir le chat avec {{username}}",
+    "with": "CANAL : {{username}}",
+    "roomTitle": "CANAL DE SALLE",
+    "operationTitle": "CANAL D'OPÉRATION",
+    "directChannel": "Liaison privée chiffrée",
+    "squadChannel": "Communications de l'escouade",
+    "loading": "RÉCUPÉRATION DES TRANSMISSIONS...",
+    "empty": "AUCUN MESSAGE ENREGISTRÉ",
+    "placeholder": "Écrivez un message...",
+    "send": "ENVOYER LE MESSAGE",
+    "close": "FERMER LE CHAT",
+    "you": "VOUS",
+    "loadError": "Impossible de récupérer l'historique.",
+    "sendError": "Impossible d'envoyer le message. Vérifiez la liaison et réessayez."
+  },
+  "about": {
+    "eyebrow": "PERSONNEL DU PROJET",
+    "title": "L'ÉQUIPE",
+    "subtitle": "Unités derrière le système Chasseur.",
+    "storyTitle": "ORIGINE DU PROJET",
+    "story": "Who's Human est né à 42 comme projet final ft_transcendence. Cinq unités ont uni leurs forces pour construire un jeu multijoueur en temps réel inspiré de Just Act Natural : des cyborgs cachés parmi les humains pendant qu'un Chasseur tente de les démasquer. Ce qui a commencé comme un défi académique —microservices, WebSockets et 3D dans le navigateur— est devenu un monde cyberpunk à part entière."
+  },
+  "manual": {
+    "eyebrow": "PROTOCOLE DE TERRAIN",
+    "intro": "Trois manches, des rôles tournants et une règle essentielle : paraître humain compte autant que marquer des points.",
+    "sections": {
+      "objective": {
+        "title": "OBJECTIF",
+        "description": "Terminez les trois manches avec le meilleur score. Chaque action compte et les rôles changent entre les déploiements."
+      },
+      "cyborg": {
+        "title": "CYBORG",
+        "description": "Fondez-vous parmi les PNJ, évitez les mouvements suspects et récupérez des objets sans révéler votre identité."
+      },
+      "hunter": {
+        "title": "CHASSEUR",
+        "description": "Observez la ville et tirez sur les joueurs cachés. Un tir juste rapporte des points ; toucher un PNJ en retire."
+      },
+      "rounds": {
+        "title": "FIN DE MANCHE",
+        "description": "La manche se termine lorsque le temps est écoulé ou que le Chasseur trouve tous les cyborgs. Les rôles tournent ensuite."
+      }
+    }
+  },
+  "faq": {
+    "eyebrow": "ARCHIVE DES REQUÊTES",
+    "title": "QUESTIONS FRÉQUENTES",
+    "subtitle": "Des réponses rapides avant de lancer une nouvelle opération.",
+    "items": {
+      "game": {
+        "question": "QU'EST-CE QUE WHO'S HUMAN ?",
+        "answer": "C'est un jeu multijoueur d'infiltration sociale inspiré de Just Act Natural. Les joueurs se cachent parmi les PNJ tandis qu'un autre joueur tente de les identifier."
+      },
+      "roles": {
+        "question": "COMMENT FONCTIONNENT LES RÔLES ?",
+        "answer": "Le Chasseur observe et tire depuis une vue aérienne. Les cyborgs parcourent la ville, imitent les PNJ et récupèrent des objets."
+      },
+      "rounds": {
+        "question": "COMBIEN DE TEMPS DURE UNE PARTIE ?",
+        "answer": "Chaque partie comporte trois manches. Une manche se termine lorsque le temps est écoulé ou que le Chasseur trouve tous les joueurs cachés."
+      },
+      "friends": {
+        "question": "COMMENT FONCTIONNE LE RÉSEAU DE CONTACTS ?",
+        "answer": "Vous pouvez chercher des unités, envoyer des demandes et gérer vos contacts depuis l'icône réseau. Les demandes reçues et acceptées créent des notifications."
+      }
+    }
+  },
+  "support": {
+    "eyebrow": "CANAL D'ASSISTANCE",
+    "title": "SUPPORT",
+    "subtitle": "Outils de diagnostic et d'aide pour rétablir l'opération.",
+    "links": {
+      "status": {
+        "title": "ÉTAT DU SYSTÈME",
+        "description": "Vérifiez si les services principaux sont opérationnels."
+      },
+      "faq": {
+        "title": "CONSULTER LA FAQ",
+        "description": "Consultez les réponses aux questions les plus courantes."
+      },
+      "manual": {
+        "title": "OUVRIR LE MANUEL",
+        "description": "Consultez les objectifs, les rôles, le score et les fins de manche."
+      }
+    },
+    "note": "Si le problème persiste, notez le message d'erreur et les étapes qui l'ont provoqué avant de redémarrer la session."
+  },
+  "privacy": {
+    "eyebrow": "PROTOCOLE DE DONNÉES",
+    "title": "POLITIQUE DE CONFIDENTIALITÉ",
+    "subtitle": "Quelles données Who's Human conserve, à quoi elles servent et quel contrôle tu as sur elles.",
+    "lastUpdated": "Dernière mise à jour : juillet 2026",
+    "items": {
+      "collect": {
+        "title": "QUELLES DONNÉES NOUS COLLECTONS",
+        "body": "Lors de la création d'un compte, nous conservons ton adresse email et ton nom d'utilisateur. Tu peux ajouter en option une biographie, un avatar et ta langue préférée. Pendant le jeu, des statistiques de partie (manches jouées et score) et ta liste de contacts sont enregistrées."
+      },
+      "purpose": {
+        "title": "À QUOI ELLES SERVENT",
+        "body": "Uniquement pour authentifier ton compte, afficher ton profil aux autres joueurs et faire fonctionner les parties. Nous n'utilisons pas tes données à des fins publicitaires, nous ne les vendons pas et nous ne les cédons pas à des tiers."
+      },
+      "storage": {
+        "title": "OÙ ELLES SONT CONSERVÉES",
+        "body": "Dans la base de données PostgreSQL propre au projet, hébergée avec le reste des services. Ton mot de passe n'est jamais conservé en clair : nous stockons uniquement son hash chiffré avec bcrypt."
+      },
+      "cookies": {
+        "title": "SESSION ET NAVIGATEUR",
+        "body": "Nous n'utilisons pas de cookies de suivi ni d'analyse tierce. Lors de la connexion, nous conservons un jeton d'accès dans le stockage local de ton navigateur pour maintenir la session ouverte ; il est supprimé à la déconnexion."
+      },
+      "rights": {
+        "title": "TES DROITS",
+        "body": "Tu peux consulter et modifier tes données depuis ton profil à tout moment, et supprimer ton compte quand tu le souhaites. Une fois supprimé, tes données personnelles sont anonymisées de façon permanente."
+      },
+      "academic": {
+        "title": "PROJET ACADÉMIQUE",
+        "body": "Who's Human est un projet éducatif développé à 42 School, sans but lucratif ni exploitation commerciale des données. Le service peut être arrêté une fois son évaluation terminée."
+      }
+    }
+  },
+  "terms": {
+    "eyebrow": "PROTOCOLE D'UTILISATION",
+    "title": "CONDITIONS D'UTILISATION",
+    "subtitle": "Les conditions dans lesquelles tu peux utiliser Who's Human.",
+    "lastUpdated": "Dernière mise à jour : juillet 2026",
+    "items": {
+      "acceptance": {
+        "title": "ACCEPTATION",
+        "body": "En créant un compte et en utilisant le service, tu acceptes ces conditions. Si tu n'es pas d'accord avec elles, n'utilise pas la plateforme."
+      },
+      "nature": {
+        "title": "NATURE DU SERVICE",
+        "body": "Who's Human est un projet éducatif de 42 School. Le service est fourni tel quel, sans garantie de disponibilité, de conservation des données ni d'absence d'erreurs."
+      },
+      "accounts": {
+        "title": "TON COMPTE",
+        "body": "Tu es responsable de la protection de ton mot de passe et de l'activité effectuée depuis ton compte. Un seul compte par personne est autorisé et il est interdit d'usurper l'identité d'autres utilisateurs."
+      },
+      "conduct": {
+        "title": "RÈGLES DE CONDUITE",
+        "body": "Il est interdit de harceler, insulter ou discriminer d'autres joueurs, de tricher ou de modifier le client pour obtenir un avantage, ou de tenter de perturber ou de surcharger le service."
+      },
+      "enforcement": {
+        "title": "NON-RESPECT",
+        "body": "Nous pouvons suspendre ou supprimer les comptes qui enfreignent ces règles, sans préavis et sans droit à compensation."
+      },
+      "availability": {
+        "title": "DISPONIBILITÉ ET CHANGEMENTS",
+        "body": "S'agissant d'un environnement de formation, le service peut être interrompu, redémarré ou modifié à tout moment. Les parties en cours peuvent être perdues lors d'un redémarrage."
+      }
+    }
+  },
+  "game": {
+    "role": "Rôle",
+    "roleSeeker": "CHASSEUR",
+    "roleHider": "CYBORG",
+    "units": "Unités",
+    "leave": "ABANDONNER",
+    "connecting": "LIAISON À L'OPÉRATION...",
+    "controls": "W/S avancer · A/D tourner",
+    "controlsSeeker": "A/D ou flèches pour orbiter · maintenir clic droit ou appuyer sur F pour viser · clic gauche pour tirer",
+    "move": "Déplacement",
+    "camera": "Caméra",
+    "aim": "Viser",
+    "shoot": "Tirer",
+    "rotateTitle": "TOURNEZ LE TÉLÉPHONE",
+    "rotateText": "La partie nécessite un écran horizontal.",
+    "fullscreenTitle": "MODE DE JEU",
+    "fullscreenText": "Activez le plein écran pour commencer.",
+    "enterFullscreen": "PLEIN ÉCRAN",
+    "score": "Points",
+    "scoreboard": "Classement",
+    "round": "Manche {{current}} / {{total}}",
+    "eliminated": "UNITÉ ÉLIMINÉE",
+    "waitNextRound": "Attendez le prochain déploiement.",
+    "roundComplete": "MANCHE TERMINÉE",
+    "reasonAllFound": "Le Chasseur a trouvé tous les cyborgs.",
+    "reasonTime": "Le temps de la manche est écoulé.",
+    "nextRound": "Prochaine manche dans {{seconds}} s",
+    "scopeHeading": "Cap",
+    "scopeDistance": "Distance",
+    "scopeAltitude": "Altitude",
+    "scopeTarget": "Cible",
+    "scopeLocked": "VERROUILLÉE",
+    "scopeScanning": "BALAYAGE",
+    "scopeStatus": "SYSTÈME DE VISÉE ACTIF",
+    "operationComplete": "OPÉRATION TERMINÉE",
+    "winnerScore": "{{score}} points",
+    "noWinner": "AUCUN GAGNANT",
+    "returnLobby": "RETOUR AU LOBBY"
+  },
+  "notFound": {
+    "protocol": "ERREUR SYSTÈME — UNITÉ NON LOCALISÉE",
+    "errorCode": "CODE D'ERREUR",
+    "notLocated": "EMPLACEMENT INTROUVABLE",
+    "descLine1": "L'adresse demandée n'existe pas dans ce système.",
+    "descLine2": "Un cyborg qui tente de s'échapper ?",
+    "back": "RETOUR À LA BASE"
+  }
+}

@@ -12,7 +12,8 @@ COPY packages ./packages
 COPY apps/notification-service/package.json ./apps/notification-service/package.json
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @whoshuman/shared-events build
+RUN pnpm exec prisma generate
+RUN pnpm --filter @whoshuman/shared-events build && pnpm --filter @whoshuman/shared-types build
 
 COPY apps/notification-service ./apps/notification-service
 

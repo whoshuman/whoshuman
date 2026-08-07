@@ -1,0 +1,468 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "login": "Acceso",
+    "register": "Registro",
+    "lobby": "Lobby",
+    "game": "Partida",
+    "designSystem": "Design System"
+  },
+  "footer": {
+    "system": "SISTEMA DE VIGILANCIA WHO'S HUMAN // 42"
+  },
+  "common": {
+    "underConstruction": "MÓDULO EN CONSTRUCCIÓN",
+    "underConstructionDesc": "Esta sección aún no está disponible en el sistema. Vuelve más tarde.",
+    "back": "VOLVER A INICIO",
+    "backShort": "ATRÁS",
+    "confirmationRequired": "CONFIRMACIÓN REQUERIDA",
+    "cancel": "CANCELAR",
+    "logoutTitle": "¿CERRAR SESIÓN?",
+    "logoutMessage": "Se cerrará tu sesión en este dispositivo. Tendrás que volver a identificarte para acceder de nuevo."
+  },
+  "settings": {
+    "title": "AJUSTES",
+    "language": "IDIOMA",
+    "languageSaveError": "No se pudo guardar el idioma.",
+    "dev": "HERRAMIENTAS DEV",
+    "audio": "AUDIO",
+    "music": "MÚSICA"
+  },
+  "home": {
+    "title": "Who's Human",
+    "tagline": "Engaña. Observa. Sobrevive.",
+    "claim": "Engaña · Observa · Sobrevive",
+    "credits": "Proyecto final 42 | Transcendence | Desarrollado por: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
+    "play": "Jugar",
+    "menu": {
+      "play": "Jugar",
+      "profile": "Perfil",
+      "manual": "Manual",
+      "logout": "Salir",
+      "about": "Sobre el proyecto",
+      "faq": "FAQ",
+      "support": "Soporte",
+      "privacy": "Privacidad",
+      "terms": "Términos"
+    },
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "playGuest": "JUGAR COMO INVITADO",
+    "manualJoke": "¿Necesitas manual para esto?"
+  },
+  "login": {
+    "protocol": "PROTOCOLO DE ACCESO — SISTEMA CAZADOR",
+    "title": "IDENTIFICAR",
+    "subtitle": "¿Eres un cyborg? El sistema lo sabrá.",
+    "emailLabel": "ID de unidad (email)",
+    "emailPlaceholder": "unidad@dominio.com",
+    "passwordLabel": "Clave de acceso",
+    "keepSession": "Mantener sesión activa",
+    "recover": "Recuperar acceso",
+    "submit": "ACCEDER AL SISTEMA",
+    "noAccount": "¿Unidad no registrada?",
+    "createProfile": "CREAR PERFIL"
+  },
+  "register": {
+    "protocol": "REGISTRO DE NUEVA UNIDAD — BASE DE DATOS",
+    "title": "REGISTRAR",
+    "subtitle": "Introduce tus datos. El sistema verificará tu identidad.",
+    "usernameLabel": "Designación de unidad",
+    "emailLabel": "ID de unidad (email)",
+    "emailPlaceholder": "unidad@dominio.com",
+    "passwordLabel": "Clave de acceso",
+    "confirmLabel": "Confirmar clave",
+    "passwordMismatch": "Las claves de acceso no coinciden.",
+    "submit": "CREAR UNIDAD",
+    "haveAccount": "¿Unidad ya registrada?",
+    "access": "ACCEDER"
+  },
+  "oauth": {
+    "continueWith": "O CONTINÚA CON",
+    "google": "Google",
+    "school": "42 School",
+    "protocol": "ENLACE DE IDENTIDAD",
+    "connectingTitle": "SINCRONIZANDO UNIDAD",
+    "connecting": "VERIFICANDO CREDENCIALES...",
+    "designationTitle": "DESIGNACIÓN DE UNIDAD",
+    "designationDescription": "Es tu primer acceso. Elige el identificador que verán el resto de jugadores.",
+    "designationLabel": "Designación de unidad",
+    "designationHint": "Entre 3 y 20 caracteres.",
+    "confirmDesignation": "CONFIRMAR DESIGNACIÓN",
+    "backToLogin": "VOLVER AL ACCESO",
+    "errors": {
+      "oauthDenied": "Has cancelado el acceso con el proveedor.",
+      "oauthStateInvalid": "La solicitud de acceso ha caducado o no es válida.",
+      "oauthCodeMissing": "El proveedor no devolvió un código de acceso.",
+      "oauthProviderInvalid": "Proveedor de acceso no válido.",
+      "oauthProviderUnavailable": "No se pudo completar el acceso con el proveedor.",
+      "oauthFailed": "No se pudo completar la autenticación externa."
+    }
+  },
+  "lobby": {
+    "eyebrow": "TERMINAL DE OPERACIONES",
+    "deployTitle": "ZONA DE DESPLIEGUE",
+    "deploySubtitle": "Despliégate en la cola general o comparte una sala con tu escuadrón.",
+    "statusActive": "SISTEMA ACTIVO",
+    "autoDeployTitle": "DESPLIEGUE AUTOMÁTICO",
+    "autoDeployText": "El sistema te asignará una operación y un rol de forma automática.",
+    "units": "unidades",
+    "exit": "SALIR",
+    "createRoom": "CREAR SALA",
+    "createRoomDesc": "Genera un código y recluta a tu escuadrón.",
+    "joinRoom": "UNIRSE A SALA",
+    "joinRoomDesc": "Introduce un código de sala para desplegarte."
+  },
+  "room": {
+    "createTitle": "CREAR SALA",
+    "create": "DESPLEGAR SALA",
+    "joinTitle": "UNIRSE A SALA",
+    "roomCode": "CÓDIGO DE SALA",
+    "roomCodePlaceholder": "ej. WH-7X2K",
+    "join": "UNIRSE",
+    "inRoomTitle": "SALA ACTIVA",
+    "connecting": "ENLAZANDO CON LA RED...",
+    "shareCode": "COMPARTE ESTE CÓDIGO CON TU ESCUADRÓN",
+    "playersConnected": "UNIDADES CONECTADAS",
+    "ready": "LISTO",
+    "cancelReady": "CANCELAR LISTO",
+    "leave": "ABANDONAR",
+    "waiting": "ESPERANDO",
+    "back": "VOLVER"
+  },
+  "profile": {
+    "eyebrow": "CONFIGURACIÓN DE UNIDAD",
+    "title": "EDITAR PERFIL",
+    "subtitle": "Actualiza la identidad de tu unidad en el sistema Cazador.",
+    "callsign": "DISTINTIVO",
+    "callsignHint": "Identificador visible en operaciones",
+    "bio": "BIO / NOTAS",
+    "bioHint": "Opcional · máx 140 caracteres",
+    "avatar": "AVATAR",
+    "avatarUpload": "SUBIR IMAGEN",
+    "avatarRemove": "ELIMINAR",
+    "avatarProcessing": "PROCESANDO...",
+    "avatarHint": "PNG, JPG o WebP · máximo 5 MB",
+    "avatarTypeError": "El avatar debe ser una imagen PNG, JPG o WebP.",
+    "avatarSizeError": "El avatar supera el tamaño permitido.",
+    "avatarProcessError": "No se pudo procesar el avatar.",
+    "save": "GUARDAR CAMBIOS",
+    "saveShort": "GUARDAR",
+    "cancel": "CANCELAR",
+    "saved": "PERFIL ACTUALIZADO"
+  },
+  "profilePage": {
+    "eyebrow": "FICHA DE UNIDAD",
+    "title": "PERFIL",
+    "subtitle": "Registro de identidad en el sistema Cazador.",
+    "emailLabel": "CANAL DE CONTACTO",
+    "bioLabel": "BIO / NOTAS",
+    "languageLabel": "IDIOMA",
+    "sinceLabel": "ALTA EN EL SISTEMA",
+    "statsTitle": "REGISTRO DE COMBATE",
+    "statsEmpty": "SIN DATOS",
+    "statsPending": "El sistema aún no ha registrado operaciones de esta unidad.",
+    "statsLoading": "CONSULTANDO REGISTRO...",
+    "statsError": "NO SE PUDO RECUPERAR EL REGISTRO",
+    "statsGames": "PARTIDAS",
+    "statsWins": "VICTORIAS",
+    "statsLosses": "DERROTAS",
+    "statsTotalPoints": "PUNTOS",
+    "statsBestScore": "MEJOR",
+    "statsAverage": "MEDIA",
+    "statsLevel": "NIVEL {{level}}",
+    "statsGlobalRank": "RANGO GLOBAL #{{rank}}",
+    "statsUnranked": "SIN RANGO",
+    "statsXp": "{{current}} / {{required}} XP",
+    "statsRecent": "ÚLTIMAS OPERACIONES",
+    "statsMatch": "PARTIDA · {{date}}",
+    "statsPlacement": "PUESTO #{{placement}} DE {{count}}",
+    "statsOpponents": "RIVALES: {{names}}",
+    "statsPointsShort": "PTS",
+    "statsAchievements": "LOGROS",
+    "statsLeaderboard": "CLASIFICACIÓN",
+    "achievement": {
+      "firstMatch": "PRIMER DESPLIEGUE",
+      "firstWin": "PRIMERA VICTORIA",
+      "veteran": "UNIDAD VETERANA",
+      "thousandPoints": "1.000 PUNTOS DE COMBATE"
+    },
+    "edit": "EDITAR",
+    "backToLobby": "VOLVER AL LOBBY",
+    "logout": "CERRAR SESIÓN",
+    "identifying": "IDENTIFICANDO UNIDAD...",
+    "contacts": "RED DE CONTACTOS",
+    "dangerTitle": "ZONA DE PELIGRO",
+    "deleteAccount": "DAR DE BAJA UNIDAD",
+    "deleteWarning": "La baja es definitiva: tu identidad, contactos y registros se eliminan del sistema. No hay restauración.",
+    "deleteConfirm": "CONFIRMAR BAJA DEFINITIVA",
+    "deleteCancel": "CANCELAR"
+  },
+  "friends": {
+    "eyebrow": "RED DE CONTACTOS",
+    "title": "CONTACTOS",
+    "subtitle": "Unidades vinculadas, solicitudes de enlace y localización de nuevas unidades.",
+    "backToLobby": "VOLVER AL LOBBY",
+    "tabContacts": "CONTACTOS",
+    "tabRequests": "SOLICITUDES",
+    "tabSearch": "BÚSQUEDA",
+    "tabBlocked": "BLOQUEADOS",
+    "emptyContacts": "SIN CONTACTOS REGISTRADOS — LOCALIZA UNIDADES EN BÚSQUEDA",
+    "emptyRequests": "SIN SOLICITUDES ENTRANTES",
+    "emptySearch": "NINGUNA UNIDAD COINCIDE CON LA CONSULTA",
+    "emptyBlocked": "NO HAY UNIDADES BLOQUEADAS",
+    "loading": "CONSULTANDO LA RED...",
+    "loadError": "NO SE PUDO CONSULTAR LA RED",
+    "searchLabel": "DISTINTIVO",
+    "searchPlaceholder": "DISTINTIVO DE UNIDAD...",
+    "searchHint": "Mínimo 2 caracteres. Búsqueda por distintivo, sin distinguir mayúsculas.",
+    "statusLinked": "VINCULADO",
+    "statusBlocked": "BLOQUEADO",
+    "online": "En línea",
+    "offline": "Desconectado",
+    "accept": "ACEPTAR",
+    "decline": "RECHAZAR",
+    "remove": "ELIMINAR",
+    "block": "BLOQUEAR",
+    "confirmSendTitle": "ENVIAR SOLICITUD",
+    "confirmRemoveTitle": "ELIMINAR CONTACTO",
+    "confirmDeclineTitle": "RECHAZAR SOLICITUD",
+    "confirmBlockTitle": "BLOQUEAR UNIDAD",
+    "confirmUnblockTitle": "DESBLOQUEAR UNIDAD",
+    "confirmSend": "¿Quieres enviar una solicitud de contacto a {{username}}?",
+    "confirmRemove": "¿Seguro que quieres eliminar a {{username}} de tus contactos?",
+    "confirmDecline": "¿Quieres rechazar la solicitud de {{username}}?",
+    "confirmBlock": "¿Seguro que quieres bloquear a {{username}}? Esta unidad dejará de ser tu contacto.",
+    "confirmUnblock": "¿Quieres desbloquear a {{username}}?",
+    "unblock": "DESBLOQUEAR",
+    "sendRequest": "SOLICITAR ENLACE",
+    "requestSent": "SOLICITUD ENVIADA",
+    "dossier": "FICHA DE UNIDAD",
+    "closeDossier": "CERRAR FICHA",
+    "since": "Alta:",
+    "loadMore": "CARGAR MÁS UNIDADES",
+    "loadingMore": "LOCALIZANDO..."
+  },
+  "status": {
+    "eyebrow": "ESTADO DE LA RED",
+    "online": "EN LÍNEA",
+    "serviceOnline": "OPERATIVO",
+    "serviceOffline": "SIN RESPUESTA",
+    "checking": "SONDEANDO...",
+    "hint": "Sondeo automático cada 30 segundos vía gateway → NATS."
+  },
+  "notifications": {
+    "title": "REGISTRO DE SEÑALES",
+    "ariaLabel": "Notificaciones: {{count}} sin leer",
+    "unread": "{{count}} sin leer",
+    "empty": "SIN SEÑALES REGISTRADAS",
+    "loading": "RECUPERANDO SEÑALES...",
+    "new": "Nueva",
+    "markAllRead": "Marcar todas como leídas",
+    "loadError": "No se pudo cargar el registro de señales.",
+    "requestReceived": "SOLICITUD DE ENLACE ENTRANTE",
+    "requestAccepted": "ENLACE ACEPTADO",
+    "chatMessage": "NUEVO MENSAJE PRIVADO"
+  },
+  "chat": {
+    "message": "MENSAJE",
+    "open": "ABRIR CHAT",
+    "openWith": "Abrir chat con {{username}}",
+    "with": "CANAL: {{username}}",
+    "roomTitle": "CANAL DE SALA",
+    "operationTitle": "CANAL DE OPERACIÓN",
+    "directChannel": "Enlace privado cifrado",
+    "squadChannel": "Comunicaciones del escuadrón",
+    "loading": "RECUPERANDO TRANSMISIONES...",
+    "empty": "SIN MENSAJES REGISTRADOS",
+    "placeholder": "Escribe un mensaje...",
+    "send": "ENVIAR MENSAJE",
+    "close": "CERRAR CHAT",
+    "you": "TÚ",
+    "loadError": "No se pudo recuperar el historial.",
+    "sendError": "No se pudo enviar el mensaje. Comprueba el enlace e inténtalo de nuevo."
+  },
+  "about": {
+    "eyebrow": "PERSONAL DEL PROYECTO",
+    "title": "EL EQUIPO",
+    "subtitle": "Unidades tras el sistema Cazador.",
+    "storyTitle": "ORIGEN DEL PROYECTO",
+    "story": "Who's Human nace en la 42 como proyecto final ft_transcendence. Cinco unidades unieron fuerzas para construir un juego multijugador en tiempo real inspirado en Just Act Natural: cyborgs que se esconden entre humanos mientras un Cazador intenta desenmascararlos. Lo que empezó como un reto académico —microservicios, WebSockets y 3D en el navegador— acabó convirtiéndose en un mundo cyberpunk propio."
+  },
+  "manual": {
+    "eyebrow": "PROTOCOLO DE CAMPO",
+    "intro": "Tres rondas, roles rotatorios y una regla esencial: parecer humano importa tanto como sumar puntos.",
+    "sections": {
+      "objective": {
+        "title": "OBJETIVO",
+        "description": "Consigue la mayor puntuación al terminar las tres rondas. Cada acción cuenta y los roles cambian entre despliegues."
+      },
+      "cyborg": {
+        "title": "CYBORG",
+        "description": "Mézclate con los NPC, evita movimientos sospechosos y recoge coleccionables sin revelar tu identidad."
+      },
+      "hunter": {
+        "title": "CAZADOR",
+        "description": "Observa la ciudad y dispara a los jugadores ocultos. Acertar suma puntos; disparar a un NPC los resta."
+      },
+      "rounds": {
+        "title": "FIN DE RONDA",
+        "description": "La ronda termina cuando se agota el tiempo o el Cazador encuentra a todos los cyborgs. Después se rotan los roles."
+      }
+    }
+  },
+  "faq": {
+    "eyebrow": "ARCHIVO DE CONSULTAS",
+    "title": "PREGUNTAS FRECUENTES",
+    "subtitle": "Respuestas rápidas antes de desplegar una nueva operación.",
+    "items": {
+      "game": {
+        "question": "¿QUÉ ES WHO'S HUMAN?",
+        "answer": "Es un juego multijugador de sigilo social inspirado en Just Act Natural. Los jugadores se ocultan entre NPC mientras otro jugador intenta identificarlos."
+      },
+      "roles": {
+        "question": "¿CÓMO FUNCIONAN LOS ROLES?",
+        "answer": "El Cazador observa y dispara desde una vista aérea. Los cyborgs recorren la ciudad, imitan a los NPC y recogen coleccionables."
+      },
+      "rounds": {
+        "question": "¿CUÁNTO DURA UNA PARTIDA?",
+        "answer": "Cada partida tiene tres rondas. Una ronda termina al agotarse el tiempo o cuando el Cazador encuentra a todos los jugadores ocultos."
+      },
+      "friends": {
+        "question": "¿CÓMO FUNCIONA LA RED DE CONTACTOS?",
+        "answer": "Puedes buscar unidades, enviar solicitudes y gestionar contactos desde el icono de red. Las solicitudes recibidas y aceptadas generan notificaciones."
+      }
+    }
+  },
+  "support": {
+    "eyebrow": "CANAL DE ASISTENCIA",
+    "title": "SOPORTE",
+    "subtitle": "Herramientas de diagnóstico y ayuda para recuperar la operación.",
+    "links": {
+      "status": {
+        "title": "ESTADO DEL SISTEMA",
+        "description": "Comprueba si los servicios principales están operativos."
+      },
+      "faq": {
+        "title": "CONSULTAR FAQ",
+        "description": "Revisa las respuestas a las dudas más habituales."
+      },
+      "manual": {
+        "title": "ABRIR MANUAL",
+        "description": "Consulta objetivos, roles, puntuación y final de ronda."
+      }
+    },
+    "note": "Si el problema continúa, anota el mensaje de error y los pasos que lo provocaron antes de reiniciar la sesión."
+  },
+  "privacy": {
+    "eyebrow": "PROTOCOLO DE DATOS",
+    "title": "POLÍTICA DE PRIVACIDAD",
+    "subtitle": "Qué datos guarda Who's Human, para qué se usan y qué control tienes sobre ellos.",
+    "lastUpdated": "Última actualización: julio de 2026",
+    "items": {
+      "collect": {
+        "title": "QUÉ DATOS RECOGEMOS",
+        "body": "Al crear una cuenta guardamos tu correo electrónico y tu nombre de usuario. De forma opcional puedes añadir una biografía, un avatar y tu idioma preferido. Durante el juego se registran estadísticas de partida (rondas jugadas y puntuación) y tu lista de contactos."
+      },
+      "purpose": {
+        "title": "PARA QUÉ LOS USAMOS",
+        "body": "Únicamente para autenticar tu cuenta, mostrar tu perfil a otros jugadores y hacer funcionar las partidas. No usamos tus datos con fines publicitarios, no los vendemos y no los cedemos a terceros."
+      },
+      "storage": {
+        "title": "DÓNDE SE GUARDAN",
+        "body": "En la base de datos PostgreSQL del propio proyecto, alojada junto al resto de servicios. Tu contraseña nunca se guarda en claro: almacenamos únicamente su hash cifrado con bcrypt."
+      },
+      "cookies": {
+        "title": "SESIÓN Y NAVEGADOR",
+        "body": "No utilizamos cookies de seguimiento ni analítica de terceros. Al iniciar sesión guardamos un token de acceso en el almacenamiento local de tu navegador para mantener la sesión abierta; se elimina al cerrar sesión."
+      },
+      "rights": {
+        "title": "TUS DERECHOS",
+        "body": "Puedes consultar y modificar tus datos desde tu perfil en cualquier momento, y eliminar tu cuenta cuando quieras. Al eliminarla, tus datos personales se anonimizan de forma permanente."
+      },
+      "academic": {
+        "title": "PROYECTO ACADÉMICO",
+        "body": "Who's Human es un proyecto educativo desarrollado en 42 School, sin ánimo de lucro ni explotación comercial de los datos. El servicio puede detenerse una vez finalizada su evaluación."
+      }
+    }
+  },
+  "terms": {
+    "eyebrow": "PROTOCOLO DE USO",
+    "title": "TÉRMINOS DEL SERVICIO",
+    "subtitle": "Las condiciones bajo las que puedes usar Who's Human.",
+    "lastUpdated": "Última actualización: julio de 2026",
+    "items": {
+      "acceptance": {
+        "title": "ACEPTACIÓN",
+        "body": "Al crear una cuenta y utilizar el servicio aceptas estas condiciones. Si no estás de acuerdo con ellas, no uses la plataforma."
+      },
+      "nature": {
+        "title": "NATURALEZA DEL SERVICIO",
+        "body": "Who's Human es un proyecto educativo de 42 School. El servicio se ofrece tal cual, sin garantía de disponibilidad, de conservación de los datos ni de ausencia de errores."
+      },
+      "accounts": {
+        "title": "TU CUENTA",
+        "body": "Eres responsable de mantener tu contraseña a salvo y de la actividad realizada desde tu cuenta. Se permite una cuenta por persona y no está permitido suplantar la identidad de otros usuarios."
+      },
+      "conduct": {
+        "title": "NORMAS DE CONDUCTA",
+        "body": "No está permitido acosar, insultar ni discriminar a otros jugadores, hacer trampas o modificar el cliente para obtener ventaja, ni intentar interrumpir o sobrecargar el servicio."
+      },
+      "enforcement": {
+        "title": "INCUMPLIMIENTO",
+        "body": "Podemos suspender o eliminar las cuentas que incumplan estas normas, sin aviso previo y sin derecho a compensación."
+      },
+      "availability": {
+        "title": "DISPONIBILIDAD Y CAMBIOS",
+        "body": "Al tratarse de un entorno de prácticas, el servicio puede interrumpirse, reiniciarse o cambiar en cualquier momento. Las partidas en curso pueden perderse durante un reinicio."
+      }
+    }
+  },
+  "game": {
+    "role": "Rol",
+    "roleSeeker": "CAZADOR",
+    "roleHider": "CYBORG",
+    "units": "Unidades",
+    "leave": "ABANDONAR",
+    "connecting": "ENLAZANDO CON LA OPERACIÓN...",
+    "controls": "W/S avanzar · A/D girar",
+    "controlsSeeker": "A/D o flechas para orbitar · mantén clic derecho o pulsa F para apuntar · clic izquierdo para disparar",
+    "move": "Movimiento",
+    "camera": "Cámara",
+    "aim": "Apuntar",
+    "shoot": "Disparar",
+    "rotateTitle": "GIRA EL MÓVIL",
+    "rotateText": "La partida necesita la pantalla en horizontal.",
+    "fullscreenTitle": "MODO DE JUEGO",
+    "fullscreenText": "Activa la pantalla completa para empezar.",
+    "enterFullscreen": "PANTALLA COMPLETA",
+    "score": "Puntos",
+    "scoreboard": "Clasificación",
+    "round": "Ronda {{current}} / {{total}}",
+    "eliminated": "UNIDAD ELIMINADA",
+    "waitNextRound": "Espera al siguiente despliegue.",
+    "roundComplete": "RONDA COMPLETADA",
+    "reasonAllFound": "El Cazador encontró a todos los cyborgs.",
+    "reasonTime": "El tiempo de la ronda se ha agotado.",
+    "nextRound": "Siguiente ronda en {{seconds}} s",
+    "scopeHeading": "Rumbo",
+    "scopeDistance": "Distancia",
+    "scopeAltitude": "Altitud",
+    "scopeTarget": "Objetivo",
+    "scopeLocked": "FIJADO",
+    "scopeScanning": "RASTREANDO",
+    "scopeStatus": "SISTEMA DE PUNTERÍA ACTIVO",
+    "operationComplete": "OPERACIÓN COMPLETADA",
+    "winnerScore": "{{score}} puntos",
+    "noWinner": "SIN GANADOR",
+    "returnLobby": "VOLVER AL LOBBY"
+  },
+  "notFound": {
+    "protocol": "ERROR DE SISTEMA — UNIDAD NO LOCALIZADA",
+    "errorCode": "CÓDIGO DE ERROR",
+    "notLocated": "LOCALIZACIÓN NO ENCONTRADA",
+    "descLine1": "La dirección solicitada no existe en este sistema.",
+    "descLine2": "¿Cyborg intentando escapar?",
+    "back": "VOLVER A BASE"
+  }
+}
