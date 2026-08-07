@@ -395,7 +395,7 @@ Longer write-ups live in [`docs/arquitectura.md`](docs/arquitectura.md),
 
 | Module             | Type  | Points | How it was implemented                                                                                                                                                                                                                                                                                                   | By            |
 | ------------------ | ----- | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
-| Multiple languages | Minor |      1 | i18next with three complete translations (English, Spanish, French — 349 keys each), a switcher in the settings menu, and the choice persisted on the user profile so it follows the account across devices. Every user-facing string goes through `t()`; backend validation errors are translated too via `nestjs-i18n` | zlu, jdelorme |
+| Multiple languages | Minor |      1 | i18next with three complete translations (English, Spanish, French — 356 keys each), a switcher in the settings menu, and the choice persisted on the user profile so it follows the account across devices. Every user-facing string goes through `t()`; backend validation errors are translated too via `nestjs-i18n` | zlu, jdelorme |
 
 ### User Management
 

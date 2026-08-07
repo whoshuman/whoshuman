@@ -210,8 +210,12 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
         >
           <CornerBrackets color="var(--color-neon-magenta)" />
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-2xl font-black text-neon-cyan [text-shadow:0_0_12px_rgba(36,245,255,0.6)]">
-              {initials}
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-2xl font-black text-neon-cyan [text-shadow:0_0_12px_rgba(36,245,255,0.6)]">
+              {user?.avatar ? (
+                <img src={user.avatar} alt={username} className="h-full w-full object-cover" />
+              ) : (
+                initials
+              )}
             </div>
             <div className="min-w-0">
               <p className="font-display truncate text-lg font-black text-text-main">{username}</p>

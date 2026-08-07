@@ -1,8 +1,9 @@
 import { useState } from "react";
-import type { CSSProperties } from "react";
+import type { ChangeEvent, CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
+import { Trash2, Upload } from "lucide-react";
 
-import { SUPPORTED_LANGUAGES } from "@whoshuman/shared-validation";
+import { AVATAR_MAX_LENGTH, SUPPORTED_LANGUAGES } from "@whoshuman/shared-validation";
 import { apiError } from "../shared/api/errors";
 import { updateMe } from "../shared/api/users";
 import { useAuthStore } from "../shared/authStore";
@@ -13,6 +14,36 @@ type ProfileEditProps = {
 };
 
 const BIO_MAX = 140;
+const AVATAR_SIZE = 128;
+const AVATAR_FILE_MAX_BYTES = 5 * 1024 * 1024;
+const AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+async function resizeAvatar(file: File): Promise<string> {
+  const image = await createImageBitmap(file);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = AVATAR_SIZE;
+    canvas.height = AVATAR_SIZE;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas is not available");
+
+    const sourceSize = Math.min(image.width, image.height);
+    context.drawImage(
+      image,
+      (image.width - sourceSize) / 2,
+      (image.height - sourceSize) / 2,
+      sourceSize,
+      sourceSize,
+      0,
+      0,
+      AVATAR_SIZE,
+      AVATAR_SIZE
+    );
+    return canvas.toDataURL("image/webp", 0.82);
+  } finally {
+    image.close();
+  }
+}
 
 // Capa de scanlines fijas (lineas oscuras horizontales) que dan textura de tubo CRT.
 const scanlinesStyle: CSSProperties = {
@@ -32,6 +63,8 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
   const [callsign, setCallsign] = useState(user?.username ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
   const [lang, setLang] = useState<string>(user?.language ?? i18n.language);
+  const [avatar, setAvatar] = useState<string | null>(user?.avatar ?? null);
+  const [processingAvatar, setProcessingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +82,36 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
       .slice(0, 2)
       .toUpperCase() || "JD";
 
+  async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setError(null);
+
+    if (!AVATAR_TYPES.has(file.type)) {
+      setError(t("profile.avatarTypeError"));
+      return;
+    }
+    if (file.size > AVATAR_FILE_MAX_BYTES) {
+      setError(t("profile.avatarSizeError"));
+      return;
+    }
+
+    setProcessingAvatar(true);
+    try {
+      const nextAvatar = await resizeAvatar(file);
+      if (nextAvatar.length > AVATAR_MAX_LENGTH) {
+        setError(t("profile.avatarSizeError"));
+        return;
+      }
+      setAvatar(nextAvatar);
+    } catch {
+      setError(t("profile.avatarProcessError"));
+    } finally {
+      setProcessingAvatar(false);
+    }
+  }
+
   async function handleSave() {
     if (!user) return;
     setError(null);
@@ -57,7 +120,7 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
       const updated = await updateMe({
         username: callsign,
         bio,
-        avatar: user.avatar,
+        avatar,
         language: lang
       });
       updateUser(updated);
@@ -130,17 +193,43 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
             <p className="mb-7 text-sm text-text-muted">{t("profile.subtitle")}</p>
 
             {/* Avatar + ID */}
-            <div className="mb-7 flex items-center gap-5">
-              <div className="flex h-16 w-16 items-center justify-center border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-2xl font-black text-neon-cyan [text-shadow:0_0_14px_rgba(36,245,255,0.6)]">
-                {initials}
+            <div className="mb-7 flex flex-wrap items-center gap-5">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-2xl font-black text-neon-cyan [text-shadow:0_0_14px_rgba(36,245,255,0.6)]">
+                {avatar ? (
+                  <img src={avatar} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  initials
+                )}
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="font-display text-xs font-bold uppercase tracking-[0.25em] text-neon-cyan/80">
                   // {t("profile.avatar")}
                 </p>
-                <p className="mt-1 font-display text-xl font-black text-text-main">
-                  {callsign || "—"}
-                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <label className="flex cursor-pointer items-center gap-2 border border-neon-cyan/50 px-3 py-2 font-display text-xs font-bold uppercase text-neon-cyan transition hover:bg-neon-cyan/10">
+                    <Upload aria-hidden="true" size={15} />
+                    {processingAvatar ? t("profile.avatarProcessing") : t("profile.avatarUpload")}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      disabled={processingAvatar || saving}
+                      onChange={(event) => void handleAvatarChange(event)}
+                      className="sr-only"
+                    />
+                  </label>
+                  {avatar && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatar(null)}
+                      disabled={processingAvatar || saving}
+                      className="flex items-center gap-2 border border-error/60 px-3 py-2 font-display text-xs font-bold uppercase text-error transition hover:bg-error/10"
+                    >
+                      <Trash2 aria-hidden="true" size={15} />
+                      {t("profile.avatarRemove")}
+                    </button>
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-text-muted/70">{t("profile.avatarHint")}</p>
               </div>
             </div>
 
@@ -205,7 +294,7 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
               <button
                 type="button"
                 onClick={() => void handleSave()}
-                disabled={saving}
+                disabled={saving || processingAvatar}
                 className="flex-1 border-2 border-neon-magenta bg-neon-magenta py-3 font-display font-black uppercase tracking-widest text-bg shadow-[0_0_20px_rgba(255,43,214,0.45)] transition hover:brightness-110 hover:shadow-[0_0_36px_rgba(255,43,214,0.65)] active:translate-y-px"
               >
                 <span className="sm:hidden">{t("profile.saveShort")}</span>

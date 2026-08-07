@@ -1,9 +1,11 @@
 import {
+  AVATAR_MAX_LENGTH,
+  AVATAR_PATTERN,
   SUPPORTED_LANGUAGES,
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH
 } from "@whoshuman/shared-validation";
-import { IsIn, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from "class-validator";
 
 export class UpdateProfileDto {
   @IsString()
@@ -16,7 +18,8 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(2048)
+  @MaxLength(AVATAR_MAX_LENGTH)
+  @Matches(AVATAR_PATTERN)
   avatar?: string;
 
   @IsOptional()

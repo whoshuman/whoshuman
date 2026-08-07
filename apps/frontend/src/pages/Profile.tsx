@@ -138,8 +138,12 @@ function Profile() {
         <div className="px-6 py-8 sm:px-10">
           {/* Identidad: avatar de iniciales + callsign */}
           <div className="mb-8 flex items-center gap-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-3xl font-black text-neon-cyan [text-shadow:0_0_14px_rgba(36,245,255,0.6)]">
-              {initials}
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-3xl font-black text-neon-cyan [text-shadow:0_0_14px_rgba(36,245,255,0.6)]">
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" />
+              ) : (
+                initials
+              )}
             </div>
             <div className="min-w-0">
               <h1 className="font-display truncate text-[clamp(1.5rem,6vw,2.25rem)] font-black uppercase leading-none text-text-main [text-shadow:0_0_18px_rgba(255,43,214,0.45),0_0_36px_rgba(36,245,255,0.24)]">
