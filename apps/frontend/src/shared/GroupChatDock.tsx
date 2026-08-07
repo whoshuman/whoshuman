@@ -43,6 +43,7 @@ function GroupChatDock({ scope, channelId, game = false }: GroupChatDockProps) {
       {open ? (
         <div className="h-[min(30rem,calc(100dvh-6rem))] w-[min(23rem,calc(100vw-1.5rem))]">
           <ChatWindow
+            key={`${scope}:${channelId}`}
             scope={scope}
             channelId={channelId}
             title={t(game ? "chat.operationTitle" : "chat.roomTitle")}

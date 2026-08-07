@@ -11,7 +11,7 @@ interface PrismaMock {
   };
   session: { deleteMany: jest.Mock };
   friendship: { deleteMany: jest.Mock };
-  score: { findMany: jest.Mock };
+  score: { findMany: jest.Mock; groupBy: jest.Mock };
   $transaction: jest.Mock;
 }
 
@@ -44,7 +44,7 @@ describe("UsersService", () => {
       },
       session: { deleteMany: jest.fn() },
       friendship: { deleteMany: jest.fn() },
-      score: { findMany: jest.fn() },
+      score: { findMany: jest.fn(), groupBy: jest.fn() },
       $transaction: jest.fn().mockResolvedValue([])
     };
     const moduleRef = await Test.createTestingModule({
@@ -91,6 +91,14 @@ describe("UsersService", () => {
   describe("combatStats", () => {
     it("agrega partidas, victorias, puntos y las cinco más recientes", async () => {
       prisma.user.findFirst.mockResolvedValue({ id: "alice" });
+      prisma.user.findMany.mockResolvedValue([
+        { id: "alice", username: "alice", avatar: null },
+        { id: "bob", username: "bob", avatar: null }
+      ]);
+      prisma.score.groupBy.mockResolvedValue([
+        { userId: "alice", _sum: { points: 225 }, _count: { _all: 2 } },
+        { userId: "bob", _sum: { points: 125 }, _count: { _all: 2 } }
+      ]);
       prisma.score.findMany.mockResolvedValue([
         {
           gameId: "g2",
@@ -98,7 +106,11 @@ describe("UsersService", () => {
           createdAt: new Date("2026-02-02"),
           game: {
             updatedAt: new Date("2026-02-02"),
-            scores: [{ points: 100 }, { points: 75 }, { points: 25 }]
+            scores: [
+              { userId: "bob", points: 100, user: { username: "bob" } },
+              { userId: "alice", points: 75, user: { username: "alice" } },
+              { userId: "carol", points: 25, user: { username: "carol" } }
+            ]
           }
         },
         {
@@ -107,7 +119,10 @@ describe("UsersService", () => {
           createdAt: new Date("2026-02-01"),
           game: {
             updatedAt: new Date("2026-02-01"),
-            scores: [{ points: 150 }, { points: 100 }]
+            scores: [
+              { userId: "alice", points: 150, user: { username: "alice" } },
+              { userId: "bob", points: 100, user: { username: "bob" } }
+            ]
           }
         }
       ]);
@@ -117,9 +132,18 @@ describe("UsersService", () => {
       expect(result).toMatchObject({
         totalGames: 2,
         wins: 1,
+        losses: 1,
         totalPoints: 225,
         bestScore: 150,
-        averagePoints: 113
+        averagePoints: 113,
+        globalRank: 1,
+        progression: {
+          level: 2,
+          experiencePoints: 325,
+          currentLevelExperience: 125,
+          experienceForNextLevel: 270,
+          progressPercent: 46
+        }
       });
       expect(result.recentMatches).toEqual([
         {
@@ -127,14 +151,40 @@ describe("UsersService", () => {
           points: 75,
           placement: 2,
           playerCount: 3,
-          playedAt: "2026-02-02T00:00:00.000Z"
+          playedAt: "2026-02-02T00:00:00.000Z",
+          opponents: ["bob", "carol"]
         },
         {
           gameId: "g1",
           points: 150,
           placement: 1,
           playerCount: 2,
-          playedAt: "2026-02-01T00:00:00.000Z"
+          playedAt: "2026-02-01T00:00:00.000Z",
+          opponents: ["bob"]
+        }
+      ]);
+      expect(result.achievements).toEqual([
+        { id: "firstMatch", unlocked: true, current: 2, target: 1 },
+        { id: "firstWin", unlocked: true, current: 1, target: 1 },
+        { id: "veteran", unlocked: false, current: 2, target: 10 },
+        { id: "thousandPoints", unlocked: false, current: 225, target: 1000 }
+      ]);
+      expect(result.leaderboard).toEqual([
+        {
+          rank: 1,
+          userId: "alice",
+          username: "alice",
+          avatar: null,
+          totalPoints: 225,
+          totalGames: 2
+        },
+        {
+          rank: 2,
+          userId: "bob",
+          username: "bob",
+          avatar: null,
+          totalPoints: 125,
+          totalGames: 2
         }
       ]);
       expect(prisma.score.findMany).toHaveBeenCalledWith(
@@ -148,13 +198,30 @@ describe("UsersService", () => {
     it("devuelve ceros cuando todavía no hay partidas", async () => {
       prisma.user.findFirst.mockResolvedValue({ id: "alice" });
       prisma.score.findMany.mockResolvedValue([]);
+      prisma.score.groupBy.mockResolvedValue([]);
 
       await expect(service.combatStats({ userId: "alice" })).resolves.toEqual({
         totalGames: 0,
         wins: 0,
+        losses: 0,
         totalPoints: 0,
         bestScore: 0,
         averagePoints: 0,
+        globalRank: null,
+        progression: {
+          level: 1,
+          experiencePoints: 0,
+          currentLevelExperience: 0,
+          experienceForNextLevel: 200,
+          progressPercent: 0
+        },
+        achievements: [
+          { id: "firstMatch", unlocked: false, current: 0, target: 1 },
+          { id: "firstWin", unlocked: false, current: 0, target: 1 },
+          { id: "veteran", unlocked: false, current: 0, target: 10 },
+          { id: "thousandPoints", unlocked: false, current: 0, target: 1000 }
+        ],
+        leaderboard: [],
         recentMatches: []
       });
     });

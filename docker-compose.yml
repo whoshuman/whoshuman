@@ -25,6 +25,22 @@ services:
     networks:
       - internal
 
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/auth-service/Dockerfile.dev
+    command: ["pnpm", "exec", "prisma", "migrate", "deploy"]
+    working_dir: /app
+    restart: "no"
+    env_file:
+      - path: ./apps/auth-service/.env
+        required: false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
   nginx:
     image: nginx:alpine
     restart: unless-stopped
@@ -103,6 +119,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_started
     networks:
@@ -121,6 +139,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_started
     networks:
@@ -139,6 +159,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_started
     networks:
@@ -172,6 +194,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_started
     networks:
@@ -190,6 +214,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_started
     networks:

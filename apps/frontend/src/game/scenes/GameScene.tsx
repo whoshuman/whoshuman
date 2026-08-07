@@ -1,4 +1,4 @@
-﻿import { AdaptiveDpr, PerformanceMonitor, useGLTF } from "@react-three/drei";
+import { AdaptiveDpr, PerformanceMonitor, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import type { GameEntityState } from "@whoshuman/shared-types";
 import {

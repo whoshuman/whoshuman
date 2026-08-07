@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -35,9 +35,13 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user?.language) setLang(user.language);
-  }, [user?.language]);
+  // Si el idioma cambia desde Ajustes con este panel abierto, se refleja aqui sin
+  // perder lo que el usuario ya haya escrito en el resto del formulario.
+  const [knownLanguage, setKnownLanguage] = useState(user?.language);
+  if (user?.language && user.language !== knownLanguage) {
+    setKnownLanguage(user.language);
+    setLang(user.language);
+  }
 
   const initials =
     callsign

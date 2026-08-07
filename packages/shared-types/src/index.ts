@@ -222,14 +222,46 @@ export interface CombatMatchSummary {
   placement: number;
   playerCount: number;
   playedAt: string;
+  opponents: string[];
+}
+
+export type CombatAchievementId = "firstMatch" | "firstWin" | "veteran" | "thousandPoints";
+
+export interface CombatAchievementProgress {
+  id: CombatAchievementId;
+  unlocked: boolean;
+  current: number;
+  target: number;
+}
+
+export interface CombatProgression {
+  level: number;
+  experiencePoints: number;
+  currentLevelExperience: number;
+  experienceForNextLevel: number;
+  progressPercent: number;
+}
+
+export interface CombatLeaderboardEntry {
+  rank: number;
+  userId: string;
+  username: string;
+  avatar: string | null;
+  totalPoints: number;
+  totalGames: number;
 }
 
 export interface UserCombatStats {
   totalGames: number;
   wins: number;
+  losses: number;
   totalPoints: number;
   bestScore: number;
   averagePoints: number;
+  globalRank: number | null;
+  progression: CombatProgression;
+  achievements: CombatAchievementProgress[];
+  leaderboard: CombatLeaderboardEntry[];
   recentMatches: CombatMatchSummary[];
 }
 

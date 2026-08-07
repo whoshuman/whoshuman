@@ -62,7 +62,6 @@ function ChatWindow({ scope, title, channelId, peer, onClose }: ChatWindowProps)
   const loadHistory = useCallback(() => {
     const socket = connectSocket();
     if (!socket.connected) return;
-    setLoading(true);
     const payload: ChatClientHistoryPayload = {
       scope,
       ...(peer ? { recipientId: peer.id } : {})
@@ -84,21 +83,27 @@ function ChatWindow({ scope, title, channelId, peer, onClose }: ChatWindowProps)
       );
   }, [peer, scope, t]);
 
+  // El estado de la conversacion se resetea remontando: cada sitio que renderiza
+  // ChatWindow le pasa una `key` propia de la conversacion.
   useEffect(() => {
-    setMessages([]);
-    setError(null);
     const socket = connectSocket();
     const receive = (message: ChatMessage) => {
       if (belongsToConversation(message, scope, selfId, channelId, peer?.id)) {
         setMessages((current) => mergeMessages(current, [message]));
       }
     };
+    // Al reconectar el gateway se vuelve a pedir el historial mostrando el spinner;
+    // en el montaje `loading` ya arranca en true.
+    const reload = () => {
+      setLoading(true);
+      loadHistory();
+    };
     socket.on(ServerSocketEvents.chatMessage, receive);
-    socket.on(ServerSocketEvents.gatewayReady, loadHistory);
+    socket.on(ServerSocketEvents.gatewayReady, reload);
     loadHistory();
     return () => {
       socket.off(ServerSocketEvents.chatMessage, receive);
-      socket.off(ServerSocketEvents.gatewayReady, loadHistory);
+      socket.off(ServerSocketEvents.gatewayReady, reload);
     };
   }, [channelId, loadHistory, peer?.id, scope, selfId]);
 
