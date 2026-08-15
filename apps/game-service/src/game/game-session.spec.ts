@@ -83,16 +83,32 @@ describe("GameSession", () => {
     expect(step).toBeLessThanOrEqual(1.2 * 1.25 * 0.05 + 1e-9);
   });
 
-  it("girar parado no cambia la rotación (no se pivota en el sitio)", () => {
+  it("permite girar parado sin desplazar al jugador", () => {
     const s = new GameSession("g1", members, config);
     s.markPresent("u1");
     const before = find(s, "u1");
     s.setInput("u1", 0, 1);
     s.tick(0.05);
     const after = find(s, "u1");
-    expect(after.rotationY).toBe(before.rotationY);
+    expect(after.rotationY).toBeGreaterThan(before.rotationY);
     expect(after.x).toBe(before.x);
     expect(after.z).toBe(before.z);
+  });
+
+  it("todos los jugadores giran a la misma velocidad", () => {
+    const players = [
+      { userId: "u1", role: "hider" as const },
+      { userId: "u2", role: "hider" as const },
+      { userId: "u3", role: "seeker" as const }
+    ];
+    const s = new GameSession("same-turn-rate", players, config);
+    s.markPresent("u1");
+    s.markPresent("u2");
+    s.setInput("u1", 0, 1);
+    s.setInput("u2", 0, 1);
+    s.tick(0.05);
+
+    expect(find(s, "u1").rotationY).toBeCloseTo(find(s, "u2").rotationY, 8);
   });
 
   it("girar mientras se avanza sí cambia la rotación", () => {
@@ -354,7 +370,7 @@ describe("GameSession", () => {
     });
   });
 
-  it("los hiders recogen objetos cercanos y suman puntos", () => {
+  it("los hiders recogen objetos cercanos y reaparecen a los cinco segundos", () => {
     const tinyHeightmap = makeHM(-0.05, -0.05, 0.05, 0.05, 0.05, () => 0);
     const s = new GameSession("collectibles", [{ userId: "u1", username: "Uno", role: "hider" }], {
       ...config,
@@ -363,9 +379,16 @@ describe("GameSession", () => {
     });
     s.markPresent("u1");
 
-    expect(s.collectibleSnapshot()).toHaveLength(GAME_RULES.collectibleCount);
+    const initial = s.collectibleSnapshot();
+    expect(initial).toHaveLength(GAME_RULES.collectibleCount);
     s.tick(0.05);
     expect(s.collectibleSnapshot()).toHaveLength(0);
+    expect(find(s, "u1").score).toBe(GAME_RULES.collectibleCount * GAME_RULES.collectiblePoints);
+
+    s.tick(GAME_RULES.collectibleRespawnSeconds - 0.1);
+    expect(s.collectibleSnapshot()).toHaveLength(0);
+    s.tick(0.11);
+    expect(s.collectibleSnapshot()).toEqual(expect.arrayContaining(initial));
     expect(find(s, "u1").score).toBe(GAME_RULES.collectibleCount * GAME_RULES.collectiblePoints);
   });
 

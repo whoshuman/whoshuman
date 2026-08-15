@@ -14,6 +14,11 @@ export type Obstacle = Rect;
 /** Área jugable: el jugador no puede salir de aquí. */
 export type Bounds = Rect;
 
+export interface MapPoint {
+  x: number;
+  z: number;
+}
+
 /** Rejilla de alturas del suelo sobre el área jugable. data fila-mayor; null = sin suelo (vacío). */
 export interface Heightmap {
   minX: number; // origen X de la rejilla
@@ -28,6 +33,7 @@ export interface Heightmap {
 export interface MapDescriptor {
   bounds: Bounds;
   obstacles: Obstacle[];
+  collectibleSpawns: MapPoint[];
   heightmap: Heightmap;
 }
 
@@ -82,11 +88,29 @@ const validHeightmap = (h: unknown): h is Heightmap => {
   );
 };
 
+const validMapPoint = (point: unknown): point is MapPoint => {
+  const value = point as Partial<MapPoint> | null;
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof value.x === "number" &&
+    Number.isFinite(value.x) &&
+    typeof value.z === "number" &&
+    Number.isFinite(value.z)
+  );
+};
+
 /** Carga maps/<name>.json. Si falta o es inválido lanza: un mapa mal configurado es fallo de despliegue. */
 export function loadMap(name: string): MapDescriptor {
   const file = join(__dirname, "maps", `${name}.json`);
   const m = JSON.parse(readFileSync(file, "utf8")) as MapDescriptor;
-  if (!validRect(m.bounds) || !Array.isArray(m.obstacles) || !validHeightmap(m.heightmap)) {
+  if (
+    !validRect(m.bounds) ||
+    !Array.isArray(m.obstacles) ||
+    !Array.isArray(m.collectibleSpawns) ||
+    !m.collectibleSpawns.every(validMapPoint) ||
+    !validHeightmap(m.heightmap)
+  ) {
     throw new Error(`Invalid map descriptor: ${file}`);
   }
   return m;

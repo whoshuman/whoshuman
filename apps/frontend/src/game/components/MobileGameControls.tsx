@@ -64,7 +64,10 @@ function VirtualJoystick({ label, side, onChange }: VirtualJoystickProps) {
     const centerY = Math.min(Math.max(event.clientY - rect.top, minY), maxY);
 
     activePointer.current = event.pointerId;
-    origin.current = { x: rect.left + centerX, y: rect.top + centerY };
+    // La base se recorta para que siga visible, pero el vector debe empezar justo
+    // donde se apoyó el dedo. Si se usaba la base recortada, tocar cerca de un borde
+    // enviaba movimiento antes incluso de arrastrar el joystick.
+    origin.current = { x: event.clientX, y: event.clientY };
     setBase({ x: centerX, y: centerY });
     event.currentTarget.setPointerCapture(event.pointerId);
     update(event.clientX, event.clientY);

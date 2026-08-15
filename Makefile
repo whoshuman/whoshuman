@@ -1,5 +1,7 @@
 .PHONY: help all clean fclean re install build certs dev dev-d db down purge logs ps stats images prune shell migrate generate studio reset
 
+.DEFAULT_GOAL := all
+
 # ─── Colors ───────────────────────────────────────────────────────────────────
 CYAN  = \033[0;36m
 RESET = \033[0m
