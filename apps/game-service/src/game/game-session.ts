@@ -10,7 +10,7 @@ import type {
   SeekerPose,
   SeekerState
 } from "@whoshuman/shared-types";
-import { sampleHeight, type Bounds, type Heightmap, type Obstacle } from "./map";
+import { sampleHeight, type Bounds, type Heightmap, type MapPoint, type Obstacle } from "./map";
 
 // Sin modo "turning": girar parado se veía como si el personaje gravitase sobre sí
 // mismo. El NPC solo cambia de rumbo mientras camina, describiendo una curva.
@@ -31,6 +31,7 @@ export interface GameSessionConfig {
   bounds: Bounds; // área jugable: el jugador no sale de aquí
   turnSpeed: number; // radianes/seg (tope de giro)
   obstacles: Obstacle[]; // AABB bloqueantes en XZ
+  collectibleSpawns?: MapPoint[]; // cruces del mapa donde pueden aparecer células
   heightmap: Heightmap; // altura del suelo por celda
   // Pendiente máxima transitable (altura/distancia). En beta-city el terreno andable
   // llega a 0.12 y las paredes arrancan en 1.72, así que cualquier valor intermedio
@@ -192,11 +193,17 @@ const NPC_BRAKING = 2.8;
 const CHARACTER_SKIN_COUNT = 4;
 const COLLECTIBLE_SEPARATION = 0.4;
 
+interface PendingCollectible {
+  item: GameCollectibleState;
+  respawnAt: number;
+}
+
 export const GAME_RULES = {
   totalRounds: 3,
   roundSeconds: 90,
   intermissionSeconds: 5,
-  collectibleCount: 8,
+  collectibleCount: 7,
+  collectibleRespawnSeconds: 5,
   collectibleRadius: 0.24,
   hiderHitPoints: 100,
   npcHitPoints: -25,
@@ -210,7 +217,9 @@ export class GameSession {
   private readonly npcs: SessionNpc[] = [];
   private readonly crowd = new CrowdGrid();
   private readonly collectibles: GameCollectibleState[] = [];
+  private readonly pendingCollectibles: PendingCollectible[] = [];
   private readonly config: GameSessionConfig;
+  private elapsedSeconds = 0;
   private randomSeed: number;
   private seekerUserId: string;
   private roundNumber = 1;
@@ -264,6 +273,7 @@ export class GameSession {
 
     this.npcs.length = 0;
     this.collectibles.length = 0;
+    this.pendingCollectibles.length = 0;
     const n = Math.max(userIds.length, 1);
     const b = this.config.bounds;
     const cx = (b.minX + b.maxX) / 2;
@@ -323,6 +333,20 @@ export class GameSession {
   }
 
   private spawnCollectibles(): void {
+    if (this.config.collectibleSpawns?.length) {
+      for (const spawn of this.config.collectibleSpawns.slice(0, GAME_RULES.collectibleCount)) {
+        const height = sampleHeight(this.config.heightmap, spawn.x, spawn.z);
+        if (height === null) continue;
+        this.collectibles.push({
+          collectibleId: randomUUID(),
+          x: spawn.x,
+          y: height + 0.14,
+          z: spawn.z
+        });
+      }
+      return;
+    }
+
     for (let i = 0; i < GAME_RULES.collectibleCount; i += 1) {
       let spawn = this.randomWalkablePoint();
       for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -516,6 +540,7 @@ export class GameSession {
   /** Avanza dt segundos: gira con turn, avanza con forward hacia el heading. */
   tick(dtSeconds: number): void {
     if (this.roundPhase === "finished") return;
+    this.elapsedSeconds += dtSeconds;
     this.remainingSeconds = Math.max(0, this.remainingSeconds - dtSeconds);
     if (this.roundPhase === "intermission") {
       if (this.remainingSeconds === 0) this.startNextRound();
@@ -533,6 +558,7 @@ export class GameSession {
 
     for (const npc of this.npcs) this.tickNpc(npc, dtSeconds);
     this.collectNearbyItems();
+    this.respawnCollectibles();
     if (this.remainingSeconds === 0) this.endRound("time");
   }
 
@@ -544,9 +570,22 @@ export class GameSession {
         if (Math.hypot(player.x - item.x, player.z - item.z) > GAME_RULES.collectibleRadius) {
           continue;
         }
-        this.collectibles.splice(i, 1);
+        const [collected] = this.collectibles.splice(i, 1);
+        this.pendingCollectibles.push({
+          item: collected,
+          respawnAt: this.elapsedSeconds + GAME_RULES.collectibleRespawnSeconds
+        });
         player.score += GAME_RULES.collectiblePoints;
       }
+    }
+  }
+
+  private respawnCollectibles(): void {
+    for (let i = this.pendingCollectibles.length - 1; i >= 0; i -= 1) {
+      const pending = this.pendingCollectibles[i];
+      if (pending.respawnAt > this.elapsedSeconds) continue;
+      this.pendingCollectibles.splice(i, 1);
+      this.collectibles.push(pending.item);
     }
   }
 
@@ -607,10 +646,10 @@ export class GameSession {
 
     const moved =
       player.velocity !== 0 && this.moveForward(player, player.velocity * dtSeconds, player);
-    // El rumbo solo cambia si de verdad se ha avanzado: pivotar parado delataría al
-    // humano, porque nadie más en la multitud lo hace.
-    if (moved && player.turn !== 0) {
-      player.heading += player.turn * this.turnRate(player.speedScale) * dtSeconds;
+    // El giro debe responder también estando quieto: en móvil, desplazar el joystick
+    // horizontalmente produce turn sin forward y antes no hacía absolutamente nada.
+    if (player.turn !== 0) {
+      player.heading += player.turn * this.turnRate() * dtSeconds;
     }
     if (!moved) player.velocity = 0; // topar con algo para en seco, igual que un NPC
   }
@@ -781,8 +820,8 @@ export class GameSession {
 
   // Radio de giro constante: quien va más rápido describe una curva más abierta, igual
   // que en la realidad, en vez de girar todos igual de cerrado.
-  private turnRate(speedScale: number): number {
-    return Math.min(this.config.turnSpeed, this.cruiseSpeed(speedScale) / NPC_TURN_RADIUS);
+  private turnRate(): number {
+    return Math.min(this.config.turnSpeed, this.config.npcSpeed / NPC_TURN_RADIUS);
   }
 
   private npcCruiseSpeed(npc: SessionNpc): number {
@@ -790,7 +829,7 @@ export class GameSession {
   }
 
   private npcTurnRate(npc: SessionNpc): number {
-    return this.turnRate(npc.speedScale);
+    return Math.min(this.config.turnSpeed, this.npcCruiseSpeed(npc) / NPC_TURN_RADIUS);
   }
 
   private turnDuration(npc: SessionNpc, from: number, to: number): number {

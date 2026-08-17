@@ -53,7 +53,6 @@ const SPRINT_FRAME_COUNT = 8;
 const SPRINT_CYCLE_DISTANCE = 0.384;
 // Girar sin desplazarse (un NPC desencajándose de otro) también mueve los pies:
 // el giro se convierte en distancia equivalente con este radio.
-const TURN_STEP_RADIUS = 0.12;
 // El clip idle dura 2.03s en los cuatro modelos: 12 fotogramas a 6 fps lo dejan en
 // un bucle de 2s, prácticamente su velocidad original.
 const IDLE_FRAME_COUNT = 12;
@@ -63,7 +62,6 @@ const IDLE_FPS = 6;
 // hay ruido del que protegerse. Con el umbral anterior (1e-6) un NPC rozando una
 // pared al 10% de velocidad se clasificaba como quieto y se deslizaba en pose idle.
 const MOVEMENT_EPSILON_SQ = 1e-8;
-const ROTATION_EPSILON = 0.0005;
 // Tope de ciclos por segundo del clip de andar. El jugador va a 3 u/s (8× los NPC) y
 // pediría 7.8 ciclos/s: un borrón con solo 8 fotogramas horneados. Se le deja en 2,
 // poco más del doble de la cadencia de autor, que se lee como correr sin parecer que
@@ -73,7 +71,6 @@ const SPRINT_MAX_CYCLES_PER_SECOND = 2;
 interface Motion {
   x: number;
   z: number;
-  rotationY: number;
   phase: number; // 0..1 dentro del ciclo de caminar, propio de cada entidad
   idleOffset: number; // desfase fijo del idle, para que no respiren todos a la vez
   moving: boolean;
@@ -82,9 +79,6 @@ interface Motion {
 // Acumula el recorrido de una entidad y avanza su fase de caminar en proporción a
 // él. Cada una lleva la suya, así que dos personajes a distinta velocidad pisan a
 // distinto ritmo y el que se queda bloqueado deja de mover los pies.
-// Girar cuenta como recorrido aunque no haya desplazamiento: es lo que hace un NPC
-// al desencajarse de otro, y así se le ve dar pasos para encararse en vez de
-// deslizarse rígido en la pose de idle.
 function advanceMotion(
   motions: Map<string, Motion>,
   entity: GameEntityState,
@@ -95,7 +89,6 @@ function advanceMotion(
     const first: Motion = {
       x: entity.x,
       z: entity.z,
-      rotationY: entity.rotationY,
       // Fase inicial dispersa: si todos arrancasen en 0, la multitud entera pisaría
       // al unísono como un desfile.
       phase: Math.random(),
@@ -107,16 +100,12 @@ function advanceMotion(
   }
 
   const distanceSq = (entity.x - previous.x) ** 2 + (entity.z - previous.z) ** 2;
-  // por el arco corto: el heading del servidor no está normalizado
-  const spin = entity.rotationY - previous.rotationY;
-  const turn = Math.abs(Math.atan2(Math.sin(spin), Math.cos(spin)));
 
   previous.x = entity.x;
   previous.z = entity.z;
-  previous.rotationY = entity.rotationY;
-  previous.moving = distanceSq > MOVEMENT_EPSILON_SQ || turn > ROTATION_EPSILON;
+  previous.moving = distanceSq > MOVEMENT_EPSILON_SQ;
   if (previous.moving) {
-    const travelled = Math.sqrt(distanceSq) + turn * TURN_STEP_RADIUS;
+    const travelled = Math.sqrt(distanceSq);
     const step = Math.min(travelled / SPRINT_CYCLE_DISTANCE, SPRINT_MAX_CYCLES_PER_SECOND * delta);
     previous.phase = (previous.phase + step) % 1;
   }
@@ -214,6 +203,8 @@ const CELL_MODEL_URL = "/models/energy-cell.glb";
 // El modelo mide 0.12 de alto; x1.7 lo deja en ~0.2, el mismo bulto que tenía el
 // octaedro que hacía de marcador y algo más de medio personaje.
 const CELL_SCALE = 1.7;
+const COLLECTIBLE_BEAM_HEIGHT = 4.8;
+const COLLECTIBLE_BEAM_RADIUS = 0.055;
 const CHASER_MODEL_URL = "/models/chaser.glb";
 // El modelo mide 1 unidad de largo; el mapa entero mide ~5, así que a 1:1 sería
 // gigante. 0.55 lo deja en algo menos de dos veces la altura de un personaje.
@@ -308,7 +299,7 @@ function Collectibles() {
   const collectibles = useGameStore((state) => state.collectibles);
   const group = useRef<THREE.Group>(null);
   const { scene } = useGLTF(CELL_MODEL_URL);
-  // Una sola geometría y un solo material para las 8 células: el GLB se carga una vez
+  // Una sola geometría y un solo material para las células: el GLB se carga una vez
   // y cada célula es un mesh que los reutiliza.
   const { geometry, material } = useMemo(() => {
     scene.updateMatrixWorld(true);
@@ -328,26 +319,60 @@ function Collectibles() {
     cellGeometry.computeBoundingSphere();
     return { geometry: cellGeometry, material: mesh.material as THREE.Material };
   }, [scene]);
+  const beamGeometry = useMemo(
+    () =>
+      new THREE.CylinderGeometry(
+        COLLECTIBLE_BEAM_RADIUS,
+        COLLECTIBLE_BEAM_RADIUS,
+        COLLECTIBLE_BEAM_HEIGHT,
+        12
+      ),
+    []
+  );
+  const beamMaterial = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: getCssColor("--color-neon-cyan"),
+        transparent: true,
+        opacity: 0.24,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false
+      }),
+    []
+  );
 
   useFrame((_, delta) => {
-    for (const item of group.current?.children ?? []) {
-      item.rotation.y += delta * 1.4;
-      item.rotation.x += delta * 0.7;
+    for (const marker of group.current?.children ?? []) {
+      const cell = marker.children[0];
+      if (!cell) continue;
+      cell.rotation.y += delta * 1.4;
+      cell.rotation.x += delta * 0.7;
     }
   });
 
-  // El material lo gestiona la caché de useGLTF; aquí solo es nuestra la geometría.
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  // El material de la célula lo gestiona useGLTF; el haz sí pertenece a este componente.
+  useEffect(
+    () => () => {
+      geometry.dispose();
+      beamGeometry.dispose();
+      beamMaterial.dispose();
+    },
+    [beamGeometry, beamMaterial, geometry]
+  );
 
   return (
     <group ref={group}>
       {collectibles.map((item) => (
-        <mesh
-          key={item.collectibleId}
-          geometry={geometry}
-          material={material}
-          position={[item.x, item.y, item.z]}
-        />
+        <group key={item.collectibleId} position={[item.x, 0, item.z]}>
+          <mesh geometry={geometry} material={material} position={[0, item.y, 0]} />
+          <mesh
+            geometry={beamGeometry}
+            material={beamMaterial}
+            position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
+            renderOrder={2}
+          />
+        </group>
       ))}
     </group>
   );
@@ -394,6 +419,7 @@ function Units() {
   const aimOffset = useMemo(() => new THREE.Vector3(), []);
   const cameraDestination = useMemo(() => new THREE.Vector3(), []);
   const cameraTarget = useMemo(() => new THREE.Vector3(), []);
+  const selfMorphs = useRef<{ value: number }[]>([]);
   const characterAssets = useMemo(
     () =>
       characterModels.map(({ scene: characterScene, animations }) => {
@@ -487,6 +513,12 @@ function Units() {
       }),
     [characterModels, gl]
   );
+  useEffect(() => {
+    selfMorphs.current = characterAssets.map((asset) => asset.selfMorph);
+    return () => {
+      selfMorphs.current = [];
+    };
+  }, [characterAssets]);
   useEffect(
     () => () => {
       for (const asset of characterAssets) {
@@ -526,18 +558,19 @@ function Units() {
         const asset = characterAssets[self.skinId];
         const motion = advanceMotion(motions.current, self, delta);
         if (selfMeshRef.current && asset) {
+          selfMeshRef.current.material = asset.selfMaterial;
+          const selfMorph = selfMorphs.current[self.skinId];
           if (motion.moving) {
             const exact = motion.phase * SPRINT_FRAME_COUNT;
             const frame = Math.min(SPRINT_FRAME_COUNT - 1, Math.floor(exact));
             selfMeshRef.current.geometry = asset.sprintGeometries[frame];
-            asset.selfMorph.value = exact - frame;
+            if (selfMorph) selfMorph.value = exact - frame;
           } else {
             const exact = ((idleCycles + motion.idleOffset) % 1) * IDLE_FRAME_COUNT;
             const frame = Math.min(IDLE_FRAME_COUNT - 1, Math.floor(exact));
             selfMeshRef.current.geometry = asset.idleGeometries[frame];
-            asset.selfMorph.value = exact - frame;
+            if (selfMorph) selfMorph.value = exact - frame;
           }
-          selfMeshRef.current.material = asset.selfMaterial;
         }
         selfRef.current.position.set(self.x, self.y, self.z);
         selfRef.current.rotation.y = self.rotationY;
@@ -777,7 +810,7 @@ function ChaserShip() {
   const aimPoint = useMemo(() => new THREE.Vector3(), []);
 
   // El uniform del aleteo, compartido con el shader y actualizado en cada frame.
-  const flap = useMemo(() => ({ value: 0 }), []);
+  const flap = useRef({ value: 0 });
 
   // useGLTF cachea la escena, así que el material se clona antes de tocarlo: si no,
   // el shader quedaría pegado al modelo para cualquier otro que lo cargue. Se guarda
@@ -794,7 +827,7 @@ function ChaserShip() {
       // confundirse con el del material sin parchear.
       clone.customProgramCacheKey = () => "chaser-flap";
       clone.onBeforeCompile = (shader) => {
-        shader.uniforms.uFlap = flap;
+        shader.uniforms.uFlap = flap.current;
         shader.vertexShader = shader.vertexShader
           .replace("#include <common>", `#include <common>\n${CHASER_FLAP_GLSL}`)
           .replace(
@@ -810,7 +843,7 @@ function ChaserShip() {
       entries.push({ mesh, original, clone });
     });
     return entries;
-  }, [scene, flap]);
+  }, [scene]);
   useEffect(
     () => () => {
       for (const { mesh, original, clone } of patched) {
@@ -832,7 +865,7 @@ function ChaserShip() {
   useFrame(({ camera, clock }) => {
     const ship = ref.current;
     if (!ship) return;
-    flap.value = Math.sin(clock.elapsedTime * CHASER_FLAP_SPEED) * CHASER_FLAP_ANGLE;
+    flap.current.value = Math.sin(clock.elapsedTime * CHASER_FLAP_SPEED) * CHASER_FLAP_ANGLE;
 
     // Para el resto de jugadores la nave es una entidad más del mundo: su pose llega
     // por la red, porque quien la mueve es la cámara del cazador.
