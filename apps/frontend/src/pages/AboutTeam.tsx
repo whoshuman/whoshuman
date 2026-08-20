@@ -155,6 +155,11 @@ function TeamCard({
       tabIndex={0}
       onClick={onSelect}
       onKeyDown={(event) => {
+        // Sin esto, mantener pulsado Enter o Espacio repite la seleccion en cada tecla
+        // repetida. Hoy no se nota porque onSelect solo fija el carril del coche y React
+        // descarta el re-render al ser el mismo valor, pero deja de ser inocuo en cuanto
+        // ese handler haga algo mas (un sonido, telemetria...).
+        if (event.repeat) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           onSelect();

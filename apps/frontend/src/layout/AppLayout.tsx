@@ -75,15 +75,6 @@ const PUBLIC_NAV_LINKS = [
   { to: "/register", key: "register", exact: false }
 ] as const;
 
-const LOBBY_FOOTER_LINKS = [
-  { to: "/about", key: "about" },
-  { to: "/manual", key: "manual" },
-  { to: "/faq", key: "faq" },
-  { to: "/support", key: "support" },
-  { to: "/privacy", key: "privacy" },
-  { to: "/terms", key: "terms" }
-] as const;
-
 const navChipBase =
   "relative shrink-0 border px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider transition";
 const navChipInactive =
@@ -239,21 +230,6 @@ function AppLayout() {
 
         {showFooter && (
           <footer className="flex flex-col items-center gap-2 border-t border-neon-cyan/15 bg-bg/60 px-6 py-3 text-center backdrop-blur-sm">
-            {pathname === "/friends" && (
-              <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-                {LOBBY_FOOTER_LINKS.map((link, index) => (
-                  <span key={link.key} className="flex items-center gap-3">
-                    {index > 0 && <span className="text-neon-cyan/25">/</span>}
-                    <Link
-                      to={link.to}
-                      className="font-display text-[0.65rem] font-bold uppercase tracking-[0.2em] text-text-muted/60 transition hover:text-neon-cyan hover:[text-shadow:0_0_10px_rgb(36_245_255_/_0.6)]"
-                    >
-                      {t(`home.menu.${link.key}`)}
-                    </Link>
-                  </span>
-                ))}
-              </nav>
-            )}
             <Link
               to="/status"
               className="font-display text-[0.65rem] font-bold uppercase tracking-[0.3em] text-text-muted/50 transition hover:text-neon-cyan"

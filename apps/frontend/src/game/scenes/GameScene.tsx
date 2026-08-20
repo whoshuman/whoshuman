@@ -264,6 +264,12 @@ const LASER_MAX_LENGTH = Math.max(MAP_W, MAP_D) * 2;
 // Una pieza del mapa. Clone y no primitive: hay modelos repetidos (farolas, arboles) y
 // primitive moveria siempre el mismo objeto; Clone comparte geometria y material y solo
 // duplica los nodos, que es lo barato.
+// Escenas cuyo material ya se ha pasado a mate. Va en un WeakSet de modulo y no en
+// scene.userData porque escribir dentro del objeto que devuelve useGLTF es mutar un valor
+// de React durante el render, y el linter lo rechaza con razon. El WeakSet no retiene nada:
+// si la escena se descarta de la cache, la entrada se va con ella.
+const matteScenes = new WeakSet<THREE.Object3D>();
+
 // Los GLB del mapa se piden nada mas cargar este modulo (que solo entra en la ruta de
 // juego), para que la manzana este lista cuando arranca la partida.
 MAP_MODEL_URLS.forEach((url) => useGLTF.preload(url));
@@ -274,7 +280,14 @@ function MapPieceModel({ piece }: { piece: (typeof mapPieces)[number] }) {
   // Los GLB salen de una IA: la malla tiene normales sucias y, con algo de metalness o
   // roughness baja, cada facetado devuelve un reflejo desparejo que canta muchisimo. Se
   // pasan a mate puro, que perdona esos defectos, y se conserva la textura de color.
+  //
+  // useGLTF cachea la escena por URL y hay modelos repetidos (farolas, arboles), asi que sin
+  // el registro se recorreria la MISMA escena una vez por instancia. Se apunta por escena y
+  // no por componente justamente por eso: lo que se normaliza es el objeto compartido.
   useMemo(() => {
+    if (matteScenes.has(scene)) return;
+    matteScenes.add(scene);
+
     scene.traverse((object) => {
       const material = (object as THREE.Mesh).material;
       for (const entry of Array.isArray(material) ? material : [material]) {
