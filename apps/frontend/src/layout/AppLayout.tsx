@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LogOut, UsersRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import SceneBackground from "../features/home-3d/SceneBackground";
 import { connectSocket, disconnectSocket } from "../game/network/socket";
 import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
@@ -17,6 +16,15 @@ import { initPresence } from "../shared/presence";
 import { usePresenceStore } from "../shared/presenceStore";
 import SettingsMenu from "../shared/SettingsMenu";
 import { AUTH_UNAUTHORIZED_EVENT } from "../shared/api/httpClient";
+
+// El fondo 3D va en un chunk aparte: arrastra three.js, el postprocesado y los GLB de la
+// plaza. AppLayout envuelve TODAS las rutas, asi que importarlo aqui de forma estatica metia
+// el motor 3D (y el preload de los modelos) en el bundle inicial hasta en /privacy o /terms,
+// que ni siquiera pintan fondo. Con lazy() solo se descarga en las rutas que lo muestran.
+// Escena 3D unica de la app: se monta aqui, fuera del Outlet, para que NO se desmonte al
+// cambiar de ruta. Antes la home y el resto de pantallas tenian cada una su canvas y el
+// cambio destruia el contexto WebGL: de ahi el parpadeo negro al entrar al lobby.
+const WorldScene = lazy(() => import("../features/home-3d/WorldScene"));
 
 // Rutas que muestran el fondo 3D unificado. La home tiene su propia escena (con zoom)
 // y el juego tendra su escena de mapa, asi que ninguna de las dos lo usa.
@@ -55,6 +63,11 @@ const KNOWN_ROUTES = new Set([
   "/design-system"
 ]);
 const PROTECTED_ROUTES = new Set(["/lobby", "/game", "/profile", "/friends"]);
+// Pantallas sin barra superior: el juego y la home son inmersivas y llevan su propio HUD de
+// esquinas; el lobby tiene sus accesos pegados a la ficha de jugador; y el perfil es una
+// pantalla diegetica (montada en la fachada de un edificio) que ya trae su propio boton de
+// volver al lobby, igual que contactos.
+const HUDLESS_ROUTES = new Set(["/", "/game", "/lobby", "/profile", "/friends"]);
 
 const PUBLIC_NAV_LINKS = [
   { to: "/", key: "home", exact: true },
@@ -132,10 +145,10 @@ function AppLayout() {
 
   // El 404 (defaultNotFoundComponent) no es una ruta del arbol: se detecta por descarte.
   const isNotFound = !KNOWN_ROUTES.has(pathname);
-  const showBackground = ROUTES_WITH_BACKGROUND.has(pathname) || isNotFound;
-  // El juego y la home son pantallas inmersivas con su propio HUD de esquinas,
-  // asi que la barra superior no se monta en ellas.
-  const showHud = pathname !== "/game" && pathname !== "/";
+  const isHome = pathname === "/";
+  // La home tambien usa la escena: es la misma, solo cambia la pose de camara.
+  const showBackground = ROUTES_WITH_BACKGROUND.has(pathname) || isNotFound || isHome;
+  const showHud = !HUDLESS_ROUTES.has(pathname);
   const showFooter = showHud && pathname !== "/about" && pathname !== "/manual";
 
   async function handleLogout() {
@@ -146,7 +159,11 @@ function AppLayout() {
 
   return (
     <div>
-      {showBackground && <SceneBackground />}
+      {showBackground && (
+        <Suspense fallback={null}>
+          <WorldScene />
+        </Suspense>
+      )}
       <NotificationToasts />
       {isAuthenticated && <DirectChatDialog />}
 
@@ -163,7 +180,7 @@ function AppLayout() {
 
       <div className="relative z-10 flex min-h-screen flex-col">
         {showHud && (
-          <header className="animate-hud-in sticky top-0 z-50 flex h-16 items-center justify-between gap-2 border-b border-neon-cyan/30 bg-bg/75 px-3 backdrop-blur-md sm:gap-4 sm:px-6">
+          <header className="animate-hud-in sticky top-0 z-50 flex h-16 items-center justify-between gap-2 border-b border-neon-cyan/30 bg-bg/40 px-3 backdrop-blur-md sm:gap-4 sm:px-6">
             {/* Linea de escaneo tipo radar que cruza la barra. */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px">
               <div
@@ -171,19 +188,6 @@ function AppLayout() {
                 style={{ animation: "hud-scan 7s linear infinite" }}
               />
             </div>
-
-            {/* Logo / marca a la izquierda. El texto se oculta en movil para dejar sitio. */}
-            <Link
-              to={isAuthenticated ? "/lobby" : "/"}
-              className="group flex shrink-0 items-center gap-2"
-            >
-              <span className="text-lg leading-none text-neon-magenta [text-shadow:0_0_12px_rgb(255_43_214_/_0.7)]">
-                ◢
-              </span>
-              <span className="font-display hidden text-sm font-black uppercase tracking-[0.22em] text-text-main transition group-hover:[text-shadow:0_0_14px_rgb(36_245_255_/_0.6)] sm:inline">
-                WHO<span className="text-neon-cyan">/</span>HUMAN
-              </span>
-            </Link>
 
             {/* Navegacion central estilo HUD. Scroll horizontal si no caben en movil. */}
             <nav className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -235,7 +239,7 @@ function AppLayout() {
 
         {showFooter && (
           <footer className="flex flex-col items-center gap-2 border-t border-neon-cyan/15 bg-bg/60 px-6 py-3 text-center backdrop-blur-sm">
-            {(pathname === "/lobby" || pathname === "/friends") && (
+            {pathname === "/friends" && (
               <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
                 {LOBBY_FOOTER_LINKS.map((link, index) => (
                   <span key={link.key} className="flex items-center gap-3">
