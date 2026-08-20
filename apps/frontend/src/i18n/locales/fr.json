@@ -18,13 +18,14 @@
     "confirmationRequired": "CONFIRMATION REQUISE",
     "cancel": "ANNULER",
     "logoutTitle": "SE DÉCONNECTER ?",
-    "logoutMessage": "Ta session sera fermée sur cet appareil. Tu devras te reconnecter pour revenir."
+    "logoutMessage": "Ta session sera fermée sur cet appareil. Tu devras te reconnecter pour revenir.",
+    "enterFullscreen": "PLEIN ÉCRAN",
+    "exitFullscreen": "QUITTER LE PLEIN ÉCRAN"
   },
   "settings": {
     "title": "PARAMÈTRES",
     "language": "LANGUE",
     "languageSaveError": "La langue n'a pas pu être enregistrée.",
-    "dev": "OUTILS DEV",
     "audio": "AUDIO",
     "music": "MUSIQUE"
   },
@@ -102,8 +103,7 @@
   "lobby": {
     "eyebrow": "TERMINAL D'OPÉRATIONS",
     "deployTitle": "ZONE DE DÉPLOIEMENT",
-    "deploySubtitle": "Déploie-toi dans la file générale ou partage une salle avec ton escouade.",
-    "statusActive": "SYSTÈME ACTIF",
+    "statsWinRate": "VICTOIRES",
     "autoDeployTitle": "DÉPLOIEMENT AUTOMATIQUE",
     "autoDeployText": "Le système t'attribuera une opération et un rôle automatiquement.",
     "units": "unités",
@@ -287,7 +287,11 @@
     "title": "L'ÉQUIPE",
     "subtitle": "Unités derrière le système Chasseur.",
     "storyTitle": "ORIGINE DU PROJET",
-    "story": "Who's Human est né à 42 comme projet final ft_transcendence. Cinq unités ont uni leurs forces pour construire un jeu multijoueur en temps réel inspiré de Just Act Natural : des cyborgs cachés parmi les humains pendant qu'un Chasseur tente de les démasquer. Ce qui a commencé comme un défi académique —microservices, WebSockets et 3D dans le navigateur— est devenu un monde cyberpunk à part entière."
+    "story": "Who's Human est né à 42 comme projet final ft_transcendence. Cinq unités ont uni leurs forces pour construire un jeu multijoueur en temps réel inspiré de Just Act Natural : des cyborgs cachés parmi les humains pendant qu'un Chasseur tente de les démasquer. Ce qui a commencé comme un défi académique —microservices, WebSockets et 3D dans le navigateur— est devenu un monde cyberpunk à part entière.",
+    "scrollHint": "Découvre l'équipe",
+    "nextMember": "Voir le membre suivant",
+    "prevMember": "Voir le membre précédent",
+    "memberCounter": "Membre {{current}} sur {{total}} : {{name}}"
   },
   "manual": {
     "eyebrow": "PROTOCOLE DE TERRAIN",

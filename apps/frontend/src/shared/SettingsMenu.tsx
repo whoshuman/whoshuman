@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -91,21 +90,6 @@ function SettingsMenu({ align = "left" }: SettingsMenuProps) {
                 <span>{t("settings.music")}</span>
                 <span>{musicEnabled ? "ON" : "OFF"}</span>
               </button>
-            </div>
-
-            {/* Seccion herramientas de desarrollo. */}
-            <div className="mt-5 border-t border-neon-cyan/15 pt-4">
-              <p className="font-display mb-2 text-[0.6rem] font-bold uppercase tracking-[0.3em] text-text-muted/60">
-                {t("settings.dev")}
-              </p>
-              <Link
-                to="/design-system"
-                onClick={() => setOpen(false)}
-                className="block border border-neon-violet/50 bg-neon-violet/10 px-3 py-2 text-center font-display text-xs font-bold uppercase tracking-wider text-neon-violet transition hover:bg-neon-violet/20"
-              >
-                <span className="mr-1 opacity-60">[DEV]</span>
-                {t("nav.designSystem")}
-              </Link>
             </div>
           </div>
         </>

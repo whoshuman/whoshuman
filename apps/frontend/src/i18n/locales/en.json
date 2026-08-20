@@ -18,13 +18,14 @@
     "confirmationRequired": "CONFIRMATION REQUIRED",
     "cancel": "CANCEL",
     "logoutTitle": "LOG OUT?",
-    "logoutMessage": "You will be signed out on this device. You will need to log in again to get back in."
+    "logoutMessage": "You will be signed out on this device. You will need to log in again to get back in.",
+    "enterFullscreen": "FULLSCREEN",
+    "exitFullscreen": "EXIT FULLSCREEN"
   },
   "settings": {
     "title": "SETTINGS",
     "language": "LANGUAGE",
     "languageSaveError": "The language could not be saved.",
-    "dev": "DEV TOOLS",
     "audio": "AUDIO",
     "music": "MUSIC"
   },
@@ -102,8 +103,7 @@
   "lobby": {
     "eyebrow": "OPERATIONS TERMINAL",
     "deployTitle": "DEPLOYMENT ZONE",
-    "deploySubtitle": "Deploy into the general queue or share a room with your squad.",
-    "statusActive": "SYSTEM ACTIVE",
+    "statsWinRate": "WIN RATE",
     "autoDeployTitle": "AUTOMATIC DEPLOYMENT",
     "autoDeployText": "The system will assign you an operation and a role automatically.",
     "units": "units",
@@ -287,7 +287,11 @@
     "title": "THE TEAM",
     "subtitle": "Units behind the Hunter system.",
     "storyTitle": "PROJECT ORIGIN",
-    "story": "Who's Human was born at 42 as the final ft_transcendence project. Five units joined forces to build a real-time multiplayer game inspired by Just Act Natural: cyborgs hiding among humans while a Hunter tries to expose them. What started as an academic challenge —microservices, WebSockets and in-browser 3D— turned into a cyberpunk world of its own."
+    "story": "Who's Human was born at 42 as the final ft_transcendence project. Five units joined forces to build a real-time multiplayer game inspired by Just Act Natural: cyborgs hiding among humans while a Hunter tries to expose them. What started as an academic challenge —microservices, WebSockets and in-browser 3D— turned into a cyberpunk world of its own.",
+    "scrollHint": "Meet the team",
+    "nextMember": "See next member",
+    "prevMember": "See previous member",
+    "memberCounter": "Member {{current}} of {{total}}: {{name}}"
   },
   "manual": {
     "eyebrow": "FIELD PROTOCOL",
