@@ -1,27 +1,30 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
-import skyHome3d from "../assets/sky-home-3d.png";
-import HomeScene from "../features/home-3d/HomeScene";
 import ConfirmDialog from "../shared/ConfirmDialog";
+import FullscreenButton from "../shared/FullscreenButton";
+import { useSceneIntent } from "../features/home-3d/sceneIntentStore";
 import SettingsMenu from "../shared/SettingsMenu";
 import NotificationCenter from "../shared/NotificationCenter";
 import ManualPanel from "../shared/ManualPanel";
-import Login from "./Login";
-import Register from "./Register";
-import Lobby from "./Lobby";
-import ProfileEdit from "./ProfileEdit";
-import AboutTeam from "./AboutTeam";
 import { useMusic } from "../shared/musicStore";
 import { useAuthStore } from "../shared/authStore";
+
+// Overlays: solo se montan tras un click del usuario, asi que no tienen por que viajar en el
+// bundle inicial. Lobby ademas arrastra medio lobby y sus paneles.
+const Login = lazy(() => import("./Login"));
+const Register = lazy(() => import("./Register"));
+const Lobby = lazy(() => import("./Lobby"));
+const ProfileEdit = lazy(() => import("./ProfileEdit"));
+const AboutTeam = lazy(() => import("./AboutTeam"));
 
 // Vistas que se montan como overlay sobre la home sin cambiar de ruta.
 type HomeView = "home" | "login" | "register" | "lobby";
 
-// Funcionalidad futura: duración del acceso al lobby como invitado.
-// const ZOOM_TO_LOBBY_MS = 1100;
+// Duracion del viaje de camara hacia la ciudad antes de entrar al lobby.
+const ZOOM_TO_LOBBY_MS = 1100;
 
 // El logo combina el encendido de neon (una vez) con una respiracion del glow en bucle.
 const titleWhoStyle: CSSProperties = {
@@ -33,6 +36,12 @@ const titleHumanStyle: CSSProperties = {
   textShadow: "0 0 18px rgb(36 245 255 / 0.65), 0 0 46px rgb(36 245 255 / 0.4)",
   animation: "flicker-in 1.8s ease-out 0.25s both, neon-breathe-cyan 4s ease-in-out 2.05s infinite"
 };
+
+// Carriles "ideales" del coche bajo cada tarjeta del equipo (alineados a la rejilla de la
+// carretera). El del medio (indice 2) coincide con el reposo por defecto del coche (x=0).
+// HomeDeLorean recorta estos valores al ancho realmente visible por la camara en cada
+// dispositivo, asi que aqui no hace falta encogerlos a mano para que quepan en movil.
+const TEAM_LANE_X = [-24, -12, 0, 12, 24];
 
 // Enlaces secundarios de la esquina inferior izquierda (info / soporte).
 const footerLinks = [
@@ -51,6 +60,8 @@ const FOOTER_LINK_CLASS =
 function Home() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const setIntent = useSceneIntent((state) => state.setIntent);
+  const resetIntent = useSceneIntent((state) => state.resetIntent);
   // La home actua de shell: las vistas de acceso y despliegue se abren aqui mismo.
   const [view, setView] = useState<HomeView>("home");
   const [isZoomed, setIsZoomed] = useState(false);
@@ -68,12 +79,25 @@ function Home() {
   const [teamReady, setTeamReady] = useState(false);
   // Carril del coche: se desliza bajo la tarjeta del equipo seleccionada.
   const [carX, setCarX] = useState(0);
-  // Funcionalidad futura: música iniciada al desplegarse como invitado.
-  // const startMusic = useMusic((state) => state.start);
+  const startMusic = useMusic((state) => state.start);
   const stopMusic = useMusic((state) => state.stop);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const currentUser = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  // Viaje de camara en curso hacia el lobby: hay que poder cancelarlo si la home se
+  // desmonta antes de que termine (p. ej. el usuario navega a otra pagina).
+  const enterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // En la home nunca suena la musica: si se vuelve desde el lobby, se apaga con un
+  // fade-out hasta el silencio y queda rebobinada para la proxima entrada.
+  useEffect(() => {
+    stopMusic();
+  }, [stopMusic]);
+
+  useEffect(() => {
+    return () => {
+      if (enterTimer.current) clearTimeout(enterTimer.current);
+    };
+  }, []);
 
   // Secuencia de "sobre el proyecto": giro de 180 -> picado al coche (1700ms) -> tarjetas
   // (2900ms, cuando la camara ya se asento). Los reset se hacen al cerrar, no en el effect.
@@ -87,7 +111,11 @@ function Home() {
     };
   }, [aboutOpen]);
 
-  if (isAuthenticated) return <Navigate to="/lobby" replace />;
+  // El coche se desliza (con retardo propio, ver HomeDeLorean) al carril bajo la tarjeta
+  // del equipo seleccionada o enfocada en el carrusel movil.
+  function handleTeamSelect(index: number) {
+    setCarX(TEAM_LANE_X[index] ?? 0);
+  }
 
   function closeAbout() {
     setAboutOpen(false);
@@ -105,17 +133,41 @@ function Home() {
     closeAbout();
   }
 
-  // Funcionalidad futura: permitir entrar al lobby sin una cuenta autenticada.
-  /*
-  function handlePlay() {
+  // Entrada al lobby: la camara se lanza hacia la ciudad con la musica ya sonando y, al
+  // terminar el viaje, se cambia de pantalla. Se usa al pulsar JUGAR y al completarse el
+  // acceso o el registro (ambos ocurren en overlays sobre esta misma escena).
+  function enterLobby() {
     if (isZoomed) return;
-    // El clic es un gesto de usuario valido para arrancar el audio (autoplay permitido).
+    // Se llega aqui siempre desde un clic, gesto valido para que el navegador permita el
+    // autoplay del audio.
     startMusic();
-    // Zoom de camara hacia la ciudad y, al terminar, abre la zona de despliegue.
     setIsZoomed(true);
-    setTimeout(() => setView("lobby"), ZOOM_TO_LOBBY_MS);
+    enterTimer.current = setTimeout(() => {
+      void navigate({ to: "/lobby" });
+    }, ZOOM_TO_LOBBY_MS);
   }
-  */
+
+  // Tras identificarse o registrarse, se cierra el overlay para que se vea el viaje de
+  // camara antes de entrar.
+  function handleAuthSuccess() {
+    setView("home");
+    enterLobby();
+  }
+
+  // La camara es de WorldScene (vive en AppLayout): la home solo publica que quiere que
+  // haga. Al desmontarse, la escena vuelve a reposo.
+  useEffect(() => {
+    setIntent({
+      isZoomed,
+      lookRight: profileOpen,
+      lookBack: aboutOpen,
+      carFocus,
+      carX,
+      showRoad: aboutOpen
+    });
+  }, [aboutOpen, carFocus, carX, isZoomed, profileOpen, setIntent]);
+
+  useEffect(() => resetIntent, [resetIntent]);
 
   // La interfaz de la landing se desvanece cuando hay zoom, vuelta al equipo o vista abierta.
   const dimmed = isZoomed || aboutOpen || view !== "home";
@@ -124,30 +176,14 @@ function Home() {
   const overlayFade = dimmed ? "pointer-events-none invisible opacity-0" : "opacity-100";
 
   return (
-    <main className="relative h-screen overflow-hidden bg-bg">
-      {/* Cielo 2D: se separa del canvas para evitar cargar una textura 3D innecesaria. */}
-      <img
-        src={skyHome3d}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover object-top opacity-80"
-      />
-      {/* Oscurece el cielo y ayuda a integrar el fondo con el grid y la ciudad. */}
-      <div className="absolute inset-0 bg-linear-to-b from-bg/20 via-bg/35 to-bg/80" />
-
-      <HomeScene
-        isZoomed={isZoomed}
-        lookRight={profileOpen}
-        lookBack={aboutOpen}
-        carFocus={carFocus}
-        carX={carX}
-        showRoad={aboutOpen}
-      />
-
-      {/* Esquina superior derecha: avisos y ajustes de cuenta. */}
+    // Sin fondo propio (antes tenia bg-bg y el cielo dentro): de eso se encarga WorldScene
+    // desde AppLayout, que sobrevive al cambio de ruta. Aqui cualquier fondo la taparia.
+    <main className="relative h-screen overflow-hidden">
+      {/* Esquina superior derecha: pantalla completa, avisos y ajustes de cuenta. */}
       <div
         className={`animate-hud-in absolute right-4 top-4 z-20 flex items-start gap-3 transition duration-700 sm:right-8 sm:top-8 ${overlayFade}`}
       >
+        <FullscreenButton />
         {isAuthenticated && <NotificationCenter />}
         <SettingsMenu align="right" />
       </div>
@@ -175,15 +211,21 @@ function Home() {
         <div className="pointer-events-auto mt-8 flex flex-col items-center gap-4 sm:mt-12">
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
             {isAuthenticated ? (
+              // Con sesion iniciada la home ya no es el acceso: el paso natural es jugar.
               <>
-                <span className="font-display text-sm font-bold uppercase tracking-widest text-neon-cyan [text-shadow:0_0_10px_rgb(36_245_255_/_0.5)]">
-                  {currentUser?.username}
-                </span>
+                <button
+                  type="button"
+                  onClick={enterLobby}
+                  data-sfx="access"
+                  className="border-2 border-neon-magenta bg-neon-magenta/15 px-7 py-3 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)] sm:px-9 sm:py-3.5"
+                >
+                  {t("home.play")}
+                </button>
                 <button
                   type="button"
                   onClick={() => setLogoutOpen(true)}
                   data-sfx="silent"
-                  className="border-2 border-neon-magenta bg-neon-magenta/15 px-7 py-3 font-display text-sm font-black uppercase tracking-widest text-text-main shadow-[0_0_18px_rgb(255_43_214_/_0.35)] transition hover:bg-neon-magenta/25 hover:shadow-[0_0_30px_rgb(255_43_214_/_0.55)] sm:px-9 sm:py-3.5"
+                  className="border border-neon-cyan/60 bg-bg/40 px-7 py-3 font-display text-sm font-bold uppercase tracking-widest text-neon-cyan transition hover:bg-neon-cyan/15 hover:shadow-[0_0_24px_rgb(36_245_255_/_0.4)] sm:px-9 sm:py-3.5"
                 >
                   {t("home.menu.logout")}
                 </button>
@@ -258,39 +300,43 @@ function Home() {
       </nav>
 
       {/* Overlays integrados: se abren sobre la home con fundido + despliegue del panel. */}
-      {view === "login" && (
-        <div className="animate-fade-in fixed inset-0 z-30 overflow-y-auto bg-bg/70 backdrop-blur-sm">
-          <Login
-            embedded
-            onClose={closeView}
-            onSwitch={() => setView("register")}
-            onSuccess={() => void navigate({ to: "/lobby", replace: true })}
-          />
-        </div>
-      )}
-      {view === "register" && (
-        <div className="animate-fade-in fixed inset-0 z-30 overflow-y-auto bg-bg/70 backdrop-blur-sm">
-          <Register
-            embedded
-            onClose={closeView}
-            onSwitch={() => setView("login")}
-            onSuccess={() => void navigate({ to: "/lobby", replace: true })}
-          />
-        </div>
-      )}
-      {/* Zona de despliegue: se oculta cuando se abre la edicion de perfil. */}
-      {view === "lobby" && !profileOpen && (
-        <div className="animate-fade-in fixed inset-0 z-30 bg-bg/30">
-          <Lobby embedded onClose={closeView} onEditProfile={() => setProfileOpen(true)} />
-        </div>
-      )}
+      <Suspense fallback={null}>
+        {view === "login" && (
+          <div className="animate-fade-in fixed inset-0 z-30 overflow-y-auto bg-bg/70 backdrop-blur-sm">
+            <Login
+              embedded
+              onClose={closeView}
+              onSwitch={() => setView("register")}
+              onSuccess={handleAuthSuccess}
+            />
+          </div>
+        )}
+        {view === "register" && (
+          <div className="animate-fade-in fixed inset-0 z-30 overflow-y-auto bg-bg/70 backdrop-blur-sm">
+            <Register
+              embedded
+              onClose={closeView}
+              onSwitch={() => setView("login")}
+              onSuccess={handleAuthSuccess}
+            />
+          </div>
+        )}
+        {/* Zona de despliegue: se oculta cuando se abre la edicion de perfil. */}
+        {view === "lobby" && !profileOpen && (
+          <div className="animate-fade-in fixed inset-0 z-30 bg-bg/30">
+            <Lobby embedded onClose={closeView} onEditProfile={() => setProfileOpen(true)} />
+          </div>
+        )}
 
-      {/* Edicion de perfil: pantalla diegetica montada en un edificio (camara apunta a la derecha). */}
-      {view === "lobby" && profileOpen && <ProfileEdit onClose={() => setProfileOpen(false)} />}
+        {/* Edicion de perfil: pantalla diegetica montada en un edificio (camara apunta a la derecha). */}
+        {view === "lobby" && profileOpen && <ProfileEdit onClose={() => setProfileOpen(false)} />}
 
-      {/* Sobre el proyecto: la camara se da la vuelta, baja al coche y aparece el equipo
+        {/* Sobre el proyecto: la camara se da la vuelta, baja al coche y aparece el equipo
           (las fichas permanecen visibles sobre la vista del coche). */}
-      {view === "home" && aboutOpen && teamReady && <AboutTeam onClose={closeAbout} />}
+        {view === "home" && aboutOpen && teamReady && (
+          <AboutTeam onClose={closeAbout} onSelect={handleTeamSelect} />
+        )}
+      </Suspense>
 
       {/* Modal-broma del boton Manual. */}
       {manualOpen && <ManualPanel onClose={() => setManualOpen(false)} />}
