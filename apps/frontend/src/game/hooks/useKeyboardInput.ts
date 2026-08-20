@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 
+import { isTypingInField } from "../../shared/isTypingInField";
 import { useGameStore } from "../store/gameStore";
 
 // Teclas → {forward, turn} del contrato del servidor: W/S = forward +1/-1,
@@ -38,12 +39,17 @@ export function useKeyboardInput(enabled: boolean): void {
     }
 
     function onKeyDown(event: KeyboardEvent) {
+      // Escribiendo en el chat, las teclas son del chat: sin esto, la "a" del mensaje
+      // giraba al personaje mientras se teclea.
+      if (isTypingInField(event.target)) return;
       const direction = KEY_MAP[event.code];
       if (!direction || event.repeat) return;
       pressed.add(direction);
       recompute();
     }
 
+    // Las sueltas se procesan SIEMPRE, tambien con el chat abierto: si se pulsa W y se hace
+    // clic en el chat antes de soltarla, ignorar el keyup dejaria al personaje corriendo solo.
     function onKeyUp(event: KeyboardEvent) {
       const direction = KEY_MAP[event.code];
       if (!direction) return;
@@ -51,11 +57,20 @@ export function useKeyboardInput(enabled: boolean): void {
       recompute();
     }
 
+    // Al perder el foco la ventana no llegan los keyup: se sueltan todas a mano.
+    function releaseAll() {
+      if (pressed.size === 0) return;
+      pressed.clear();
+      recompute();
+    }
+
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", releaseAll);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", releaseAll);
       // Al salir de la pantalla, frena al personaje en el servidor.
       if (forward !== 0 || turn !== 0) sendInput(0, 0);
     };
