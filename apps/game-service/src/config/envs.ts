@@ -29,7 +29,7 @@ const envSchema = joi
     // 1.5 las bloquea; apretarlo más forma bolsas donde la gente se queda atascada
     // (medido: a 0.7, hasta 14 s parados; a 1.5, 2.4 s, el roce normal del gentío).
     GAME_MAX_SLOPE: joi.number().positive().default(1.5),
-    GAME_MAP: joi.string().default("beta-city"),
+    GAME_MAP: joi.string().default("neon-block"),
     GAME_NPC_COUNT: joi.number().integer().min(0).max(64).default(32),
     // Velocidad de toda la multitud, humanos incluidos. 0.36 = la zancada del clip
     // "sprint" (0.18 u de mundo por ciclo, medida sobre el pie de apoyo) entre la
