@@ -1,4 +1,4 @@
-import { AdaptiveDpr, PerformanceMonitor, useGLTF } from "@react-three/drei";
+import { AdaptiveDpr, Clone, PerformanceMonitor, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import type { GameEntityState } from "@whoshuman/shared-types";
 import {
@@ -15,21 +15,28 @@ import { useTranslation } from "react-i18next";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
+import HomeMountains from "../../features/home-3d/HomeMountains";
+import HomeSun from "../../features/home-3d/HomeSun";
 import { getCssColor } from "../../features/home-3d/homeSceneUtils";
 import {
   TOUCH_CAMERA_EVENT,
   TOUCH_SEEKER_SHOOT_EVENT,
   type TouchCameraDetail
 } from "../input/touchInput";
-import betaCity from "../maps/beta-city.json";
+import { createMapFloorTexture } from "../maps/mapFloorTexture";
+import { createSkyDomeTexture } from "../maps/skyDomeTexture";
+import neonBlock from "../maps/neon-block.json";
+import { MAP_MODEL_BASE, MAP_MODEL_URLS, mapPieces } from "../maps/neonBlockLayout";
+import { isTypingInField } from "../../shared/isTypingInField";
+import { setSfxLoop, setSfxLoopProximity, stopAllSfxLoops } from "../../shared/sfx";
 import { useGameStore } from "../store/gameStore";
 import { AIM_LOCK_RADIUS, WORLD_UNITS_TO_METERS, aimTelemetry } from "../systems/aimTelemetry";
 import { sampleSeeker, sampleWorld } from "../systems/interpolation";
 
-// COPIA del mapa lógico del servidor (game-service/src/game/maps/beta-city.json).
+// COPIA del mapa lógico del servidor (game-service/src/game/maps/neon-block.json).
 // El server es la única verdad de colisiones: lo que se pinta aquí debe coincidir
 // con lo que él simula. Si backend cambia el mapa, re-copiar el JSON.
-const { bounds, obstacles } = betaCity;
+const { bounds, obstacles } = neonBlock;
 const MAP_W = bounds.maxX - bounds.minX;
 const MAP_D = bounds.maxZ - bounds.minZ;
 const CENTER_X = (bounds.minX + bounds.maxX) / 2;
@@ -197,12 +204,11 @@ const SCOPE_REFRESH_MS = 80;
 const TOUCH_CAMERA_SPEED = 1.8;
 const TOUCH_SEEKER_AIM_SPEED = 0.65;
 const HIDER_CAMERA_DISTANCE = 1.8;
-const CITY_MODEL_URL = "/models/beta-city-new.glb";
-const CITY_OFFSET: [number, number, number] = [-8.5, 0, -0.3];
+
 const CELL_MODEL_URL = "/models/energy-cell.glb";
-// El modelo mide 0.12 de alto; x1.7 lo deja en ~0.2, el mismo bulto que tenía el
-// octaedro que hacía de marcador y algo más de medio personaje.
-const CELL_SCALE = 1.7;
+// El modelo mide 0.12 de alto; x1.0 lo deja en ~0.12, algo menos de un tercio de personaje.
+// A 1.7 abultaban demasiado y competían con los personajes en la lectura de la escena.
+const CELL_SCALE = 1.0;
 const COLLECTIBLE_BEAM_HEIGHT = 4.8;
 const COLLECTIBLE_BEAM_RADIUS = 0.055;
 const CHASER_MODEL_URL = "/models/chaser.glb";
@@ -229,6 +235,14 @@ const CHASER_DOWN_OFFSET = 0.3;
 const CHASER_WING_HINGE = 0.24;
 const CHASER_WING_RAMP_IN = 0.2;
 const CHASER_WING_RAMP_OUT = 0.3;
+// Alabeo: la nave se tumba hacia el lado al que vira, como un avion. El valor se suaviza
+// en el tiempo para que entre y salga solo, sin saltos al pulsar y soltar la tecla.
+// Umbral para dar por "en movimiento" la nave ajena (u/s) y alcance en el que se la oye.
+const SHIP_AUDIBLE_SPEED = 0.15;
+const SHIP_AUDIBLE_RANGE = 9;
+
+const CHASER_BANK_ANGLE = 0.45; // ~26° en pleno viraje
+const CHASER_BANK_SPEED = 4.5; // rapidez con la que entra y sale
 const CHASER_FLAP_ANGLE = 0.22; // ~13° en la punta
 const CHASER_FLAP_SPEED = 6.5; // rad/s → ~1 aleteo por segundo
 // Flotación vertical: muy leve y lenta, para que la nave respire en el sitio.
@@ -247,9 +261,53 @@ const LASER_RADIUS = 0.006;
 const LASER_DOT_RADIUS = 0.028;
 const LASER_MAX_LENGTH = Math.max(MAP_W, MAP_D) * 2;
 
+// Una pieza del mapa. Clone y no primitive: hay modelos repetidos (farolas, arboles) y
+// primitive moveria siempre el mismo objeto; Clone comparte geometria y material y solo
+// duplica los nodos, que es lo barato.
+// Los GLB del mapa se piden nada mas cargar este modulo (que solo entra en la ruta de
+// juego), para que la manzana este lista cuando arranca la partida.
+MAP_MODEL_URLS.forEach((url) => useGLTF.preload(url));
+
+function MapPieceModel({ piece }: { piece: (typeof mapPieces)[number] }) {
+  const { scene } = useGLTF(MAP_MODEL_BASE + piece.model);
+
+  // Los GLB salen de una IA: la malla tiene normales sucias y, con algo de metalness o
+  // roughness baja, cada facetado devuelve un reflejo desparejo que canta muchisimo. Se
+  // pasan a mate puro, que perdona esos defectos, y se conserva la textura de color.
+  useMemo(() => {
+    scene.traverse((object) => {
+      const material = (object as THREE.Mesh).material;
+      for (const entry of Array.isArray(material) ? material : [material]) {
+        if (entry instanceof THREE.MeshStandardMaterial) {
+          entry.metalness = 0;
+          entry.roughness = 1;
+          entry.envMapIntensity = 0;
+          entry.needsUpdate = true;
+        }
+      }
+    });
+  }, [scene]);
+
+  return (
+    <Clone
+      object={scene}
+      position={[piece.x, piece.groundOffset, piece.z]}
+      rotation={[0, piece.rotationY, 0]}
+      scale={piece.scale}
+    />
+  );
+}
+
+// La manzana: calle, edificios y atrezo, colocados desde el layout generado junto al mapa
+// del servidor. Antes era un unico GLB de ciudad entera.
 function CityMap() {
-  const { scene } = useGLTF(CITY_MODEL_URL);
-  return <primitive object={scene} position={CITY_OFFSET} />;
+  return (
+    <group>
+      {mapPieces.map((piece, index) => (
+        <MapPieceModel key={index} piece={piece} />
+      ))}
+    </group>
+  );
 }
 
 // Los AABB siguen siendo la verdad para disparos, pero el GLB aporta la imagen.
@@ -267,13 +325,17 @@ function Obstacles() {
 
   return (
     <group>
-      {obstacles.map((rect, index) => {
-        const w = rect.maxX - rect.minX;
-        const d = rect.maxZ - rect.minZ;
-        const x = (rect.minX + rect.maxX) / 2;
-        const z = (rect.minZ + rect.maxZ) / 2;
+      {mapPieces.map((piece, index) => {
+        const box = piece.collider;
+        if (!box) return null;
+        const w = box.maxX - box.minX;
+        const d = box.maxZ - box.minZ;
+        const x = (box.minX + box.maxX) / 2;
+        const z = (box.minZ + box.maxZ) / 2;
+        // Altura real de la pieza, no una fija: si no, una farola pararia los disparos
+        // como si fuese un rascacielos.
         return (
-          <group key={index} position={[x, BUILDING_HEIGHT / 2, z]} scale={[w, BUILDING_HEIGHT, d]}>
+          <group key={index} position={[x, box.height / 2, z]} scale={[w, box.height, d]}>
             <mesh geometry={geometry} material={material} userData={{ blocksShot: true }} />
           </group>
         );
@@ -282,15 +344,109 @@ function Obstacles() {
   );
 }
 
+// Fondo del mundo: la rejilla neon que se pierde en el horizonte y el sol al fondo, el mismo
+// lenguaje visual del menu. Sin esto la manzana flotaba en negro y el mapa se acababa de
+// golpe en el borde. Todo va con fog={false}: la niebla de la partida (8..22) es lo que da
+// ambiente de cerca, pero se comeria el fondo entero.
+function Backdrop() {
+  const cyan = useMemo(() => getCssColor("--color-neon-cyan"), []);
+  const magenta = useMemo(() => getCssColor("--color-neon-magenta"), []);
+  const surface = useMemo(() => getCssColor("--color-surface"), []);
+
+  const sky = useMemo(() => createSkyDomeTexture(), []);
+
+  return (
+    <group>
+      {/* Cupula de cielo: una esfera enorme vista por dentro (BackSide). Al ser un objeto de
+          la escena gira con la camara, a diferencia de la capa HTML que habia antes y que se
+          quedaba clavada a la pantalla al girar la vista del cazador. Sin niebla ni escritura
+          de profundidad: es el fondo de todo. */}
+      <mesh position={[CENTER_X, 0, CENTER_Z]}>
+        <sphereGeometry args={[120, 32, 16]} />
+        <meshBasicMaterial map={sky} side={THREE.BackSide} fog={false} depthWrite={false} />
+      </mesh>
+
+      {/* Suelo infinito bajo la rejilla: tapa el vacio por los huecos de las lineas. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[CENTER_X, -0.06, CENTER_Z]}>
+        <planeGeometry args={[160, 160]} />
+        <meshBasicMaterial color="#07031a" fog={false} />
+      </mesh>
+      {/* Rejilla retrowave. 80 divisiones sobre 160 u = una celda por cada 2 u, la misma
+          densidad aparente que en el menu a esta escala de mundo. */}
+      <gridHelper
+        position={[CENTER_X, -0.04, CENTER_Z]}
+        args={[160, 80, cyan, "#241a52"]}
+        material-fog={false}
+        material-transparent
+        material-opacity={0.55}
+      />
+      {/* Sol al fondo. HomeSun esta modelado a escala de menu (disco de 276 u), asi que se
+          encoge para este mundo: x0.05 lo deja en ~14 u de ancho a 50 de distancia. */}
+      <group position={[CENTER_X, 2.4, CENTER_Z]} scale={0.05}>
+        <HomeSun color={magenta} />
+      </group>
+
+      {/* Anillo de montañas, las mismas del menu. Tambien vienen a escala de menu (2000 u de
+          ancho), asi que van a x0.035: crestas de ~4 u a 30 de distancia, justo por delante
+          del sol. Cierran el horizonte por los cuatro lados para que el mundo no se acabe en
+          un canto de rejilla se mire hacia donde se mire. */}
+      <group position={[CENTER_X, 0, CENTER_Z]} scale={0.035}>
+        <HomeMountains fillColor={surface} position={[0, 0, -900]} />
+        <HomeMountains fillColor={surface} position={[0, 0, 900]} rotationY={Math.PI} />
+        <HomeMountains fillColor={surface} position={[-900, 0, 0]} rotationY={Math.PI / 2} />
+        <HomeMountains fillColor={surface} position={[900, 0, 0]} rotationY={-Math.PI / 2} />
+      </group>
+    </group>
+  );
+}
+
+// Luz en la punta de cada farola: un foco corto que moja el asfalto a su alrededor y una
+// bombilla visible en el remate. Son 7 luces puntuales, que no es gratis (el renderizador
+// las evalua por fragmento), pero la manzana es pequeña y es lo que le da vida al suelo.
+// El color alterna cian y magenta para que la calle no quede monocroma.
+function LamppostLights() {
+  const cyan = useMemo(() => getCssColor("--color-neon-cyan"), []);
+  const magenta = useMemo(() => getCssColor("--color-neon-magenta"), []);
+  const lamps = useMemo(() => mapPieces.filter((p) => p.model === "neon-lamppost.glb"), []);
+
+  return (
+    <group>
+      {lamps.map((lamp, index) => {
+        const color = index % 2 === 0 ? cyan : magenta;
+        // El collider guarda la altura real del modelo: la bombilla va justo bajo el remate.
+        const top = (lamp.collider?.height ?? 1) * 0.92;
+
+        return (
+          <group key={index} position={[lamp.x, top, lamp.z]}>
+            {/* distance corta: cada farola ilumina su tramo, no el mapa entero. */}
+            <pointLight color={color} intensity={2.6} distance={2.6} decay={2} />
+            {/* Bombilla: basica y sin luz propia, para que se vea el origen del foco. */}
+            <mesh>
+              <sphereGeometry args={[0.045, 10, 10]} />
+              <meshBasicMaterial color={color} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+// El suelo de la manzana: un plano con el trazado de calzadas pintado. Sustituye al GLB de
+// calle, que al ser un volumen dejaba su superficie por encima del suelo jugable.
 function Floor() {
-  const gridColor = useMemo(() => getCssColor("--color-neon-cyan"), []);
+  const cyan = useMemo(() => getCssColor("--color-neon-cyan"), []);
+  const magenta = useMemo(() => getCssColor("--color-neon-magenta"), []);
+  const texture = useMemo(() => createMapFloorTexture(cyan, magenta), [cyan, magenta]);
+
   return (
     <group position={[CENTER_X, 0, CENTER_Z]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+      {/* Va por DEBAJO de la losa de calle (que ocupa de -0.10 a 0): solo se ve si la losa
+          no llega a algun canto del area jugable. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.12, 0]}>
         <planeGeometry args={[MAP_W, MAP_D]} />
-        <meshBasicMaterial color="#050014" />
+        <meshBasicMaterial map={texture} color={texture ? "#ffffff" : "#050014"} />
       </mesh>
-      <gridHelper args={[Math.max(MAP_W, MAP_D), 24, gridColor, "#1a1140"]} />
     </group>
   );
 }
@@ -702,16 +858,20 @@ function Units() {
           ({ object }) =>
             object.userData.blocksShot || typeof object.userData.characterVariant === "number"
         );
-      if (hit?.object.userData.blocksShot || hit?.instanceId === undefined) return;
-      const variant = hit.object.userData.characterVariant as number;
-      // Cada malla sabe de qué ciclo y fotograma es, que es lo que identifica al
-      // grupo donde se apuntó esa instancia.
-      const frame = hit.object.userData.frame as number;
-      const ids = hit.object.userData.sprinting
-        ? sprintingEntityIds.current
-        : idleEntityIds.current;
-      const targetEntityId = ids[variant]?.[frame]?.[hit.instanceId];
-      if (targetEntityId) shoot(targetEntityId);
+      // Contra un muro, o al vacio, no hay blanco — pero el disparo se efectua igual
+      // (suena), asi que se avisa al store en todos los casos.
+      let targetEntityId: string | null = null;
+      if (hit && !hit.object.userData.blocksShot && hit.instanceId !== undefined) {
+        const variant = hit.object.userData.characterVariant as number;
+        // Cada malla sabe de qué ciclo y fotograma es, que es lo que identifica al
+        // grupo donde se apuntó esa instancia.
+        const frame = hit.object.userData.frame as number;
+        const ids = hit.object.userData.sprinting
+          ? sprintingEntityIds.current
+          : idleEntityIds.current;
+        targetEntityId = ids[variant]?.[frame]?.[hit.instanceId] ?? null;
+      }
+      shoot(targetEntityId);
     };
     const handleShoot = (event: PointerEvent) => {
       if (event.button !== 0 || event.pointerType === "touch") return;
@@ -811,6 +971,10 @@ function ChaserShip() {
 
   // El uniform del aleteo, compartido con el shader y actualizado en cada frame.
   const flap = useRef({ value: 0 });
+  // Alabeo actual, perseguido hacia el objetivo en cada fotograma.
+  const bank = useRef(0);
+  // Ultima pose conocida de la nave ajena, para deducir si se mueve.
+  const lastShipPos = useRef<{ x: number; y: number; z: number } | null>(null);
 
   // useGLTF cachea la escena, así que el material se clona antes de tocarlo: si no,
   // el shader quedaría pegado al modelo para cualquier otro que lo cargue. Se guarda
@@ -862,7 +1026,7 @@ function ChaserShip() {
     });
   }, [scene]);
 
-  useFrame(({ camera, clock }) => {
+  useFrame(({ camera, clock }, delta) => {
     const ship = ref.current;
     if (!ship) return;
     flap.current.value = Math.sin(clock.elapsedTime * CHASER_FLAP_SPEED) * CHASER_FLAP_ANGLE;
@@ -872,7 +1036,24 @@ function ChaserShip() {
     if (!isSeeker) {
       const seeker = sampleSeeker();
       ship.visible = !!seeker;
-      if (!seeker) return;
+      if (!seeker) {
+        setSfxLoop("shipMove", false);
+        return;
+      }
+      // La pose que llega por la red no trae velocidad: el movimiento se deduce de cuanto
+      // se ha desplazado desde el fotograma anterior. El umbral filtra el temblor de la
+      // interpolacion, que si no encenderia el motor con la nave quieta.
+      const previous = lastShipPos.current;
+      const speed =
+        previous && delta > 0
+          ? Math.hypot(seeker.x - previous.x, seeker.y - previous.y, seeker.z - previous.z) / delta
+          : 0;
+      lastShipPos.current = { x: seeker.x, y: seeker.y, z: seeker.z };
+      setSfxLoop("shipMove", speed > SHIP_AUDIBLE_SPEED);
+      // Se oye mas fuerte cuanto mas cerca pasa: a SHIP_AUDIBLE_RANGE ya no se oye nada.
+      const distance = camera.position.distanceTo(ship.position);
+      setSfxLoopProximity("shipMove", 1 - Math.min(1, distance / SHIP_AUDIBLE_RANGE));
+
       ship.position.set(seeker.x, seeker.y, seeker.z);
       direction.set(seeker.dirX, seeker.dirY, seeker.dirZ).normalize();
       ship.rotation.set(
@@ -933,14 +1114,24 @@ function ChaserShip() {
       -CHASER_MAX_PITCH,
       CHASER_MAX_PITCH
     );
-    // Orden YXZ: primero encara el rumbo y luego baja el morro sobre su propio eje.
-    // Con el orden por defecto (XYZ) la inclinación se aplicaría en ejes de mundo y
-    // se convertiría en alabeo en cuanto la nave girase.
-    ship.rotation.set(pitch, Math.atan2(direction.x, direction.z), 0, "YXZ");
+    // Alabeo hacia el lado del viraje. Se persigue el objetivo en vez de asignarlo para
+    // que la nave se tumbe y se enderece con inercia, no de golpe.
+    const bankTarget = seekerTurn.value * CHASER_BANK_ANGLE;
+    bank.current += (bankTarget - bank.current) * Math.min(1, delta * CHASER_BANK_SPEED);
+
+    // Orden YXZ: primero encara el rumbo, luego baja el morro sobre su propio eje y por
+    // ultimo alabea. Con el orden por defecto (XYZ) la inclinación se aplicaría en ejes de
+    // mundo y se convertiría en alabeo en cuanto la nave girase.
+    ship.rotation.set(pitch, Math.atan2(direction.x, direction.z), bank.current, "YXZ");
   });
 
   return <primitive ref={ref} object={scene} scale={CHASER_SCALE} />;
 }
+
+// Viraje lateral que esta pidiendo el cazador (-1 izquierda .. 1 derecha). Lo escribe el rig
+// de camara y lo leen la nave (para el alabeo) y el zumbido del motor. Es un valor de modulo
+// y no estado de React a proposito: cambia en cada fotograma y no debe provocar renders.
+const seekerTurn = { value: 0 };
 
 const AIM_EPSILON = 1e-6;
 
@@ -1149,6 +1340,12 @@ function SeekerCamera() {
     };
     const stopAiming = (event?: PointerEvent) => {
       if (event && event.button !== 2) return;
+      // Un pointerup con el boton derecho TODAVIA pulsado (bit 2 de buttons) no es una
+      // soltada real: al enganchar el pointer lock con el boton apretado, el navegador
+      // rompe la captura implicita y sintetiza uno. Si se hacia caso, la mira se apagaba
+      // al instante y por eso apuntando con el derecho no se podia disparar (con F si,
+      // porque ahi no hay ningun boton pulsado).
+      if (event && (event.buttons & 2) !== 0) return;
       setAiming(false);
       if (document.pointerLockElement === gl.domElement) document.exitPointerLock();
     };
@@ -1217,6 +1414,11 @@ function SeekerCamera() {
   useEffect(() => {
     if (selfRole !== "seeker") return;
     const setKey = (event: KeyboardEvent, active: boolean) => {
+      // Con el foco en el chat las teclas son suyas: apuntar con F y girar con A/D hacian
+      // preventDefault, asi que ademas de ejecutar la accion impedian que la letra llegara
+      // a escribirse. Solo se ignoran las pulsaciones; las sueltas (active=false) se
+      // procesan siempre, para no dejar una tecla marcada como pulsada.
+      if (active && isTypingInField(event.target)) return;
       if (active && event.code === "KeyF" && !event.repeat) {
         event.preventDefault();
         const next = !useGameStore.getState().aiming;
@@ -1248,6 +1450,9 @@ function SeekerCamera() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", clear);
+      // Al salir de la partida no puede quedar el motor sonando de fondo.
+      seekerTurn.value = 0;
+      stopAllSfxLoops();
     };
   }, [gl, selfRole, setAiming]);
 
@@ -1264,11 +1469,21 @@ function SeekerCamera() {
     }
     const blend = aimBlend.current;
 
-    const direction = THREE.MathUtils.clamp(
-      Number(pressed.current.right) - Number(pressed.current.left) + touchCamera.current.x,
-      -1,
-      1
-    );
+    // Apuntando no se pilota: hay que bajar la mira para volver a mover la nave. Ademas de
+    // ser la regla pedida, deja el alabeo a cero y apaga el motor mientras se apunta, que es
+    // lo coherente con una nave detenida en el aire.
+    const direction = aiming
+      ? 0
+      : THREE.MathUtils.clamp(
+          Number(pressed.current.right) - Number(pressed.current.left) + touchCamera.current.x,
+          -1,
+          1
+        );
+    // Se publica para la nave (alabeo) y se enciende el motor solo mientras se vira. Es
+    // declarativo: llamarlo cada fotograma es barato y solo actua cuando cambia de verdad.
+    seekerTurn.value = direction;
+    setSfxLoop("shipMove", direction !== 0);
+    setSfxLoopProximity("shipMove", 1);
 
     if (blend === 0) {
       if (direction !== 0) orbitYaw.current += direction * delta * 1.2;
@@ -1528,7 +1743,7 @@ function GameScene() {
   const aiming = useGameStore((s) => s.aiming);
   const flashKey = useAimFlashKey(aiming);
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden bg-bg">
       <Canvas
         dpr={[1, 1.5]}
         camera={{ position: [CENTER_X, 4.5, bounds.maxZ + 5], fov: 60 }}
@@ -1539,11 +1754,28 @@ function GameScene() {
       >
         <PerformanceMonitor>
           <AdaptiveDpr />
-          <color attach="background" args={["#050014"]} />
-          <fog attach="fog" args={["#050014", 8, 22]} />
-          <ambientLight intensity={0.7} />
-          <directionalLight position={[4, 8, 2]} intensity={0.8} />
-          <Suspense fallback={<Floor />}>
+          <color attach="background" args={["#0d0520"]} />
+          <fog attach="fog" args={["#2b1245", 10, 30]} />
+          {/* Luz suave y envolvente, a proposito. Los modelos son de IA: sus normales estan
+              sucias y una direccional fuerte marca cada faceta y saca reflejos desparejos.
+              El grueso lo pone una hemisferica (cielo violeta arriba, rebote del asfalto
+              abajo), que ilumina por igual desde todas las direcciones y no crea aristas.
+              Las direccionales quedan de apoyo, a intensidad baja, solo para dar volumen. */}
+          <hemisphereLight args={["#c9a6ff", "#3a2a5a", 1.7]} />
+          <ambientLight intensity={0.5} />
+          {/* Sol: calido y rasante, desde donde esta el disco (al fondo, -Z). Es la unica
+              luz con direccion clara, para que las fachadas tengan un lado iluminado y otro
+              en sombra sin llegar a marcar el facetado de la malla. */}
+          <directionalLight position={[2, 5, -14]} intensity={1.15} color="#ffcf9b" />
+          {/* Relleno frio por el lado contrario, muy suave: evita que la cara opuesta al sol
+              se quede plana y muerta. */}
+          <directionalLight position={[-6, 6, 8]} intensity={0.35} color="#8fd4ff" />
+          <Backdrop />
+          <LamppostLights />
+          {/* El suelo va SIEMPRE, no como respaldo de carga: antes lo ponia el GLB de calle
+              y, al quitarlo, la manzana se quedaba sin superficie en cuanto cargaba. */}
+          <Floor />
+          <Suspense fallback={null}>
             <CityMap />
           </Suspense>
           <Obstacles />
