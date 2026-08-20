@@ -2,11 +2,11 @@ import { AdaptiveDpr, PerformanceMonitor } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense } from "react";
 
-import HomeCityModel from "./HomeCityModel";
 import HomeCityTraffic from "./HomeCityTraffic";
 import HomeDeLorean from "./HomeDeLorean";
 import HomeGrid from "./HomeGrid";
 import HomeMoon from "./HomeMoon";
+import HomePlaza from "./HomePlaza";
 import HomeRoad from "./HomeRoad";
 import HomeRoadSide from "./HomeRoadSide";
 import HomeMountains from "./HomeMountains";
@@ -15,16 +15,15 @@ import { getCssColor } from "./homeSceneUtils";
 
 type RetrowaveLandscapeProps = {
   // Escena del lado de la luna (carretera + DeLorean + montañas laterales + luna). Solo es
-  // visible cuando la camara gira (la home). En los fondos estaticos (SceneBackground) nunca
-  // se ve, asi que se omite para no cargar el GLB del coche ni animarla en esas paginas.
+  // visible cuando la camara gira hacia la luna (pantalla del equipo). En el resto de
+  // pantallas nunca se ve, asi que se omite para no cargar el GLB del coche ni animarla.
   showRoadScene?: boolean;
   // Carril del coche: x bajo la tarjeta del equipo seleccionada.
   carX?: number;
 };
 
 // Contenido 3D del paisaje retrowave (sol, ciudad, trafico, grid + bloom).
-// Se separa del Canvas para reutilizarlo: la home lo monta con camara animada
-// y el fondo global (SceneBackground) lo monta con camara estatica.
+// Se separa del Canvas: lo monta WorldScene, la unica escena 3D de la app.
 function RetrowaveLandscape({ showRoadScene = false, carX = 0 }: RetrowaveLandscapeProps) {
   // Los colores salen de los tokens CSS para mantener la escena alineada con el design system.
   const colorBg = getCssColor("--color-bg");
@@ -69,9 +68,9 @@ function RetrowaveLandscape({ showRoadScene = false, carX = 0 }: RetrowaveLandsc
       <directionalLight position={[0, 80, 30]} intensity={2.6} color={colorNeonCyan} />
       <directionalLight position={[0, 40, -60]} intensity={1.4} color={colorNeonMagenta} />
 
-      {/* Suspense hace de red de seguridad mientras el GLB de la ciudad descarga. */}
+      {/* Suspense hace de red de seguridad mientras descargan los GLB de la plaza. */}
       <Suspense fallback={null}>
-        <HomeCityModel />
+        <HomePlaza colorCyan={colorNeonCyan} colorMagenta={colorNeonMagenta} />
       </Suspense>
       <HomeCityTraffic
         colorCyan={colorNeonCyan}
