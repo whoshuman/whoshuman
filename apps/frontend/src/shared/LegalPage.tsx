@@ -1,8 +1,8 @@
-import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useAuthStore } from "./authStore";
+import { useBackTarget } from "./useBackTarget";
 
 type LegalPageProps = {
   namespace: "privacy" | "terms";
@@ -12,7 +12,8 @@ type LegalPageProps = {
 export function LegalPage({ namespace, itemKeys }: LegalPageProps) {
   const { t } = useTranslation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const backTo = isAuthenticated ? "/lobby" : "/";
+  // Respaldo solo para cuando no hay historial (enlace directo): con sesion, el lobby.
+  const goBack = useBackTarget(isAuthenticated ? "/lobby" : "/");
 
   return (
     <main className="relative flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-10">
@@ -32,13 +33,14 @@ export function LegalPage({ namespace, itemKeys }: LegalPageProps) {
               {t(`${namespace}.lastUpdated`)}
             </p>
           </div>
-          <Link
-            to={backTo}
+          <button
+            type="button"
+            onClick={goBack}
             aria-label={t("common.back")}
             className="flex h-10 w-10 shrink-0 items-center justify-center border border-neon-cyan/40 text-neon-cyan transition hover:bg-neon-cyan/10"
           >
             <ArrowLeft aria-hidden="true" size={18} />
-          </Link>
+          </button>
         </div>
 
         <div className="flex flex-col gap-6">
