@@ -11,8 +11,6 @@
     "system": "SISTEMA DE VIGILANCIA WHO'S HUMAN // 42"
   },
   "common": {
-    "underConstruction": "MÓDULO EN CONSTRUCCIÓN",
-    "underConstructionDesc": "Esta sección aún no está disponible en el sistema. Vuelve más tarde.",
     "back": "VOLVER A INICIO",
     "backShort": "ATRÁS",
     "confirmationRequired": "CONFIRMACIÓN REQUERIDA",
@@ -30,10 +28,6 @@
     "music": "MÚSICA"
   },
   "home": {
-    "title": "Who's Human",
-    "tagline": "Engaña. Observa. Sobrevive.",
-    "claim": "Engaña · Observa · Sobrevive",
-    "credits": "Proyecto final 42 | Transcendence | Desarrollado por: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
     "play": "Jugar",
     "menu": {
       "play": "Jugar",
@@ -148,8 +142,7 @@
     "avatarProcessError": "No se pudo procesar el avatar.",
     "save": "GUARDAR CAMBIOS",
     "saveShort": "GUARDAR",
-    "cancel": "CANCELAR",
-    "saved": "PERFIL ACTUALIZADO"
+    "cancel": "CANCELAR"
   },
   "profilePage": {
     "eyebrow": "FICHA DE UNIDAD",

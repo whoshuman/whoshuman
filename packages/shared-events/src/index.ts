@@ -29,16 +29,12 @@ export const UserSubjects = {
 } as const;
 
 export const GameSubjects = {
-  create: "game.create",
   join: "game.join",
   disconnected: "game.disconnected",
   leave: "game.leave",
   aim: "game.aim",
   shoot: "game.shoot",
   playerMoved: "game.player.moved",
-  playerEliminated: "game.player.eliminated",
-  diamondCollected: "game.diamond.collected",
-  roundEnded: "game.round.ended",
   stateSnapshot: "game.state.snapshot",
   health: "game.health"
 } as const;

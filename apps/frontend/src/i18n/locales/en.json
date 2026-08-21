@@ -11,8 +11,6 @@
     "system": "WHO'S HUMAN SURVEILLANCE SYSTEM // 42"
   },
   "common": {
-    "underConstruction": "MODULE UNDER CONSTRUCTION",
-    "underConstructionDesc": "This section is not available in the system yet. Come back later.",
     "back": "BACK TO HOME",
     "backShort": "BACK",
     "confirmationRequired": "CONFIRMATION REQUIRED",
@@ -30,10 +28,6 @@
     "music": "MUSIC"
   },
   "home": {
-    "title": "Who's Human",
-    "tagline": "Deceive. Observe. Survive.",
-    "claim": "Deceive · Observe · Survive",
-    "credits": "42 Final Project | Transcendence | Developed by: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
     "play": "Play",
     "menu": {
       "play": "Play",
@@ -148,8 +142,7 @@
     "avatarProcessError": "The avatar could not be processed.",
     "save": "SAVE CHANGES",
     "saveShort": "SAVE",
-    "cancel": "CANCEL",
-    "saved": "PROFILE UPDATED"
+    "cancel": "CANCEL"
   },
   "profilePage": {
     "eyebrow": "UNIT RECORD",
