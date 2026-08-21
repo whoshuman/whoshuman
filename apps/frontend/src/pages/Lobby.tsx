@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { preloadGameModels } from "../game/gameAssets";
 import { useLobbyStore } from "../game/store/lobbyStore";
 import { useAuthStore } from "../shared/authStore";
 import ConfirmDialog from "../shared/ConfirmDialog";
@@ -367,6 +368,16 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
   useEffect(() => {
     const music = useMusic.getState();
     if (!music.started) music.start();
+  }, []);
+
+  // Los modelos de la partida pesan y hasta ahora no se empezaban a pedir hasta navegar a
+  // /game, que es el peor momento: la ronda ya corre en el servidor mientras tu bajas la
+  // manzana. Aqui hay tiempo muerto de sobra (esperando a que se llene la sala) y el
+  // cargador GLTF ya esta en memoria por la escena del lobby, asi que la descarga sale
+  // gratis en percepcion. Si la partida salta antes de terminar, no se pierde nada: lo que
+  // haya bajado queda en cache y el resto sigue por su cuenta.
+  useEffect(() => {
+    preloadGameModels();
   }, []);
 
   // Partida encontrada: el servidor asignó gameId y roles → a la pantalla de juego.

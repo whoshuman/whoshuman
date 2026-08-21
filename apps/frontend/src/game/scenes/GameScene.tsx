@@ -26,7 +26,13 @@ import {
 import { createMapFloorTexture } from "../maps/mapFloorTexture";
 import { createSkyDomeTexture } from "../maps/skyDomeTexture";
 import neonBlock from "../maps/neon-block.json";
-import { MAP_MODEL_BASE, MAP_MODEL_URLS, mapPieces } from "../maps/neonBlockLayout";
+import { MAP_MODEL_BASE, mapPieces } from "../maps/neonBlockLayout";
+import {
+  CELL_MODEL_URL,
+  CHARACTER_MODEL_URLS,
+  CHASER_MODEL_URL,
+  preloadGameModels
+} from "../gameAssets";
 import { isTypingInField } from "../../shared/isTypingInField";
 import { setSfxLoop, setSfxLoopProximity, stopAllSfxLoops } from "../../shared/sfx";
 import { useGameStore } from "../store/gameStore";
@@ -177,14 +183,6 @@ function buildMorphSet(frames: THREE.BufferGeometry[]): THREE.BufferGeometry[] {
     return geometry;
   });
 }
-// Debe coincidir con CHARACTER_SKIN_COUNT del game-service: el server manda skinId
-// y aquí se indexa este array directamente.
-const CHARACTER_MODEL_URLS: string[] = [
-  "/models/personajes/neon-vixen.glb",
-  "/models/personajes/cubist-warrior.glb",
-  "/models/personajes/purple-visor.glb",
-  "/models/personajes/pixel-voyager.glb"
-];
 // Los modelos miden ~1.69 unidades de alto; esto los deja en ~0.33, la altura que
 // tenían los personajes anteriores respecto al mapa.
 const CHARACTER_SCALE = 0.194;
@@ -205,13 +203,11 @@ const TOUCH_CAMERA_SPEED = 1.8;
 const TOUCH_SEEKER_AIM_SPEED = 0.65;
 const HIDER_CAMERA_DISTANCE = 1.8;
 
-const CELL_MODEL_URL = "/models/energy-cell.glb";
 // El modelo mide 0.12 de alto; x1.0 lo deja en ~0.12, algo menos de un tercio de personaje.
 // A 1.7 abultaban demasiado y competían con los personajes en la lectura de la escena.
 const CELL_SCALE = 1.0;
 const COLLECTIBLE_BEAM_HEIGHT = 4.8;
 const COLLECTIBLE_BEAM_RADIUS = 0.055;
-const CHASER_MODEL_URL = "/models/chaser.glb";
 // El modelo mide 1 unidad de largo; el mapa entero mide ~5, así que a 1:1 sería
 // gigante. 0.55 lo deja en algo menos de dos veces la altura de un personaje.
 const CHASER_SCALE = 0.55;
@@ -270,9 +266,10 @@ const LASER_MAX_LENGTH = Math.max(MAP_W, MAP_D) * 2;
 // si la escena se descarta de la cache, la entrada se va con ella.
 const matteScenes = new WeakSet<THREE.Object3D>();
 
-// Los GLB del mapa se piden nada mas cargar este modulo (que solo entra en la ruta de
-// juego), para que la manzana este lista cuando arranca la partida.
-MAP_MODEL_URLS.forEach((url) => useGLTF.preload(url));
+// Red de seguridad: si se entra a /game sin pasar por el lobby (recarga, enlace directo),
+// nadie ha precargado nada y hay que pedirlo aqui. Por el camino normal esto ya no baja
+// nada, porque el lobby lo dejo en cache mientras se llenaba la sala.
+preloadGameModels();
 
 function MapPieceModel({ piece }: { piece: (typeof mapPieces)[number] }) {
   const { scene } = useGLTF(MAP_MODEL_BASE + piece.model);
