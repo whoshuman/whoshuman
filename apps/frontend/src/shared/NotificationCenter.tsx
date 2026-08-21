@@ -72,9 +72,14 @@ function NotificationCenter() {
         aria-expanded={open}
         title={t("notifications.title")}
         onClick={() => setOpen((current) => !current)}
-        className="relative flex h-10 w-10 items-center justify-center border border-neon-cyan/45 bg-bg/55 text-neon-cyan transition hover:border-neon-cyan hover:bg-neon-cyan/10"
+        className="group relative flex h-10 w-10 items-center justify-center border border-neon-cyan/45 bg-bg/55 text-neon-cyan transition hover:border-neon-cyan hover:bg-neon-cyan/10"
       >
-        <Bell aria-hidden="true" size={19} strokeWidth={1.8} />
+        <Bell
+          aria-hidden="true"
+          size={19}
+          strokeWidth={1.8}
+          className="origin-top group-hover:animate-bell-ring"
+        />
         {unreadCount > 0 && (
           <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center border border-neon-magenta bg-bg px-1 font-display text-[0.6rem] font-black text-neon-magenta shadow-[0_0_12px_rgba(255,43,214,0.6)]">
             {unreadCount > 99 ? "99+" : unreadCount}

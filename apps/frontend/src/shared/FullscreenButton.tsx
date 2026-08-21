@@ -75,12 +75,22 @@ function FullscreenButton() {
       title={label}
       aria-label={label}
       aria-pressed={isFullscreen}
-      className="flex h-10 w-10 items-center justify-center border border-neon-cyan/60 bg-bg/60 text-neon-cyan backdrop-blur-sm transition hover:border-neon-cyan hover:bg-neon-cyan/18 hover:shadow-[0_0_16px_rgba(36,245,255,0.3)]"
+      className="group flex h-10 w-10 items-center justify-center border border-neon-cyan/60 bg-bg/60 text-neon-cyan backdrop-blur-sm transition hover:border-neon-cyan hover:bg-neon-cyan/18 hover:shadow-[0_0_16px_rgba(36,245,255,0.3)]"
     >
       {isFullscreen ? (
-        <Minimize aria-hidden="true" size={19} strokeWidth={1.8} />
+        <Minimize
+          aria-hidden="true"
+          size={19}
+          strokeWidth={1.8}
+          className="group-hover:animate-icon-expand"
+        />
       ) : (
-        <Maximize aria-hidden="true" size={19} strokeWidth={1.8} />
+        <Maximize
+          aria-hidden="true"
+          size={19}
+          strokeWidth={1.8}
+          className="group-hover:animate-icon-expand"
+        />
       )}
     </button>
   );
