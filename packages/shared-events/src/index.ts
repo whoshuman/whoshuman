@@ -98,13 +98,3 @@ export const ServerSocketEvents = {
   presenceChanged: "presence:changed",
   chatMessage: "chat:message"
 } as const;
-
-export type AuthSubject = (typeof AuthSubjects)[keyof typeof AuthSubjects];
-export type UserSubject = (typeof UserSubjects)[keyof typeof UserSubjects];
-export type GameSubject = (typeof GameSubjects)[keyof typeof GameSubjects];
-export type MatchmakingSubject = (typeof MatchmakingSubjects)[keyof typeof MatchmakingSubjects];
-export type ChatSubject = (typeof ChatSubjects)[keyof typeof ChatSubjects];
-export type NotificationSubject = (typeof NotificationSubjects)[keyof typeof NotificationSubjects];
-export type RealtimeSubject = (typeof RealtimeSubjects)[keyof typeof RealtimeSubjects];
-export type ClientSocketEvent = (typeof ClientSocketEvents)[keyof typeof ClientSocketEvents];
-export type ServerSocketEvent = (typeof ServerSocketEvents)[keyof typeof ServerSocketEvents];

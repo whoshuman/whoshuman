@@ -1,18 +1,3 @@
-export type ServiceName =
-  | "api-gateway"
-  | "realtime-gateway"
-  | "auth-service"
-  | "user-service"
-  | "game-service"
-  | "matchmaking-service"
-  | "chat-service"
-  | "notification-service";
-
-export interface UserIdentity {
-  id: string;
-  username: string;
-}
-
 export interface PublicUser {
   id: string;
   email: string;
