@@ -4,8 +4,9 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { Vector3, type Group } from "three";
 
-// Mismo elenco jugable que la partida (ver CHARACTER_MODEL_URLS en game/scenes/GameScene.tsx;
-// no se importa de ahi para no acoplar este widget de UI a la escena de juego).
+// Mismo elenco jugable que la partida (ver CHARACTER_MODEL_URLS en game/gameAssets.ts). No
+// se importa de alli a proposito: ese modulo arrastra tambien el trazado del mapa, y este
+// widget sale en la home y en el lobby, donde no pinta nada bajarse la manzana.
 const CHARACTER_MODEL_URLS = [
   "/models/personajes/neon-vixen.glb",
   "/models/personajes/cubist-warrior.glb",
