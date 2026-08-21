@@ -156,6 +156,13 @@ services:
     env_file:
       - path: ./apps/game-service/.env
         required: false
+    # El mapa no es configuracion de entorno: el cliente lo tiene fijo en
+    # GameScene.tsx, asi que si el servidor simula otro los jugadores salen en
+    # coordenadas que no existen en lo que se pinta. environment gana a env_file,
+    # o sea que esto anula cualquier GAME_MAP viejo que quede en el .env manual de
+    # la maquina (el deploy excluye los .env y nunca los actualiza).
+    environment:
+      GAME_MAP: neon-block
     depends_on:
       postgres:
         condition: service_healthy
