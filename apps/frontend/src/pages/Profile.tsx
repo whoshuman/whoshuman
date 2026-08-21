@@ -112,10 +112,11 @@ function Profile() {
         <div className="h-[32rem] w-[32rem] bg-neon-cyan/8 blur-3xl" />
       </div>
 
-      <div className="animate-unfold-down relative w-full max-w-2xl origin-top border border-neon-cyan/50 bg-surface shadow-[0_0_48px_rgba(36,245,255,0.18),inset_0_0_48px_rgba(36,245,255,0.03)]">
-        {/* Cabecera terminal */}
-        <div className="flex items-center justify-between gap-4 border-b border-neon-cyan/30 bg-neon-cyan/8 px-6 py-3 sm:px-10">
-          <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-neon-cyan">
+      <div className="animate-unfold-down relative w-full max-w-2xl origin-top border lg:max-w-6xl border-neon-cyan/50 bg-surface shadow-[0_0_48px_rgba(36,245,255,0.18),inset_0_0_48px_rgba(36,245,255,0.03)]">
+        {/* Cabecera terminal. Eyebrow mas compacta en movil (tracking ancho + texto largo
+            no cabian junto al boton de volver en pantallas estrechas). */}
+        <div className="flex items-center justify-between gap-2 border-b border-neon-cyan/30 bg-neon-cyan/8 px-4 py-3 sm:gap-4 sm:px-10">
+          <p className="font-display truncate text-[0.6rem] font-bold uppercase tracking-[0.15em] text-neon-cyan sm:text-xs sm:tracking-[0.3em]">
             // {t("profilePage.eyebrow")}
           </p>
           <button
@@ -135,10 +136,10 @@ function Profile() {
         <span className="absolute bottom-0 left-0 h-4 w-4 border-b-2 border-l-2 border-neon-magenta" />
         <span className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-neon-magenta" />
 
-        <div className="px-6 py-8 sm:px-10">
-          {/* Identidad: avatar de iniciales + callsign */}
-          <div className="mb-8 flex items-center gap-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-3xl font-black text-neon-cyan [text-shadow:0_0_14px_rgba(36,245,255,0.6)]">
+        <div className="px-4 py-6 sm:px-10 sm:py-8 lg:grid lg:auto-rows-min lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-x-10">
+          {/* Identidad: avatar de iniciales + callsign. Avatar mas pequeño en movil. */}
+          <div className="mb-6 flex items-center gap-3 sm:mb-8 sm:gap-5 lg:col-start-1 lg:row-start-1">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-2xl font-black text-neon-cyan [text-shadow:0_0_14px_rgba(36,245,255,0.6)] sm:h-20 sm:w-20 sm:text-3xl">
               {user.avatar ? (
                 <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" />
               ) : (
@@ -154,7 +155,7 @@ function Profile() {
           </div>
 
           {/* Datos de la unidad */}
-          <dl className="mb-8 grid gap-5 sm:grid-cols-2">
+          <dl className="mb-6 grid gap-4 sm:mb-8 sm:grid-cols-2 sm:gap-5 lg:col-start-1 lg:row-start-2 lg:grid-cols-1">
             <div>
               <dt className="font-display text-xs font-bold uppercase tracking-[0.25em] text-neon-cyan/80">
                 {t("profilePage.emailLabel")}
@@ -177,7 +178,7 @@ function Profile() {
                 </span>
               </dd>
             </div>
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 lg:col-span-1">
               <dt className="font-display text-xs font-bold uppercase tracking-[0.25em] text-neon-cyan/80">
                 {t("profilePage.bioLabel")}
               </dt>
@@ -186,7 +187,7 @@ function Profile() {
           </dl>
 
           {/* Registro de combate persistido al finalizar cada partida. */}
-          <div className="mb-8 border border-neon-cyan/25 bg-black/20 px-5 py-4">
+          <div className="mb-6 border border-neon-cyan/25 bg-black/20 px-4 py-4 sm:mb-8 sm:px-5 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:mb-0">
             <p className="font-display mb-3 text-xs font-bold uppercase tracking-[0.25em] text-neon-cyan/80">
               // {t("profilePage.statsTitle")}
             </p>
@@ -243,7 +244,7 @@ function Profile() {
                   </p>
                 </div>
 
-                <dl className="grid grid-cols-2 gap-px border border-neon-cyan/20 bg-neon-cyan/20 sm:grid-cols-3">
+                <dl className="grid grid-cols-2 gap-px border border-neon-cyan/20 bg-neon-cyan/20 sm:grid-cols-3 lg:grid-cols-6">
                   {[
                     ["statsGames", combatStats.totalGames],
                     ["statsWins", combatStats.wins],
@@ -263,46 +264,46 @@ function Profile() {
                   ))}
                 </dl>
 
-                <div className="mt-5">
-                  <p className="font-display mb-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-neon-magenta">
-                    {t("profilePage.statsRecent")}
-                  </p>
-                  <div className="border-y border-neon-cyan/20">
-                    {combatStats.recentMatches.map((match) => (
-                      <div
-                        key={match.gameId}
-                        className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-neon-cyan/15 px-1 py-3 last:border-b-0 sm:grid-cols-[1fr_auto_auto]"
-                      >
-                        <div className="min-w-0">
-                          <p className="font-display truncate text-xs font-bold uppercase text-text-main">
-                            {t("profilePage.statsMatch", {
-                              date: matchDateFormatter.format(new Date(match.playedAt))
-                            })}
-                          </p>
-                          {match.opponents.length > 0 && (
-                            <p className="mt-1 truncate text-[0.65rem] text-text-muted/70">
-                              {t("profilePage.statsOpponents", {
-                                names: match.opponents.join(", ")
+                <div className="mt-5 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                  <div>
+                    <p className="font-display mb-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-neon-magenta">
+                      {t("profilePage.statsRecent")}
+                    </p>
+                    <div className="border-y border-neon-cyan/20">
+                      {combatStats.recentMatches.map((match) => (
+                        <div
+                          key={match.gameId}
+                          className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-neon-cyan/15 px-1 py-3 last:border-b-0 sm:grid-cols-[1fr_auto_auto]"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-display truncate text-xs font-bold uppercase text-text-main">
+                              {t("profilePage.statsMatch", {
+                                date: matchDateFormatter.format(new Date(match.playedAt))
                               })}
                             </p>
-                          )}
+                            {match.opponents.length > 0 && (
+                              <p className="mt-1 truncate text-[0.65rem] text-text-muted/70">
+                                {t("profilePage.statsOpponents", {
+                                  names: match.opponents.join(", ")
+                                })}
+                              </p>
+                            )}
+                          </div>
+                          <p className="hidden text-xs font-bold text-text-muted sm:block">
+                            {t("profilePage.statsPlacement", {
+                              placement: match.placement,
+                              count: match.playerCount
+                            })}
+                          </p>
+                          <p className="font-display text-sm font-black text-neon-magenta">
+                            {match.points > 0 ? "+" : ""}
+                            {match.points} {t("profilePage.statsPointsShort")}
+                          </p>
                         </div>
-                        <p className="hidden text-xs font-bold text-text-muted sm:block">
-                          {t("profilePage.statsPlacement", {
-                            placement: match.placement,
-                            count: match.playerCount
-                          })}
-                        </p>
-                        <p className="font-display text-sm font-black text-neon-magenta">
-                          {match.points > 0 ? "+" : ""}
-                          {match.points} {t("profilePage.statsPointsShort")}
-                        </p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-6 grid gap-6 sm:grid-cols-2">
                   <div>
                     <p className="font-display mb-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-neon-magenta">
                       {t("profilePage.statsAchievements")}
@@ -361,7 +362,7 @@ function Profile() {
           </div>
 
           {/* Acción principal */}
-          <div className="border-t border-neon-cyan/20 pt-6">
+          <div className="border-t border-neon-cyan/20 pt-6 lg:col-start-1 lg:row-start-3">
             <button
               type="button"
               onClick={() => setEditOpen(true)}
@@ -378,7 +379,7 @@ function Profile() {
           </div>
 
           {/* Zona de peligro: baja definitiva de la unidad (DELETE /users/me). */}
-          <div className="mt-8 border border-error/40 bg-error/5 px-5 py-4">
+          <div className="mt-8 border border-error/40 bg-error/5 px-5 py-4 lg:col-start-1 lg:row-start-4">
             <p className="font-display mb-2 text-xs font-bold uppercase tracking-[0.25em] text-error">
               // {t("profilePage.dangerTitle")}
             </p>

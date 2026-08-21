@@ -18,6 +18,17 @@ function getAudio() {
   return audio;
 }
 
+// Arranque aplazado: cuando suena la musiquita de fin de partida no queremos que la musica
+// de fondo entre encima, asi que se retiene hasta que aquella termina.
+let holdTimer: ReturnType<typeof setTimeout> | null = null;
+let holdUntil = 0;
+function clearHold() {
+  if (holdTimer) {
+    clearTimeout(holdTimer);
+    holdTimer = null;
+  }
+}
+
 // Temporizador del fade-out en curso (para cancelarlo si se reanuda antes de terminar).
 let fadeTimer: ReturnType<typeof setInterval> | null = null;
 function clearFade() {
@@ -61,8 +72,10 @@ type MusicState = {
   started: boolean;
   // Arranca la musica (llamar tras un gesto del usuario, p. ej. el boton JUGAR).
   start: () => void;
-  // Para la musica con un fade-out (al volver a la home).
+  // Para la musica con un fade-out (al volver a la home, o al empezar la partida).
   stop: () => void;
+  // Retiene el proximo arranque los ms indicados (lo que dure el sonido de fin de partida).
+  hold: (ms: number) => void;
   // Alterna activar/desactivar la musica.
   toggle: () => void;
 };
@@ -71,19 +84,42 @@ export const useMusic = create<MusicState>((set, get) => ({
   enabled: initialEnabled(),
   started: false,
   start: () => {
+    // started se marca ya: para el resto de la app la musica esta en marcha, aunque su
+    // primera nota este esperando a que acabe el sonido de fin de partida.
     set({ started: true });
     const element = getAudio();
     // Si habia un fade-out a medias, lo cancelamos y restauramos el volumen.
     clearFade();
+    clearHold();
     element.volume = VOLUME;
+    // Siempre desde el principio: entrar al lobby es el arranque de la sesion de juego, no
+    // la continuacion de lo que sonaba antes (un fade-out cortado a medias dejaria la pista
+    // por donde iba).
+    element.currentTime = 0;
     // play() solo funciona tras un gesto del usuario; el navegador lo permite desde el clic.
-    if (get().enabled) void element.play().catch(() => {});
+    const playNow = () => {
+      if (get().started && get().enabled) void element.play().catch(() => {});
+    };
+
+    const wait = holdUntil - Date.now();
+    if (wait > 0) {
+      holdTimer = setTimeout(() => {
+        holdTimer = null;
+        playNow();
+      }, wait);
+      return;
+    }
+    playNow();
   },
   stop: () => {
     set({ started: false });
+    clearHold();
     if (audio && !audio.paused) {
       fadeOut(audio, () => {});
     }
+  },
+  hold: (ms) => {
+    holdUntil = Date.now() + ms;
   },
   toggle: () => {
     const next = !get().enabled;
@@ -93,8 +129,9 @@ export const useMusic = create<MusicState>((set, get) => ({
     }
     const element = getAudio();
     if (next) {
-      // Solo reanuda si la partida ya habia arrancado la musica.
-      if (get().started) void element.play().catch(() => {});
+      // Solo reanuda si la partida ya habia arrancado la musica (y sin pisar el sonido
+      // de fin de partida, si todavia esta sonando).
+      if (get().started && Date.now() >= holdUntil) void element.play().catch(() => {});
     } else {
       element.pause();
     }

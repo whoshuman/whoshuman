@@ -79,6 +79,46 @@ body {
   box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
+/* Ficha del carrusel de equipo (movil): --focus (0 a 1) lo fija el scroll listener de
+   AboutTeam segun la cercania de la ficha al centro del carrusel. Con la ficha centrada
+   (focus=1) se ve a tamaño y nitidez completos; las de alrededor se encogen, atenuan y
+   desenfocan, como si una camara panease enfocando a quien tiene delante. */
+.team-carousel-card {
+  --focus: 1;
+  transform: scale(calc(0.82 + 0.18 * var(--focus)));
+  opacity: calc(0.4 + 0.6 * var(--focus));
+  filter: blur(calc((1 - var(--focus)) * 3px));
+}
+
+/* Carteles colgados del lobby: giro sutil en falso 3D, cada uno encarado hacia el centro
+   de la calle (el eje de giro queda en el lateral por el que cuelgan de la fachada). Solo
+   a partir de tablet: en movil son paneles planos, sin brazos ni perspectiva. */
+@media (min-width: 640px) {
+  .hanging-sign-left {
+    transform: perspective(1400px) rotateY(-3deg);
+    transform-origin: left center;
+  }
+  /* Angulo corto y pivote en el lado por el que cuelga: con mas giro, el borde izquierdo
+     se adelanta lo bastante como para invadir la ficha de identidad. */
+  .hanging-sign-right {
+    transform: perspective(1400px) rotateY(3deg);
+    transform-origin: right center;
+  }
+}
+
+/* Cursor de bloque de la terminal del lobby: encendido/apagado seco (steps), sin fundido,
+   como el caret de una consola real. */
+@keyframes terminal-caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Boton con color de acento via --accent: relleno al pasar el raton, todo en CSS (sin JS). */
 .btn-accent {
   border: 1px solid var(--accent, var(--color-neon-cyan));

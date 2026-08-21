@@ -121,6 +121,7 @@ function HomeMountains({
             polygonOffset
             polygonOffsetFactor={1}
             polygonOffsetUnits={1}
+            fog={false}
           />
         </mesh>
 
@@ -128,7 +129,7 @@ function HomeMountains({
             el bloom de la escena le da el brillo neon en las cimas. */}
         <mesh ref={wireRef}>
           <planeGeometry args={[WIDTH, DEPTH, SEGMENTS_X, SEGMENTS_Z]} />
-          <meshBasicMaterial vertexColors wireframe />
+          <meshBasicMaterial vertexColors wireframe fog={false} />
         </mesh>
       </group>
     </group>

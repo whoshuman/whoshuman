@@ -3,6 +3,7 @@ import { Activity, ArrowLeft, BookOpen, CircleHelp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useAuthStore } from "../shared/authStore";
+import { useBackTarget } from "../shared/useBackTarget";
 
 const SUPPORT_LINKS = [
   { to: "/status", key: "status", Icon: Activity },
@@ -13,7 +14,8 @@ const SUPPORT_LINKS = [
 function Support() {
   const { t } = useTranslation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const backTo = isAuthenticated ? "/lobby" : "/";
+  // Respaldo solo para cuando no hay historial (enlace directo): con sesion, el lobby.
+  const goBack = useBackTarget(isAuthenticated ? "/lobby" : "/");
 
   return (
     <main className="relative flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-10">
@@ -30,13 +32,14 @@ function Support() {
               {t("support.subtitle")}
             </p>
           </div>
-          <Link
-            to={backTo}
-            aria-label={isAuthenticated ? t("friends.backToLobby") : t("common.back")}
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label={t("common.back")}
             className="flex h-10 w-10 shrink-0 items-center justify-center border border-neon-cyan/40 text-neon-cyan transition hover:bg-neon-cyan/10"
           >
             <ArrowLeft aria-hidden="true" size={18} />
-          </Link>
+          </button>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">

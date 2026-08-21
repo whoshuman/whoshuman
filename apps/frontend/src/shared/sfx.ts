@@ -15,7 +15,10 @@ const SOUNDS = {
   shot: "/sounds/disparo_2.mp3",
   collect: "/sounds/collect_Cell.mp3",
   matchStart: "/sounds/inicio_partida.mp3",
-  matchEnd: "/sounds/end_game.mp3"
+  matchEnd: "/sounds/end_game.mp3",
+  // Zumbido de la nave del cazador. Se reproduce en BUCLE mientras se mueve, no como
+  // disparo suelto: ver setSfxLoop.
+  shipMove: "/sounds/nave-cazador.mp3"
 } as const;
 
 export type SfxName = keyof typeof SOUNDS;
@@ -23,14 +26,16 @@ export type SfxName = keyof typeof SOUNDS;
 // Sonidos de UI: se decodifican en la primera interaccion, esten donde esten.
 const UI_SFX: SfxName[] = ["click", "access", "hologram"];
 // Sonidos de partida: solo se decodifican al entrar en una partida.
-const GAME_SFX: SfxName[] = ["shot", "collect", "matchStart", "matchEnd"];
+const GAME_SFX: SfxName[] = ["shot", "collect", "matchStart", "matchEnd", "shipMove"];
 
 // Ganancia relativa por sonido (1 = volumen del bus). Equilibra pistas grabadas a
 // distinto nivel sin tener que reeditar los mp3.
 const SFX_GAIN: Partial<Record<SfxName, number>> = {
   shot: 0.85,
   matchStart: 0.7,
-  matchEnd: 0.7
+  matchEnd: 0.7,
+  // Suena continuo mientras vuela: por debajo del resto para no tapar disparos ni voces.
+  shipMove: 0.45
 };
 
 let context: AudioContext | null = null;
@@ -101,6 +106,94 @@ function play(name: SfxName) {
 export function playSfx(name: SfxName) {
   load([name]);
   play(name);
+}
+
+// Cuanto dura un sonido, en milisegundos (0 si aun no se ha decodificado). Sirve para
+// encadenar cosas detras de un sonido, como esperar a que acabe la musiquita de fin de
+// partida antes de devolver la musica de fondo.
+export function sfxDurationMs(name: SfxName): number {
+  const buffer = buffers[name];
+  return buffer ? buffer.duration * 1000 : 0;
+}
+
+// --- Sonidos en bucle -------------------------------------------------------------------
+// Los efectos normales son de usar y tirar. El zumbido de la nave, en cambio, tiene que
+// sostenerse mientras el cazador se mueve y apagarse al parar, con fundidos: sin ellos el
+// arranque y el corte suenan a chasquido.
+const LOOP_FADE_SECONDS = 0.25;
+
+type Loop = { source: AudioBufferSourceNode; trim: GainNode; near: GainNode; stopping: boolean };
+const loops: Partial<Record<SfxName, Loop>> = {};
+
+/**
+ * Enciende o apaga un sonido en bucle. Es declarativo e idempotente: se puede llamar en
+ * cada fotograma con el estado actual y solo actua cuando cambia de verdad. Si el mp3 aun
+ * no esta decodificado no hace nada, y la siguiente llamada lo reintenta.
+ */
+export function setSfxLoop(name: SfxName, active: boolean) {
+  load([name]);
+  if (!context || !gain) return;
+
+  const current = loops[name];
+
+  if (active) {
+    // Ya sonando y sin apagarse: nada que hacer.
+    if (current && !current.stopping) return;
+    const buffer = buffers[name];
+    if (!buffer) return;
+    // Estaba en pleno fundido de salida: se corta y se relanza limpio.
+    if (current) {
+      current.source.onended = null;
+      current.source.stop();
+      delete loops[name];
+    }
+    if (context.state === "suspended") void context.resume();
+
+    const trim = context.createGain();
+    trim.gain.value = 0;
+    trim.connect(gain);
+    // Nodo aparte para la atenuacion por distancia: asi se puede mover en cada fotograma
+    // sin cancelar las rampas de fundido, que viven en `trim`.
+    const near = context.createGain();
+    near.gain.value = 1;
+    near.connect(trim);
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    source.connect(near);
+    source.start(0);
+    trim.gain.linearRampToValueAtTime(SFX_GAIN[name] ?? 1, context.currentTime + LOOP_FADE_SECONDS);
+    loops[name] = { source, trim, near, stopping: false };
+    return;
+  }
+
+  if (!current || current.stopping) return;
+  current.stopping = true;
+  const now = context.currentTime;
+  // Se parte del volumen real de este instante: si aun estaba subiendo, el fundido de
+  // salida arranca donde estuviera y no da un salto.
+  current.trim.gain.cancelScheduledValues(now);
+  current.trim.gain.setValueAtTime(current.trim.gain.value, now);
+  current.trim.gain.linearRampToValueAtTime(0, now + LOOP_FADE_SECONDS);
+  current.source.stop(now + LOOP_FADE_SECONDS);
+  current.source.onended = () => {
+    if (loops[name] === current) delete loops[name];
+  };
+}
+
+/**
+ * Volumen por cercania de un bucle ya sonando (0 = lejos, 1 = encima). Se suaviza con
+ * setTargetAtTime para que un cambio brusco de distancia no chasquee.
+ */
+export function setSfxLoopProximity(name: SfxName, value: number) {
+  const loop = loops[name];
+  if (!loop || !context) return;
+  loop.near.gain.setTargetAtTime(Math.max(0, Math.min(1, value)), context.currentTime, 0.08);
+}
+
+/** Corta todos los bucles de golpe. Al salir de la partida no puede quedar nada sonando. */
+export function stopAllSfxLoops() {
+  for (const name of Object.keys(loops) as SfxName[]) setSfxLoop(name, false);
 }
 
 // Prepara los sonidos de partida. Se llama al unirse a una partida: asi el disparo o la

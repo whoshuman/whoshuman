@@ -1,24 +1,36 @@
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  lazyRouteComponent
+} from "@tanstack/react-router";
 
 import AppLayout from "./layout/AppLayout";
 
+// Home y el 404 entran en el bundle inicial: son el primer render de la app.
 import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Lobby from "./pages/Lobby";
-import Game from "./pages/Game";
-import Profile from "./pages/Profile";
-import Friends from "./pages/Friends";
-import SystemStatus from "./pages/SystemStatus";
-import Manual from "./pages/Manual";
-import About from "./pages/About";
-import Faq from "./pages/Faq";
-import Support from "./pages/Support";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import OAuthCallback from "./pages/OAuthCallback";
-import DesignSystem from "./pages/DesignSystem";
 import NotFound from "./pages/NotFound";
+
+// El resto viaja en chunks propios (lazyRouteComponent hace el import() al navegar). Lo que
+// mas pesa es /game, que arrastra la escena de juego entera: sin esto, quien abre /privacy
+// se descarga el motor 3D y el mapa igual que quien va a jugar.
+// Login y Register tambien: la home los abre como overlay con su propio import diferido, y
+// tenerlos aqui de forma estatica anulaba ese split (el bundler los devolvia al chunk comun).
+const Login = lazyRouteComponent(() => import("./pages/Login"));
+const Register = lazyRouteComponent(() => import("./pages/Register"));
+const OAuthCallback = lazyRouteComponent(() => import("./pages/OAuthCallback"));
+const Lobby = lazyRouteComponent(() => import("./pages/Lobby"));
+const Game = lazyRouteComponent(() => import("./pages/Game"));
+const Profile = lazyRouteComponent(() => import("./pages/Profile"));
+const Friends = lazyRouteComponent(() => import("./pages/Friends"));
+const SystemStatus = lazyRouteComponent(() => import("./pages/SystemStatus"));
+const Manual = lazyRouteComponent(() => import("./pages/Manual"));
+const About = lazyRouteComponent(() => import("./pages/About"));
+const Faq = lazyRouteComponent(() => import("./pages/Faq"));
+const Support = lazyRouteComponent(() => import("./pages/Support"));
+const Privacy = lazyRouteComponent(() => import("./pages/Privacy"));
+const Terms = lazyRouteComponent(() => import("./pages/Terms"));
+const DesignSystem = lazyRouteComponent(() => import("./pages/DesignSystem"));
 
 const rootRoute = createRootRoute({
   component: AppLayout

@@ -11,7 +11,8 @@ import type {
 import type { Socket } from "socket.io-client";
 import { create } from "zustand";
 
-import { playSfx, preloadGameSfx } from "../../shared/sfx";
+import { useMusic } from "../../shared/musicStore";
+import { playSfx, preloadGameSfx, sfxDurationMs } from "../../shared/sfx";
 import { connectSocket } from "../network/socket";
 import { clearSnapshots, pushSnapshot } from "../systems/interpolation";
 import { useLobbyStore } from "./lobbyStore";
@@ -41,7 +42,9 @@ interface GameState {
   reset: () => void;
   setAiming: (aiming: boolean) => void;
   sendAimPose: (pose: SeekerPose) => void;
-  shoot: (targetEntityId: string) => void;
+  // targetEntityId null = disparo al vacio (o contra un muro): el arma suena igual, pero
+  // no hay impacto que comunicar al servidor.
+  shoot: (targetEntityId: string | null) => void;
   sendInput: (forward: number, turn: number) => void;
 }
 
@@ -136,9 +139,15 @@ function bindListeners() {
     if (!matchStartPlayed && payload.round.phase === "playing") {
       matchStartPlayed = true;
       playSfx("matchStart");
+      // La musica del lobby se apaga con un fade: la partida tiene su propio ambiente y
+      // no se pisan. Al quedar `started` en false, volver al lobby la reanuda desde 0.
+      useMusic.getState().stop();
     }
     if (payload.round.phase === "finished" && current.round?.phase !== "finished") {
       playSfx("matchEnd");
+      // La musica de fondo no debe entrar encima de la musiquita de cierre: se retiene lo
+      // que dura (ya esta decodificada, la precargo preloadGameSfx al entrar en la partida).
+      useMusic.getState().hold(sfxDurationMs("matchEnd"));
     }
     // Un hider solo suma puntos recogiendo celulas, asi que subir de marcador es
     // exactamente eso. Se comprueba el rol nuevo para no confundirlo con el disparo
@@ -341,10 +350,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     ) {
       return;
     }
-    connectSocket().emit(ClientSocketEvents.gameShoot, { gameId, targetEntityId });
     // Suena en local sin esperar respuesta: el arma es del cazador y el feedback tiene
-    // que ser inmediato (el servidor no difunde el disparo, solo su resultado).
+    // que ser inmediato (el servidor no difunde el disparo, solo su resultado). El sonido
+    // es del arma, no del impacto: dispone tambien al fallar, antes de comprobar el blanco.
     playSfx("shot");
+    // Sin blanco no hay nada que resolver en el servidor (fallar no cuesta nada al cazador).
+    if (!targetEntityId) return;
+    connectSocket().emit(ClientSocketEvents.gameShoot, { gameId, targetEntityId });
   },
 
   sendInput: (forward, turn) => {

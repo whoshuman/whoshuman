@@ -163,7 +163,19 @@ class CrowdGrid {
 // Radio de la curva que traza el NPC al cambiar de rumbo, en unidades de mundo
 // (~3 anchos de personaje). El giro se deriva de él: ω = v/r. Fijar el radio y no
 // los rad/s es lo que evita que bajar npcSpeed convierta la curva en un pivote.
-const NPC_TURN_RADIUS = 0.45;
+// Medio cuerpo. Las entidades se mueven como un punto, pero ocupan sitio: NPC_SEPARATION es
+// la distancia minima entre dos centros, asi que la mitad es el radio efectivo. Se usa para
+// que el area jugable recorte el CUERPO y no el centro, o los bordes se ven traspasados.
+const BODY_RADIUS = NPC_SEPARATION / 2;
+
+// Radio de giro de la multitud. Estaba en 0.45 (diametro 0.9), afinado para beta-city, que
+// era un descampado con tres edificios. En una manzana con calles de 0.45 de ancho eso es el
+// DOBLE del corredor: el NPC no cabia girando y se quedaba pegado a las paredes describiendo
+// curvas que no le entraban. A 0.16 gira dentro de una calzada.
+//
+// De paso acerca su agilidad a la del jugador (3 rad/s): con 0.45 giraba a 0.8 rad/s y eso
+// era un delator, porque en este juego el cazador tiene que confundir humanos con NPC.
+const NPC_TURN_RADIUS = 0.22;
 // Amplitud del cambio de rumbo al elegir paseo (±63°). Cuanto más abierto, más
 // largo es el arco y más difícil que quepa libre en un mapa de 4×5.
 const NPC_HEADING_SPREAD = Math.PI * 0.7;
@@ -172,7 +184,9 @@ const NPC_UNBLOCK_SECONDS = 0.6;
 // Cuánto mira hacia delante, en radios de giro. Con 2 ve el obstáculo con el margen
 // justo para rodearlo sin frenar: menos y llega pegado, más y esquiva paredes que
 // aún le quedan lejos, dando bandazos por el centro del mapa.
-const NPC_LOOKAHEAD_TURNS = 2;
+// Distancia de sondeo, en radios de giro. Con el radio antiguo sondeaba 0.9 u, o sea dos
+// calzadas enteras: casi cualquier rumbo daba "cerrado" y la multitud vivia en modo escape.
+const NPC_LOOKAHEAD_TURNS = 2.5;
 // Desvíos que se prueban al buscar salida, de menor a mayor: el primero que quepa
 // gana, así que siempre rodea por el lado más suave.
 const NPC_ESCAPE_OFFSETS = [0.4, 0.8, 1.2, 1.6, 2.0, 2.4, Math.PI];
@@ -407,8 +421,20 @@ export class GameSession {
       (!roaming || (this.clearOfCrowd(x, z) && this.canRoam(x, z, h)));
 
     for (let i = 0; i < 100; i += 1) {
-      const x = bounds.minX + this.random() * (bounds.maxX - bounds.minX);
-      const z = bounds.minZ + this.random() * (bounds.maxZ - bounds.minZ);
+      // Se muestrea en todo el area y luego se mete el punto hacia dentro medio cuerpo, en
+      // vez de muestrear ya sobre el area encogida: asi la mayoria de puntos caen donde
+      // caian y solo se corrigen los del borde. Reescalar el rango entero recolocaba a toda
+      // la multitud y cambiaba como se estorban entre si.
+      const x = clamp(
+        bounds.minX + this.random() * (bounds.maxX - bounds.minX),
+        bounds.minX + BODY_RADIUS,
+        bounds.maxX - BODY_RADIUS
+      );
+      const z = clamp(
+        bounds.minZ + this.random() * (bounds.maxZ - bounds.minZ),
+        bounds.minZ + BODY_RADIUS,
+        bounds.maxZ - BODY_RADIUS
+      );
       const h = sampleHeight(heightmap, x, z);
       if (usable(x, z, h)) return { x, z, h };
     }
@@ -651,7 +677,11 @@ export class GameSession {
     if (player.turn !== 0) {
       player.heading += player.turn * this.turnRate() * dtSeconds;
     }
-    if (!moved) player.velocity = 0; // topar con algo para en seco, igual que un NPC
+    // Topar con algo aminora, NO para en seco. Antes el jugador se quedaba a cero mientras
+    // los NPC conservaban NPC_BUMP_KEEP, asi que bastaba con mirar como reacciona alguien al
+    // rozar una pared para saber si era humano. En un juego que va de no distinguirlos, eso
+    // era un delator: humanos y multitud comparten ahora la misma fisica de choque.
+    if (!moved) player.velocity *= NPC_BUMP_KEEP;
   }
 
   private tickNpc(npc: SessionNpc, dtSeconds: number): void {
@@ -914,8 +944,14 @@ export class GameSession {
     const b = this.config.bounds;
     const beforeX = entity.x;
     const beforeZ = entity.z;
-    // movimiento por eje → deslizar a lo largo de las paredes; clamp = no salir del área jugable
-    const nx = clamp(entity.x + Math.sin(entity.heading) * distance, b.minX, b.maxX);
+    // movimiento por eje → deslizar a lo largo de las paredes; clamp = no salir del área
+    // jugable. El margen es medio cuerpo: recortando el centro contra el borde exacto, la
+    // mitad del personaje quedaba fuera del mapa y se veía asomar por el canto.
+    const nx = clamp(
+      entity.x + Math.sin(entity.heading) * distance,
+      b.minX + BODY_RADIUS,
+      b.maxX - BODY_RADIUS
+    );
     if (
       this.walkable(nx, entity.z, entity.h, Math.abs(nx - entity.x)) &&
       (!member || this.clearOfCrowd(nx, entity.z, member))
@@ -923,7 +959,11 @@ export class GameSession {
       entity.x = nx;
       entity.h = sampleHeight(this.config.heightmap, entity.x, entity.z) as number;
     }
-    const nz = clamp(entity.z + Math.cos(entity.heading) * distance, b.minZ, b.maxZ);
+    const nz = clamp(
+      entity.z + Math.cos(entity.heading) * distance,
+      b.minZ + BODY_RADIUS,
+      b.maxZ - BODY_RADIUS
+    );
     if (
       this.walkable(entity.x, nz, entity.h, Math.abs(nz - entity.z)) &&
       (!member || this.clearOfCrowd(entity.x, nz, member))

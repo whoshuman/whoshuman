@@ -1,0 +1,21 @@
+# Finales de linea normalizados a LF en todo el repo.
+#
+# Sin esto, en Windows con core.autocrlf=true git entrega los archivos con CRLF y prettier
+# (que usa endOfLine "lf") los marca como mal formateados: `pnpm run check` fallaba con 303
+# archivos, la mayoria sin tocar, y el hook de pre-push no podia pasar nunca en esas maquinas.
+#
+# text=auto deja que git detecte que es texto; eol=lf fija como se escribe en el arbol de
+# trabajo, en cualquier sistema operativo.
+* text=auto eol=lf
+
+# Binarios: nunca convertir.
+*.glb binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.mp3 binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

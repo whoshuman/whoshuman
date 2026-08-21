@@ -18,13 +18,14 @@
     "confirmationRequired": "CONFIRMACIÓN REQUERIDA",
     "cancel": "CANCELAR",
     "logoutTitle": "¿CERRAR SESIÓN?",
-    "logoutMessage": "Se cerrará tu sesión en este dispositivo. Tendrás que volver a identificarte para acceder de nuevo."
+    "logoutMessage": "Se cerrará tu sesión en este dispositivo. Tendrás que volver a identificarte para acceder de nuevo.",
+    "enterFullscreen": "PANTALLA COMPLETA",
+    "exitFullscreen": "SALIR DE PANTALLA COMPLETA"
   },
   "settings": {
     "title": "AJUSTES",
     "language": "IDIOMA",
     "languageSaveError": "No se pudo guardar el idioma.",
-    "dev": "HERRAMIENTAS DEV",
     "audio": "AUDIO",
     "music": "MÚSICA"
   },
@@ -102,8 +103,7 @@
   "lobby": {
     "eyebrow": "TERMINAL DE OPERACIONES",
     "deployTitle": "ZONA DE DESPLIEGUE",
-    "deploySubtitle": "Despliégate en la cola general o comparte una sala con tu escuadrón.",
-    "statusActive": "SISTEMA ACTIVO",
+    "statsWinRate": "ACIERTO",
     "autoDeployTitle": "DESPLIEGUE AUTOMÁTICO",
     "autoDeployText": "El sistema te asignará una operación y un rol de forma automática.",
     "units": "unidades",
@@ -287,7 +287,11 @@
     "title": "EL EQUIPO",
     "subtitle": "Unidades tras el sistema Cazador.",
     "storyTitle": "ORIGEN DEL PROYECTO",
-    "story": "Who's Human nace en la 42 como proyecto final ft_transcendence. Cinco unidades unieron fuerzas para construir un juego multijugador en tiempo real inspirado en Just Act Natural: cyborgs que se esconden entre humanos mientras un Cazador intenta desenmascararlos. Lo que empezó como un reto académico —microservicios, WebSockets y 3D en el navegador— acabó convirtiéndose en un mundo cyberpunk propio."
+    "story": "Who's Human nace en la 42 como proyecto final ft_transcendence. Cinco unidades unieron fuerzas para construir un juego multijugador en tiempo real inspirado en Just Act Natural: cyborgs que se esconden entre humanos mientras un Cazador intenta desenmascararlos. Lo que empezó como un reto académico —microservicios, WebSockets y 3D en el navegador— acabó convirtiéndose en un mundo cyberpunk propio.",
+    "scrollHint": "Conoce al equipo",
+    "nextMember": "Ver siguiente miembro",
+    "prevMember": "Ver miembro anterior",
+    "memberCounter": "Miembro {{current}} de {{total}}: {{name}}"
   },
   "manual": {
     "eyebrow": "PROTOCOLO DE CAMPO",

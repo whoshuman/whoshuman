@@ -7,6 +7,7 @@ import { AVATAR_MAX_LENGTH, SUPPORTED_LANGUAGES } from "@whoshuman/shared-valida
 import { apiError } from "../shared/api/errors";
 import { updateMe } from "../shared/api/users";
 import { useAuthStore } from "../shared/authStore";
+import ProfileAvatarHead from "../shared/ProfileAvatarHead";
 import { useHologramSound } from "../shared/useHologramSound";
 
 type ProfileEditProps = {
@@ -136,8 +137,11 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
 
   return (
     // perspective da profundidad para que la pantalla se sienta inclinada sobre la fachada.
+    // El fondo va translucido, no opaco: la pantalla esta montada en un edificio de la
+    // ciudad, asi que la ciudad tiene que seguir viendose detras. Con bg-bg macizo la
+    // escena desaparecia al abrir la edicion y se perdia la continuidad con el perfil.
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-bg p-4"
+      className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-bg/40 p-4"
       style={{ perspective: "1800px" }}
     >
       {/* Carcasa de la pantalla: bisel oscuro grueso, ligeramente girada como sobre un muro.
@@ -194,11 +198,13 @@ function ProfileEdit({ onClose }: ProfileEditProps) {
 
             {/* Avatar + ID */}
             <div className="mb-7 flex flex-wrap items-center gap-5">
+              {/* Sin foto propia se ve el mismo retrato 3D del elenco que en la ficha del
+                  lobby: asi la vista previa muestra de verdad lo que veran los demas. */}
               <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-2xl font-black text-neon-cyan [text-shadow:0_0_14px_rgba(36,245,255,0.6)]">
                 {avatar ? (
                   <img src={avatar} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  initials
+                  <ProfileAvatarHead initials={initials} />
                 )}
               </div>
               <div className="min-w-0 flex-1">
