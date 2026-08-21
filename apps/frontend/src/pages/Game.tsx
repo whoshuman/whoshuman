@@ -7,6 +7,7 @@ import { useKeyboardInput } from "../game/hooks/useKeyboardInput";
 import GameScene from "../game/scenes/GameScene";
 import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
+import ConfirmDialog from "../shared/ConfirmDialog";
 import GroupChatDock from "../shared/GroupChatDock";
 
 // lock/unlock no estan en lib.dom (siguen siendo experimentales), asi que se declaran aparte.
@@ -104,6 +105,7 @@ function Game() {
   const error = useGameStore((s) => s.error);
   const join = useGameStore((s) => s.join);
   const leave = useGameStore((s) => s.leave);
+  const [leaveOpen, setLeaveOpen] = useState(false);
 
   const connected = phase === "playing";
   const playing = connected && round?.phase === "playing";
@@ -182,7 +184,7 @@ function Game() {
           </div>
           <button
             type="button"
-            onClick={handleLeave}
+            onClick={() => setLeaveOpen(true)}
             className="pointer-events-auto border border-sun-orange/60 bg-bg/70 px-2 py-2 font-display text-[0.55rem] font-bold uppercase text-sun-orange backdrop-blur-sm transition hover:bg-sun-orange/10 sm:px-4 sm:text-xs"
           >
             {t("game.leave")}
@@ -292,6 +294,21 @@ function Game() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Irse con la ronda en marcha deja al equipo en inferioridad, asi que se avisa antes.
+          Solo cuelga del boton del HUD: el marcador final lo tapa (inset-0 z-30 sobre z-10),
+          asi que cuando esto es alcanzable la partida esta viva por definicion. */}
+      {leaveOpen && (
+        <ConfirmDialog
+          danger
+          title={t("game.leaveTitle")}
+          message={t("game.leaveWarning")}
+          confirmLabel={t("game.leaveConfirm")}
+          cancelLabel={t("game.leaveKeepPlaying")}
+          onConfirm={handleLeave}
+          onCancel={() => setLeaveOpen(false)}
+        />
       )}
 
       <MobileGameControls enabled={playing && selfAlive} />

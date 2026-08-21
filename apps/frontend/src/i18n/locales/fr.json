@@ -452,7 +452,11 @@
     "operationComplete": "OPÉRATION TERMINÉE",
     "winnerScore": "{{score}} points",
     "noWinner": "AUCUN GAGNANT",
-    "returnLobby": "RETOUR AU LOBBY"
+    "returnLobby": "RETOUR AU LOBBY",
+    "leaveTitle": "ABANDONNER LA PARTIE ?",
+    "leaveWarning": "Si tu pars maintenant, tu laisses le reste de ton escouade en infériorité jusqu’à la fin de la manche. Abandonner des parties de manière répétée peut entraîner des restrictions sur ton compte.",
+    "leaveConfirm": "CONFIRMER L’ABANDON",
+    "leaveKeepPlaying": "CONTINUER À JOUER"
   },
   "notFound": {
     "protocol": "ERREUR SYSTÈME — UNITÉ NON LOCALISÉE",

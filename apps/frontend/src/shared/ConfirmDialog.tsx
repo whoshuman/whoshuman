@@ -6,10 +6,13 @@ import CornerBrackets from "./CornerBrackets";
 // Diálogo de confirmación genérico (título + mensaje + cancelar/confirmar).
 // `danger` lo tiñe de naranja para acciones destructivas o irreversibles.
 // `pending` bloquea el diálogo mientras la acción está en curso (evita doble envío).
+// `cancelLabel` sirve para cuando "cancelar" no describe bien la salida: al abandonar
+// una partida, lo que hace ese botón es seguir jugando.
 function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  cancelLabel,
   danger = false,
   pending = false,
   onConfirm,
@@ -18,6 +21,7 @@ function ConfirmDialog({
   title: string;
   message: string;
   confirmLabel: string;
+  cancelLabel?: string;
   danger?: boolean;
   pending?: boolean;
   onConfirm: () => void;
@@ -83,7 +87,7 @@ function ConfirmDialog({
               onClick={onCancel}
               className="border border-neon-cyan/50 px-5 py-2.5 font-display text-xs font-bold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/10 disabled:opacity-50"
             >
-              {t("common.cancel")}
+              {cancelLabel ?? t("common.cancel")}
             </button>
             <button
               type="button"

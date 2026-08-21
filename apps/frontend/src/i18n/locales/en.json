@@ -452,7 +452,11 @@
     "operationComplete": "OPERATION COMPLETE",
     "winnerScore": "{{score}} points",
     "noWinner": "NO WINNER",
-    "returnLobby": "RETURN TO LOBBY"
+    "returnLobby": "RETURN TO LOBBY",
+    "leaveTitle": "ABANDON THE MATCH?",
+    "leaveWarning": "Leaving now leaves the rest of your squad outnumbered for the remainder of the round. Abandoning matches repeatedly may lead to restrictions on your account.",
+    "leaveConfirm": "CONFIRM ABANDON",
+    "leaveKeepPlaying": "KEEP PLAYING"
   },
   "notFound": {
     "protocol": "SYSTEM ERROR — UNIT NOT LOCATED",
