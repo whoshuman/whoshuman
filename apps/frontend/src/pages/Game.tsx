@@ -10,6 +10,14 @@ import { useLobbyStore } from "../game/store/lobbyStore";
 import ConfirmDialog from "../shared/ConfirmDialog";
 import GroupChatDock from "../shared/GroupChatDock";
 
+// Un mapa y no un ternario: los motivos los define el servidor y crecen, y con un
+// ternario cualquiera nuevo se colaba silenciosamente como "se acabo el tiempo".
+const ROUND_REASON_KEYS: Record<string, string> = {
+  "all-hiders-found": "game.reasonAllFound",
+  "seeker-left": "game.reasonSeekerLeft",
+  time: "game.reasonTime"
+};
+
 // lock/unlock no estan en lib.dom (siguen siendo experimentales), asi que se declaran aparte.
 type LockableOrientation = ScreenOrientation & {
   lock?: (orientation: "landscape") => Promise<void>;
@@ -113,6 +121,10 @@ function Game() {
   const ownScore = scores.find((entry) => entry.userId === selfUserId)?.score ?? 0;
   const ranking = [...scores].sort((a, b) => b.score - a.score);
   const winner = ranking[0];
+  // La ronda se repite porque se fue el cazador; la partida se corto porque no queda
+  // gente suficiente. Los dos motivos los decide el servidor.
+  const restartedRound = round?.endReason === "seeker-left";
+  const abandoned = round?.endReason === "abandoned";
   const minutes = Math.floor((round?.remainingSeconds ?? 0) / 60);
   const seconds = String((round?.remainingSeconds ?? 0) % 60).padStart(2, "0");
   useKeyboardInput(playing && selfAlive && selfRole !== "seeker");
@@ -246,15 +258,15 @@ function Game() {
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-bg/35">
           <div className="border border-neon-cyan/60 bg-bg/90 px-10 py-6 text-center backdrop-blur-sm">
             <p className="font-display text-2xl font-black uppercase text-neon-cyan">
-              {t("game.roundComplete")}
+              {t(restartedRound ? "game.roundRestarted" : "game.roundComplete")}
             </p>
             <p className="mt-2 text-sm text-text-muted">
-              {t(
-                round.endReason === "all-hiders-found" ? "game.reasonAllFound" : "game.reasonTime"
-              )}
+              {t(ROUND_REASON_KEYS[round.endReason ?? "time"] ?? "game.reasonTime")}
             </p>
             <p className="mt-3 font-display text-sm font-bold text-neon-magenta">
-              {t("game.nextRound", { seconds: round.remainingSeconds })}
+              {t(restartedRound ? "game.restartingRound" : "game.nextRound", {
+                seconds: round.remainingSeconds
+              })}
             </p>
           </div>
         </div>
@@ -264,14 +276,21 @@ function Game() {
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-bg/80 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md border border-neon-magenta/70 bg-bg px-8 py-7 text-center">
             <p className="font-display text-[0.7rem] font-bold uppercase text-text-muted">
-              {t("game.operationComplete")}
+              {t(abandoned ? "game.matchAbandoned" : "game.operationComplete")}
             </p>
-            <h1 className="mt-2 font-display text-3xl font-black uppercase text-neon-magenta">
-              {winner?.username ?? t("game.noWinner")}
-            </h1>
-            <p className="mt-1 text-sm text-text-muted">
-              {t("game.winnerScore", { score: winner?.score ?? 0 })}
-            </p>
+            {abandoned ? (
+              // Sin ganador que proclamar: lo que hay que explicar es por que se corto.
+              <p className="mt-2 text-sm text-text-muted">{t("game.abandonedText")}</p>
+            ) : (
+              <>
+                <h1 className="mt-2 font-display text-3xl font-black uppercase text-neon-magenta">
+                  {winner?.username ?? t("game.noWinner")}
+                </h1>
+                <p className="mt-1 text-sm text-text-muted">
+                  {t("game.winnerScore", { score: winner?.score ?? 0 })}
+                </p>
+              </>
+            )}
             <div className="my-6 space-y-2 text-left">
               {ranking.map((entry, index) => (
                 <div
@@ -290,7 +309,7 @@ function Game() {
               onClick={handleLeave}
               className="border border-neon-cyan px-6 py-3 font-display text-sm font-bold uppercase text-neon-cyan transition hover:bg-neon-cyan/10"
             >
-              {t("game.returnLobby")}
+              {t(abandoned ? "game.accept" : "game.returnLobby")}
             </button>
           </div>
         </div>

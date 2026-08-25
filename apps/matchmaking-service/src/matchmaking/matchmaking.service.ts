@@ -121,7 +121,8 @@ export class MatchmakingService {
     const event: MatchFoundPayload = {
       lobbyId: lobby.lobbyId,
       gameId: randomUUID(),
-      players: this.assignRoles(players)
+      players: this.assignRoles(players),
+      minPlayers: envs.matchmakingMinPlayers
     };
 
     try {
