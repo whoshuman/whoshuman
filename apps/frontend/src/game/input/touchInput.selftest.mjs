@@ -17,5 +17,7 @@ assert.deepEqual(normalizeJoystick(80, 0, 40, 0.12), {
 });
 
 const diagonal = normalizeJoystick(40, 40, 40, 0.12);
-assert.ok(Math.abs(Math.hypot(diagonal.x, diagonal.y) - 1) < 0.000001);
+assert.ok(Math.abs(Math.hypot(diagonal.knobX, diagonal.knobY) - 40) < 0.000001);
+assert.equal(diagonal.x, 1);
+assert.equal(diagonal.y, 1);
 assert.equal(normalizeJoystick(4, 0, 40, 0.12).x, 0);

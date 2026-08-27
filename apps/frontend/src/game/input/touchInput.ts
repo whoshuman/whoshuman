@@ -23,8 +23,10 @@ export function normalizeJoystick(
   const scale = distance > radius ? radius / distance : 1;
   const knobX = rawX * scale;
   const knobY = rawY * scale;
-  const x = Math.abs(knobX / radius) < deadZone ? 0 : knobX / radius;
-  const y = Math.abs(knobY / radius) < deadZone ? 0 : knobY / radius;
+  const axisX = Math.max(-1, Math.min(1, rawX / radius));
+  const axisY = Math.max(-1, Math.min(1, rawY / radius));
+  const x = Math.abs(axisX) < deadZone ? 0 : axisX;
+  const y = Math.abs(axisY) < deadZone ? 0 : axisY;
   return { knobX, knobY, x, y };
 }
 

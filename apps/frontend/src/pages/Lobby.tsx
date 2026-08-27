@@ -575,41 +575,43 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
       {/* Dentro de una sala (o conectando) → panel de sala. Fuera → menu de operaciones:
           despliegue automatico como opcion destacada (la que usa la mayoria), crear/unirse
           como par de opciones secundarias debajo — un menu de juego, no tres fichas iguales. */}
-      {inRoom ? (
-        <RoomPanel />
-      ) : mode === "menu" ? (
-        <div className="mx-auto mt-6 flex max-w-5xl flex-col gap-2 sm:mt-10 sm:gap-4">
-          <OperationCard
-            accent="var(--color-neon-violet)"
-            icon={<AutoDeployIcon />}
-            title={t("lobby.autoDeployTitle")}
-            description={t("lobby.autoDeployText")}
-            onClick={() => join()}
-            delay={0.1}
-            featured
-          />
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
+      <section className="mt-6 sm:mt-10">
+        {inRoom ? (
+          <RoomPanel />
+        ) : mode === "menu" ? (
+          <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:gap-4">
             <OperationCard
-              accent="var(--color-neon-magenta)"
-              icon={<CreateRoomIcon />}
-              title={t("lobby.createRoom")}
-              description={t("lobby.createRoomDesc")}
-              onClick={() => setMode("create")}
-              delay={0.2}
+              accent="var(--color-neon-violet)"
+              icon={<AutoDeployIcon />}
+              title={t("lobby.autoDeployTitle")}
+              description={t("lobby.autoDeployText")}
+              onClick={() => join()}
+              delay={0.1}
+              featured
             />
-            <OperationCard
-              accent="var(--color-neon-cyan)"
-              icon={<JoinRoomIcon />}
-              title={t("lobby.joinRoom")}
-              description={t("lobby.joinRoomDesc")}
-              onClick={() => setMode("join")}
-              delay={0.3}
-            />
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
+              <OperationCard
+                accent="var(--color-neon-magenta)"
+                icon={<CreateRoomIcon />}
+                title={t("lobby.createRoom")}
+                description={t("lobby.createRoomDesc")}
+                onClick={() => setMode("create")}
+                delay={0.2}
+              />
+              <OperationCard
+                accent="var(--color-neon-cyan)"
+                icon={<JoinRoomIcon />}
+                title={t("lobby.joinRoom")}
+                description={t("lobby.joinRoomDesc")}
+                onClick={() => setMode("join")}
+                delay={0.3}
+              />
+            </div>
           </div>
-        </div>
-      ) : (
-        <RoomModal mode={mode} onBack={() => setMode("menu")} />
-      )}
+        ) : (
+          <RoomModal mode={mode} onBack={() => setMode("menu")} />
+        )}
+      </section>
 
       {lobbyStatus === "inLobby" && lobbyId && <GroupChatDock scope="lobby" channelId={lobbyId} />}
     </main>
