@@ -1482,7 +1482,7 @@ function SeekerCamera() {
     // Apuntando no se pilota: hay que bajar la mira para volver a mover la nave. Ademas de
     // ser la regla pedida, deja el alabeo a cero y apaga el motor mientras se apunta, que es
     // lo coherente con una nave detenida en el aire.
-    const direction = aiming
+    const turnDirection = aiming
       ? 0
       : THREE.MathUtils.clamp(
           Number(pressed.current.right) - Number(pressed.current.left) + touchCamera.current.x,
@@ -1491,12 +1491,12 @@ function SeekerCamera() {
         );
     // Se publica para la nave (alabeo) y se enciende el motor solo mientras se vira. Es
     // declarativo: llamarlo cada fotograma es barato y solo actua cuando cambia de verdad.
-    seekerTurn.value = direction;
-    setSfxLoop("shipMove", direction !== 0);
+    seekerTurn.value = turnDirection;
+    setSfxLoop("shipMove", turnDirection !== 0);
     setSfxLoopProximity("shipMove", 1);
 
     if (blend === 0) {
-      if (direction !== 0) orbitYaw.current += direction * delta * 1.2;
+      if (turnDirection !== 0) orbitYaw.current += turnDirection * delta * 1.2;
       placeOrbit(SEEKER_OVERVIEW_DISTANCE);
       return;
     }
@@ -1524,8 +1524,8 @@ function SeekerCamera() {
       aimYaw.current = camera.rotation.y;
       aimReady.current = true;
     }
-    if (direction === 0 && touchCamera.current.y === 0) return;
-    aimYaw.current -= direction * delta * TOUCH_SEEKER_AIM_SPEED;
+    if (touchCamera.current.x === 0 && touchCamera.current.y === 0) return;
+    aimYaw.current -= touchCamera.current.x * delta * TOUCH_SEEKER_AIM_SPEED;
     aimPitch.current = THREE.MathUtils.clamp(
       aimPitch.current - touchCamera.current.y * delta * TOUCH_SEEKER_AIM_SPEED,
       -Math.PI / 2 + 0.1,
