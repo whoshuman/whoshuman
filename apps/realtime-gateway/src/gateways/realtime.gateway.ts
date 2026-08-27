@@ -197,7 +197,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     }
 
     const ready = this.isRecord(payload) && payload.ready === true;
-    await this.publishToNats("matchmaking.setReady", {
+    await this.publishToNats(MatchmakingSubjects.setReady, {
       userId: user.sub,
       lobbyId,
       ready

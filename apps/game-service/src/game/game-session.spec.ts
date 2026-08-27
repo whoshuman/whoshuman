@@ -26,7 +26,8 @@ const config = {
   heightmap: flatHM,
   maxSlope: 1,
   npcCount: 0,
-  npcSpeed: 1.2
+  npcSpeed: 1.2,
+  minPlayers: 2
 };
 const members = [
   { userId: "u1", role: "hider" as const },
@@ -41,7 +42,8 @@ const crowdSession = (gameId: string) => {
     heightmap: map.heightmap,
     maxSlope: 1.5,
     npcCount: 32,
-    npcSpeed: 0.36
+    npcSpeed: 0.36,
+    minPlayers: 2
   });
 };
 const find = (s: GameSession, id: string) => s.playerSnapshot().find((p) => p.userId === id)!;
@@ -370,6 +372,93 @@ describe("GameSession", () => {
     });
   });
 
+  describe("abandonos", () => {
+    const trio = [
+      { userId: "u1", username: "Uno", role: "hider" as const },
+      { userId: "u2", username: "Dos", role: "seeker" as const },
+      { userId: "u3", username: "Tres", role: "hider" as const }
+    ];
+    const started = () => {
+      const s = new GameSession("abandon", trio, config);
+      trio.forEach(({ userId }) => s.markPresent(userId));
+      return s;
+    };
+
+    it("si se va el cazador y queda gente, repite la ronda con otro cazador", () => {
+      const s = started();
+
+      s.removePlayer("u2");
+      expect(s.roundSnapshot()).toMatchObject({
+        phase: "intermission",
+        current: 1,
+        endReason: "seeker-left"
+      });
+
+      s.tick(GAME_RULES.intermissionSeconds);
+      // Misma ronda, no la siguiente: la anulada no cuenta.
+      expect(s.roundSnapshot()).toMatchObject({ phase: "playing", current: 1 });
+      const seeker = s.scoreSnapshot().find((entry) => entry.role === "seeker");
+      expect(seeker?.userId).not.toBe("u2");
+      expect(["u1", "u3"]).toContain(seeker?.userId);
+    });
+
+    it("la ronda repetida conserva los puntos ya ganados", () => {
+      const s = started();
+      s.setAiming("u2", true);
+      s.shoot("u2", find(s, "u1").entityId);
+      expect(find(s, "u2").score).toBe(GAME_RULES.hiderHitPoints);
+
+      // El disparo dejó vivo a u3, así que la ronda sigue en juego.
+      expect(s.roundSnapshot().phase).toBe("playing");
+      s.removePlayer("u3");
+      s.tick(GAME_RULES.intermissionSeconds);
+
+      expect(s.scoreSnapshot().find((entry) => entry.userId === "u2")?.score).toBe(
+        GAME_RULES.hiderHitPoints
+      );
+    });
+
+    it("si se va un hider y aún hay mínimo, la ronda continúa", () => {
+      const s = started();
+      s.removePlayer("u3");
+      expect(s.roundSnapshot()).toMatchObject({ phase: "playing", current: 1, endReason: null });
+    });
+
+    it("termina la partida cuando se baja del mínimo de jugadores", () => {
+      const s = started();
+      s.removePlayer("u3");
+      s.removePlayer("u1");
+      expect(s.roundSnapshot()).toMatchObject({ phase: "finished", endReason: "abandoned" });
+    });
+
+    it("quedarse sin cazador y sin mínimo termina la partida, no la reinicia", () => {
+      const s = new GameSession("abandon", trio, { ...config, minPlayers: 3 });
+      trio.forEach(({ userId }) => s.markPresent(userId));
+
+      s.removePlayer("u2");
+      expect(s.roundSnapshot()).toMatchObject({ phase: "finished", endReason: "abandoned" });
+    });
+
+    it("también termina si el abandono ocurre durante la intermisión", () => {
+      const s = started();
+      s.tick(GAME_RULES.roundSeconds);
+      expect(s.roundSnapshot().phase).toBe("intermission");
+
+      s.removePlayer("u1");
+      s.removePlayer("u3");
+      expect(s.roundSnapshot()).toMatchObject({ phase: "finished", endReason: "abandoned" });
+    });
+
+    it("una partida terminada por abandono ya no avanza", () => {
+      const s = started();
+      s.removePlayer("u1");
+      s.removePlayer("u3");
+
+      s.tick(GAME_RULES.roundSeconds);
+      expect(s.roundSnapshot()).toMatchObject({ phase: "finished", endReason: "abandoned" });
+    });
+  });
+
   it("los hiders recogen objetos cercanos y reaparecen a los cinco segundos", () => {
     const tinyHeightmap = makeHM(-0.05, -0.05, 0.05, 0.05, 0.05, () => 0);
     const s = new GameSession("collectibles", [{ userId: "u1", username: "Uno", role: "hider" }], {
@@ -407,7 +496,8 @@ describe("GameSession", () => {
       heightmap: flatHM,
       maxSlope: 1,
       npcCount: 0,
-      npcSpeed: 1.2
+      npcSpeed: 1.2,
+      minPlayers: 1
     });
 
     it("un obstáculo delante bloquea el avance en z", () => {
@@ -473,7 +563,8 @@ describe("GameSession", () => {
       heightmap: makeHM(-4, -4, 4, 4, 1, f),
       maxSlope,
       npcCount: 0,
-      npcSpeed: 1.2
+      npcSpeed: 1.2,
+      minPlayers: 1
     });
     const walk = (f: (x: number, z: number) => number | null, maxSlope: number) => {
       const s = new GameSession("g", [{ userId: "u", role: "hider" }], cfgH(f, maxSlope));
@@ -515,7 +606,8 @@ describe("GameSession", () => {
         heightmap: map.heightmap,
         maxSlope: 1.5,
         npcCount: 8,
-        npcSpeed: 1.2
+        npcSpeed: 1.2,
+        minPlayers: 2
       });
       const initial = session.npcSnapshot();
       const previous = new Map(initial.map((npc) => [npc.entityId, npc]));

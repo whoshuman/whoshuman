@@ -40,9 +40,3 @@ export async function searchUsers(
   });
   return data;
 }
-
-// Ficha pública de otro jugador (sin email).
-export async function getUser(id: string): Promise<UserProfile> {
-  const { data } = await httpClient.get<UserProfile>(`/users/${id}`);
-  return data;
-}

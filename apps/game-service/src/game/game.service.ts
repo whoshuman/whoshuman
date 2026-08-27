@@ -24,6 +24,9 @@ interface RunningGame {
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
 const RECONNECT_GRACE_MS = 45_000;
+// Reserva para un match.found publicado por un matchmaking anterior al campo: sin
+// cazador y sin nadie a quien cazar no hay partida posible.
+const FALLBACK_MIN_PLAYERS = 2;
 
 @Injectable()
 export class GameService {
@@ -60,7 +63,11 @@ export class GameService {
       heightmap: map.heightmap,
       maxSlope: envs.gameMaxSlope,
       npcCount: envs.gameNpcCount,
-      npcSpeed: envs.gameNpcSpeed
+      npcSpeed: envs.gameNpcSpeed,
+      minPlayers:
+        typeof payload.minPlayers === "number" && payload.minPlayers > 0
+          ? payload.minPlayers
+          : FALLBACK_MIN_PLAYERS
     });
     const dt = envs.gameTickMs / 1000;
     let tick = 0;
@@ -187,6 +194,29 @@ export class GameService {
     for (const score of running.session.scoreSnapshot()) scoreMap.set(score.userId, score);
     const scores = [...scoreMap.values()];
 
+    // Una partida rota por abandono no deja rastro: nadie se lleva al perfil los puntos
+    // de algo que no se llegó a jugar. Aun así se difunde el snapshot final, que es lo
+    // que hace aparecer el aviso a quien siga dentro.
+    const abandoned = running.session.roundSnapshot().endReason === "abandoned";
+
+    if (abandoned) {
+      this.logger.log(`Game abandoned, result discarded: game=${gameId}`);
+    } else {
+      await this.persistResult(gameId, running, scores);
+    }
+
+    // El cliente solo ve `finished` cuando el resultado ya está disponible para
+    // el perfil. Así evitamos que consulte estadísticas antiguas al salir rápido.
+    await this.broadcast(gameId, tick, running.session);
+    for (const timer of running.reconnectTimers.values()) clearTimeout(timer);
+    if (this.games.get(gameId) === running) this.games.delete(gameId);
+  }
+
+  private async persistResult(
+    gameId: string,
+    running: RunningGame,
+    scores: GameScoreState[]
+  ): Promise<void> {
     try {
       await this.prisma.$transaction([
         this.prisma.game.upsert({
@@ -218,12 +248,6 @@ export class GameService {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to save game result: game=${gameId} error=${message}`);
     }
-
-    // El cliente solo ve `finished` cuando el resultado ya está disponible para
-    // el perfil. Así evitamos que consulte estadísticas antiguas al salir rápido.
-    await this.broadcast(gameId, tick, running.session);
-    for (const timer of running.reconnectTimers.values()) clearTimeout(timer);
-    if (this.games.get(gameId) === running) this.games.delete(gameId);
   }
 
   private async broadcast(gameId: string, tick: number, session: GameSession): Promise<void> {

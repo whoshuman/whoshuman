@@ -1,18 +1,3 @@
-export type ServiceName =
-  | "api-gateway"
-  | "realtime-gateway"
-  | "auth-service"
-  | "user-service"
-  | "game-service"
-  | "matchmaking-service"
-  | "chat-service"
-  | "notification-service";
-
-export interface UserIdentity {
-  id: string;
-  username: string;
-}
-
 export interface PublicUser {
   id: string;
   email: string;
@@ -191,7 +176,9 @@ export interface GameStateSnapshotPayload {
 
 export type PlayerRole = "hider" | "seeker";
 export type GameRoundPhase = "playing" | "intermission" | "finished";
-export type GameRoundEndReason = "time" | "all-hiders-found" | null;
+// "seeker-left" anula la ronda (se repite con otro cazador); "abandoned" acaba la
+// partida entera por quedarse sin jugadores suficientes.
+export type GameRoundEndReason = "time" | "all-hiders-found" | "seeker-left" | "abandoned" | null;
 
 export interface GameCollectibleState {
   collectibleId: string;
@@ -269,6 +256,10 @@ export interface MatchFoundPayload {
   lobbyId?: string;
   gameId: string;
   players: { userId: string; username: string; role: PlayerRole }[];
+  // Viaja con la partida en vez de configurarse aparte en game-service: el umbral
+  // que la abandona tiene que ser el mismo con el que se formó, y el dueño de ese
+  // número es el matchmaking.
+  minPlayers: number;
 }
 
 export interface LobbyStatePayload {

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Bell, CheckCheck } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -18,6 +18,10 @@ function NotificationCenter() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [anchor, setAnchor] = useState<{ top: number; right: number; maxHeight: number } | null>(
+    null
+  );
 
   const unreadQuery = useQuery({
     queryKey: ["notificationUnreadCount"],
@@ -61,20 +65,61 @@ function NotificationCenter() {
     };
   }, [open]);
 
+  // El panel va en position:fixed para que no lo recorte ningun ancestro con overflow ni lo
+  // desplace ninguno con transform, pero eso obliga a darle las coordenadas a mano. Se sacan
+  // de la caja real del boton en el momento de abrir, asi que el panel cuelga de la campana
+  // este donde este la fila de accesos, y sigue valiendo si se mueve otra vez. Antes iban
+  // fijas (top-16, right-3) a la cabecera que ya no existe.
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const place = () => {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const margin = 12;
+      // Mismo ancho que declara el CSS del panel. Hay que conocerlo aqui porque se alinea
+      // por su borde derecho con el del boton, y sin esto se saldria por la izquierda
+      // cuando la campana queda cerca del borde izquierdo (tipico en movil).
+      const width = Math.min(window.innerWidth - margin * 2, 384);
+      const right = Math.min(
+        Math.max(window.innerWidth - rect.right, margin),
+        window.innerWidth - width - margin
+      );
+      const top = rect.bottom + margin;
+      // Lo que quede de pantalla por debajo, para que en apaisado no se salga por abajo.
+      setAnchor({ top, right, maxHeight: Math.max(window.innerHeight - top - margin, 160) });
+    };
+
+    place();
+    window.addEventListener("resize", place);
+    // En captura: tambien interesa el scroll de cualquier contenedor intermedio.
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open]);
+
   const unreadCount = unreadQuery.data?.count ?? 0;
   const notifications = notificationsQuery.data ?? [];
 
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={buttonRef}
         type="button"
         aria-label={t("notifications.ariaLabel", { count: unreadCount })}
         aria-expanded={open}
         title={t("notifications.title")}
         onClick={() => setOpen((current) => !current)}
-        className="relative flex h-10 w-10 items-center justify-center border border-neon-cyan/45 bg-bg/55 text-neon-cyan transition hover:border-neon-cyan hover:bg-neon-cyan/10"
+        className="group relative flex h-10 w-10 items-center justify-center border border-neon-cyan/45 bg-bg/55 text-neon-cyan transition hover:border-neon-cyan hover:bg-neon-cyan/10"
       >
-        <Bell aria-hidden="true" size={19} strokeWidth={1.8} />
+        <Bell
+          aria-hidden="true"
+          size={19}
+          strokeWidth={1.8}
+          className="origin-top group-hover:animate-bell-ring"
+        />
         {unreadCount > 0 && (
           <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center border border-neon-magenta bg-bg px-1 font-display text-[0.6rem] font-black text-neon-magenta shadow-[0_0_12px_rgba(255,43,214,0.6)]">
             {unreadCount > 99 ? "99+" : unreadCount}
@@ -83,7 +128,10 @@ function NotificationCenter() {
       </button>
 
       {open && (
-        <section className="animate-unfold-down fixed right-3 top-16 z-[80] w-[calc(100vw-1.5rem)] max-w-sm origin-top border border-neon-cyan/55 bg-surface/98 shadow-[0_0_40px_rgba(36,245,255,0.2)] sm:right-8">
+        <section
+          style={anchor ?? undefined}
+          className="animate-unfold-down fixed z-[80] flex w-[calc(100vw-1.5rem)] max-w-sm origin-top flex-col overflow-hidden border border-neon-cyan/55 bg-surface/98 shadow-[0_0_40px_rgba(36,245,255,0.2)]"
+        >
           <header className="flex items-center justify-between gap-3 border-b border-neon-cyan/25 bg-neon-cyan/8 px-4 py-3">
             <div>
               <p className="font-display text-xs font-black uppercase tracking-[0.2em] text-neon-cyan">
@@ -105,7 +153,7 @@ function NotificationCenter() {
             </button>
           </header>
 
-          <div className="max-h-[min(28rem,calc(100vh-8rem))] overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             {notificationsQuery.isLoading && (
               <p className="animate-pulse px-4 py-8 text-center font-display text-xs font-bold uppercase tracking-widest text-neon-cyan">
                 {t("notifications.loading")}

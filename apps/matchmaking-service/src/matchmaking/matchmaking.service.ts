@@ -6,6 +6,7 @@ import type {
   MatchFoundPayload,
   MatchmakingJoinQueuePayload,
   MatchmakingLeaveQueuePayload,
+  MatchmakingSetReadyPayload,
   PlayerRole
 } from "@whoshuman/shared-types";
 import { MessagingService } from "../common/messaging.service";
@@ -22,12 +23,6 @@ interface Lobby {
   lobbyId: string;
   players: QueuedPlayer[];
 }
-
-type SetReadyEvent = {
-  userId: string;
-  lobbyId: string;
-  ready: boolean;
-};
 
 @Injectable()
 export class MatchmakingService {
@@ -126,7 +121,8 @@ export class MatchmakingService {
     const event: MatchFoundPayload = {
       lobbyId: lobby.lobbyId,
       gameId: randomUUID(),
-      players: this.assignRoles(players)
+      players: this.assignRoles(players),
+      minPlayers: envs.matchmakingMinPlayers
     };
 
     try {
@@ -232,7 +228,7 @@ export class MatchmakingService {
     );
   }
 
-  private parseSetReadyPayload(payload: unknown): SetReadyEvent | null {
+  private parseSetReadyPayload(payload: unknown): MatchmakingSetReadyPayload | null {
     if (
       !this.isRecord(payload) ||
       !this.isNonEmptyString(payload.lobbyId) ||

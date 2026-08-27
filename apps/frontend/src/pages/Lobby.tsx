@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { preloadGameModels } from "../game/gameAssets";
 import { useLobbyStore } from "../game/store/lobbyStore";
 import { useAuthStore } from "../shared/authStore";
 import ConfirmDialog from "../shared/ConfirmDialog";
@@ -369,6 +370,16 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
     if (!music.started) music.start();
   }, []);
 
+  // Los modelos de la partida pesan y hasta ahora no se empezaban a pedir hasta navegar a
+  // /game, que es el peor momento: la ronda ya corre en el servidor mientras tu bajas la
+  // manzana. Aqui hay tiempo muerto de sobra (esperando a que se llene la sala) y el
+  // cargador GLTF ya esta en memoria por la escena del lobby, asi que la descarga sale
+  // gratis en percepcion. Si la partida salta antes de terminar, no se pierde nada: lo que
+  // haya bajado queda en cache y el resto sigue por su cuenta.
+  useEffect(() => {
+    preloadGameModels();
+  }, []);
+
   // Partida encontrada: el servidor asignó gameId y roles → a la pantalla de juego.
   useEffect(() => {
     if (match) {
@@ -424,9 +435,14 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
                     onClick={onClose}
                     title={t("lobby.exit")}
                     aria-label={t("lobby.exit")}
-                    className="flex h-10 w-10 items-center justify-center border border-sun-orange/60 bg-bg/60 text-sun-orange backdrop-blur-sm transition hover:border-sun-orange hover:bg-sun-orange/18 hover:shadow-[0_0_16px_rgba(255,159,28,0.3)]"
+                    className="group flex h-10 w-10 items-center justify-center border border-sun-orange/60 bg-bg/60 text-sun-orange backdrop-blur-sm transition hover:border-sun-orange hover:bg-sun-orange/18 hover:shadow-[0_0_16px_rgba(255,159,28,0.3)]"
                   >
-                    <LogOut aria-hidden="true" size={19} strokeWidth={1.8} />
+                    <LogOut
+                      aria-hidden="true"
+                      size={19}
+                      strokeWidth={1.8}
+                      className="group-hover:animate-icon-exit"
+                    />
                   </button>
                 )}
                 <FullscreenButton />
@@ -439,18 +455,28 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
                   to="/"
                   title={t("nav.home")}
                   aria-label={t("nav.home")}
-                  className="flex h-10 w-10 items-center justify-center border border-neon-cyan/60 bg-bg/60 text-neon-cyan backdrop-blur-sm transition hover:border-neon-cyan hover:bg-neon-cyan/18 hover:shadow-[0_0_16px_rgba(36,245,255,0.3)]"
+                  className="group flex h-10 w-10 items-center justify-center border border-neon-cyan/60 bg-bg/60 text-neon-cyan backdrop-blur-sm transition hover:border-neon-cyan hover:bg-neon-cyan/18 hover:shadow-[0_0_16px_rgba(36,245,255,0.3)]"
                 >
-                  <House aria-hidden="true" size={19} strokeWidth={1.8} />
+                  <House
+                    aria-hidden="true"
+                    size={19}
+                    strokeWidth={1.8}
+                    className="group-hover:animate-icon-hop"
+                  />
                 </Link>
                 <NotificationCenter />
                 <Link
                   to="/friends"
                   title={t("profilePage.contacts")}
                   aria-label={t("profilePage.contacts")}
-                  className="flex h-10 w-10 items-center justify-center border border-neon-violet/60 bg-bg/60 text-neon-violet backdrop-blur-sm transition hover:border-neon-violet hover:bg-neon-violet/18 hover:shadow-[0_0_16px_rgba(157,78,221,0.3)]"
+                  className="group flex h-10 w-10 items-center justify-center border border-neon-violet/60 bg-bg/60 text-neon-violet backdrop-blur-sm transition hover:border-neon-violet hover:bg-neon-violet/18 hover:shadow-[0_0_16px_rgba(157,78,221,0.3)]"
                 >
-                  <UsersRound aria-hidden="true" size={19} strokeWidth={1.8} />
+                  <UsersRound
+                    aria-hidden="true"
+                    size={19}
+                    strokeWidth={1.8}
+                    className="transition-transform duration-300 group-hover:-scale-x-100"
+                  />
                 </Link>
                 <FullscreenButton />
                 <SettingsMenu align="right" />
@@ -459,9 +485,14 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
                   onClick={() => setLogoutOpen(true)}
                   title={t("profilePage.logout")}
                   aria-label={t("profilePage.logout")}
-                  className="flex h-10 w-10 items-center justify-center border border-sun-orange/60 bg-bg/60 text-sun-orange backdrop-blur-sm transition hover:border-sun-orange hover:bg-sun-orange/18 hover:shadow-[0_0_16px_rgba(255,159,28,0.3)]"
+                  className="group flex h-10 w-10 items-center justify-center border border-sun-orange/60 bg-bg/60 text-sun-orange backdrop-blur-sm transition hover:border-sun-orange hover:bg-sun-orange/18 hover:shadow-[0_0_16px_rgba(255,159,28,0.3)]"
                 >
-                  <LogOut aria-hidden="true" size={19} strokeWidth={1.8} />
+                  <LogOut
+                    aria-hidden="true"
+                    size={19}
+                    strokeWidth={1.8}
+                    className="group-hover:animate-icon-exit"
+                  />
                 </button>
               </>
             )}

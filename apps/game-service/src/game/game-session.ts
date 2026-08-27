@@ -41,6 +41,9 @@ export interface GameSessionConfig {
   // Velocidad de TODA la multitud, humanos incluidos. Ya no existe una velocidad de
   // jugador aparte: tenerla era regalarle al cazador un modo de distinguirlos.
   npcSpeed: number;
+  // Por debajo de esto la partida se abandona. Llega en match.found, para que sea el
+  // mismo umbral con el que el matchmaking decidió que había gente suficiente.
+  minPlayers: number;
 }
 
 export interface GameRoundRecord {
@@ -240,6 +243,9 @@ export class GameSession {
   private roundPhase: GameRoundPhase = "playing";
   private remainingSeconds: number = GAME_RULES.roundSeconds;
   private roundEndReason: GameRoundEndReason = null;
+  // La ronda en curso se anuló (se fue el cazador) y toca repetirla con el mismo
+  // número en vez de avanzar al siguiente.
+  private roundRestart = false;
   private roundStartedAt = new Date();
   private readonly completedRounds: GameRoundRecord[] = [];
 
@@ -281,6 +287,9 @@ export class GameSession {
   private resetRoundWorld(rotateSeeker: boolean): void {
     const userIds = [...this.players.keys()];
     if (rotateSeeker && userIds.length > 0 && this.seekerUserId) {
+      // Si el cazador anterior abandonó ya no está en la lista, indexOf da -1 y el
+      // turno arranca por el primero. Es justo lo que queremos al reiniciar una ronda
+      // por su marcha: alguien tiene que heredar el rol.
       const current = userIds.indexOf(this.seekerUserId);
       this.seekerUserId = userIds[(current + 1 + userIds.length) % userIds.length];
     }
@@ -547,9 +556,18 @@ export class GameSession {
     if (!player) return null;
     this.crowd.remove(player);
     this.players.delete(userId);
-    if (this.roundPhase === "playing" && this.allHidersFound) {
+
+    // El orden manda: quedarse sin gente gana sobre cualquier otra consecuencia.
+    if (this.players.size < this.config.minPlayers) {
+      this.abortGame();
+    } else if (this.roundPhase === "playing" && player.role === "seeker") {
+      // Sin cazador la ronda ya no se puede jugar: nadie ve la nave ni puede
+      // disparar, así que correría en vacío hasta agotar el reloj.
+      this.restartRound();
+    } else if (this.roundPhase === "playing" && this.allHidersFound) {
       this.endRound("all-hiders-found");
     }
+
     return {
       userId,
       username: player.username,
@@ -628,11 +646,7 @@ export class GameSession {
       startedAt: this.roundStartedAt,
       endedAt: new Date()
     });
-    for (const player of this.players.values()) {
-      player.forward = 0;
-      player.turn = 0;
-      player.aiming = false;
-    }
+    this.stopEveryone();
     if (this.roundNumber >= GAME_RULES.totalRounds) {
       this.roundPhase = "finished";
       this.remainingSeconds = 0;
@@ -642,8 +656,43 @@ export class GameSession {
     this.remainingSeconds = GAME_RULES.intermissionSeconds;
   }
 
+  /**
+   * Corta la partida por abandono. No es un endRound porque tiene que funcionar
+   * también desde la intermisión, y porque la ronda a medias no cuenta: no entra en
+   * completedRounds ni se guarda nada de esta partida.
+   */
+  private abortGame(): void {
+    if (this.roundPhase === "finished") return;
+    this.stopEveryone();
+    this.roundEndReason = "abandoned";
+    this.roundPhase = "finished";
+    this.remainingSeconds = 0;
+  }
+
+  /**
+   * Anula la ronda en curso y la programa de nuevo con el mismo número: pasa por la
+   * intermisión para que a todos les dé tiempo a leer por qué se ha reiniciado.
+   */
+  private restartRound(): void {
+    this.stopEveryone();
+    this.roundEndReason = "seeker-left";
+    this.roundPhase = "intermission";
+    this.remainingSeconds = GAME_RULES.intermissionSeconds;
+    this.roundRestart = true;
+  }
+
+  private stopEveryone(): void {
+    for (const player of this.players.values()) {
+      player.forward = 0;
+      player.turn = 0;
+      player.aiming = false;
+    }
+  }
+
   private startNextRound(): void {
-    this.roundNumber += 1;
+    // Una ronda anulada se repite, no avanza.
+    if (!this.roundRestart) this.roundNumber += 1;
+    this.roundRestart = false;
     this.roundPhase = "playing";
     this.remainingSeconds = GAME_RULES.roundSeconds;
     this.roundEndReason = null;

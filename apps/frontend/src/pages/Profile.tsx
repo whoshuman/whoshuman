@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { apiError } from "../shared/api/errors";
 import { deleteMe, getCombatStats, getMe } from "../shared/api/users";
 import { useAuthStore } from "../shared/authStore";
+import ProfileAvatarHead from "../shared/ProfileAvatarHead";
 import ProfileEdit from "./ProfileEdit";
 
 function Profile() {
@@ -137,13 +138,15 @@ function Profile() {
         <span className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-neon-magenta" />
 
         <div className="px-4 py-6 sm:px-10 sm:py-8 lg:grid lg:auto-rows-min lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-x-10">
-          {/* Identidad: avatar de iniciales + callsign. Avatar mas pequeño en movil. */}
+          {/* Identidad: avatar + callsign. Sin foto propia se ve el mismo retrato 3D del
+              elenco que en la ficha del lobby y en la edicion, para que las tres pantallas
+              enseñen lo mismo. Avatar mas pequeño en movil. */}
           <div className="mb-6 flex items-center gap-3 sm:mb-8 sm:gap-5 lg:col-start-1 lg:row-start-1">
             <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden border-2 border-neon-cyan/40 bg-neon-cyan/10 font-display text-2xl font-black text-neon-cyan [text-shadow:0_0_14px_rgba(36,245,255,0.6)] sm:h-20 sm:w-20 sm:text-3xl">
               {user.avatar ? (
                 <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" />
               ) : (
-                initials
+                <ProfileAvatarHead initials={initials} />
               )}
             </div>
             <div className="min-w-0">

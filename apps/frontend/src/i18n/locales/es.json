@@ -11,8 +11,6 @@
     "system": "SISTEMA DE VIGILANCIA WHO'S HUMAN // 42"
   },
   "common": {
-    "underConstruction": "MÓDULO EN CONSTRUCCIÓN",
-    "underConstructionDesc": "Esta sección aún no está disponible en el sistema. Vuelve más tarde.",
     "back": "VOLVER A INICIO",
     "backShort": "ATRÁS",
     "confirmationRequired": "CONFIRMACIÓN REQUERIDA",
@@ -30,10 +28,6 @@
     "music": "MÚSICA"
   },
   "home": {
-    "title": "Who's Human",
-    "tagline": "Engaña. Observa. Sobrevive.",
-    "claim": "Engaña · Observa · Sobrevive",
-    "credits": "Proyecto final 42 | Transcendence | Desarrollado por: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
     "play": "Jugar",
     "menu": {
       "play": "Jugar",
@@ -148,8 +142,7 @@
     "avatarProcessError": "No se pudo procesar el avatar.",
     "save": "GUARDAR CAMBIOS",
     "saveShort": "GUARDAR",
-    "cancel": "CANCELAR",
-    "saved": "PERFIL ACTUALIZADO"
+    "cancel": "CANCELAR"
   },
   "profilePage": {
     "eyebrow": "FICHA DE UNIDAD",
@@ -446,9 +439,12 @@
     "eliminated": "UNIDAD ELIMINADA",
     "waitNextRound": "Espera al siguiente despliegue.",
     "roundComplete": "RONDA COMPLETADA",
+    "roundRestarted": "RONDA REINICIADA",
     "reasonAllFound": "El Cazador encontró a todos los cyborgs.",
     "reasonTime": "El tiempo de la ronda se ha agotado.",
+    "reasonSeekerLeft": "El Cazador abandonó la operación.",
     "nextRound": "Siguiente ronda en {{seconds}} s",
+    "restartingRound": "Reiniciando ronda en {{seconds}} s",
     "scopeHeading": "Rumbo",
     "scopeDistance": "Distancia",
     "scopeAltitude": "Altitud",
@@ -459,7 +455,14 @@
     "operationComplete": "OPERACIÓN COMPLETADA",
     "winnerScore": "{{score}} puntos",
     "noWinner": "SIN GANADOR",
-    "returnLobby": "VOLVER AL LOBBY"
+    "matchAbandoned": "OPERACIÓN ABORTADA",
+    "abandonedText": "No quedan efectivos suficientes para continuar.",
+    "returnLobby": "VOLVER AL LOBBY",
+    "accept": "ACEPTAR",
+    "leaveTitle": "¿ABANDONAR LA PARTIDA?",
+    "leaveWarning": "Si te vas ahora dejas al resto del escuadron en inferioridad durante lo que queda de ronda. Abandonar partidas de forma reiterada puede acarrear restricciones sobre tu cuenta.",
+    "leaveConfirm": "CONFIRMAR ABANDONO",
+    "leaveKeepPlaying": "SEGUIR JUGANDO"
   },
   "notFound": {
     "protocol": "ERROR DE SISTEMA — UNIDAD NO LOCALIZADA",

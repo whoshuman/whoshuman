@@ -11,8 +11,6 @@
     "system": "SYSTÈME DE SURVEILLANCE WHO'S HUMAN // 42"
   },
   "common": {
-    "underConstruction": "MODULE EN CONSTRUCTION",
-    "underConstructionDesc": "Cette section n'est pas encore disponible dans le système. Reviens plus tard.",
     "back": "RETOUR À L'ACCUEIL",
     "backShort": "RETOUR",
     "confirmationRequired": "CONFIRMATION REQUISE",
@@ -30,10 +28,6 @@
     "music": "MUSIQUE"
   },
   "home": {
-    "title": "Who's Human",
-    "tagline": "Trompe. Observe. Survie.",
-    "claim": "Trompe · Observe · Survie",
-    "credits": "Projet final 42 | Transcendence | Développé par : Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
     "play": "Jouer",
     "menu": {
       "play": "Jouer",
@@ -148,8 +142,7 @@
     "avatarProcessError": "L'avatar n'a pas pu être traité.",
     "save": "ENREGISTRER",
     "saveShort": "ENREG.",
-    "cancel": "ANNULER",
-    "saved": "PROFIL MIS À JOUR"
+    "cancel": "ANNULER"
   },
   "profilePage": {
     "eyebrow": "FICHE D'UNITÉ",
@@ -446,9 +439,12 @@
     "eliminated": "UNITÉ ÉLIMINÉE",
     "waitNextRound": "Attendez le prochain déploiement.",
     "roundComplete": "MANCHE TERMINÉE",
+    "roundRestarted": "MANCHE RELANCÉE",
     "reasonAllFound": "Le Chasseur a trouvé tous les cyborgs.",
     "reasonTime": "Le temps de la manche est écoulé.",
+    "reasonSeekerLeft": "Le Chasseur a abandonné l’opération.",
     "nextRound": "Prochaine manche dans {{seconds}} s",
+    "restartingRound": "Relance de la manche dans {{seconds}} s",
     "scopeHeading": "Cap",
     "scopeDistance": "Distance",
     "scopeAltitude": "Altitude",
@@ -459,7 +455,14 @@
     "operationComplete": "OPÉRATION TERMINÉE",
     "winnerScore": "{{score}} points",
     "noWinner": "AUCUN GAGNANT",
-    "returnLobby": "RETOUR AU LOBBY"
+    "matchAbandoned": "OPÉRATION INTERROMPUE",
+    "abandonedText": "Il ne reste pas assez d’effectifs pour continuer.",
+    "returnLobby": "RETOUR AU LOBBY",
+    "accept": "ACCEPTER",
+    "leaveTitle": "ABANDONNER LA PARTIE ?",
+    "leaveWarning": "Si tu pars maintenant, tu laisses le reste de ton escouade en infériorité jusqu’à la fin de la manche. Abandonner des parties de manière répétée peut entraîner des restrictions sur ton compte.",
+    "leaveConfirm": "CONFIRMER L’ABANDON",
+    "leaveKeepPlaying": "CONTINUER À JOUER"
   },
   "notFound": {
     "protocol": "ERREUR SYSTÈME — UNITÉ NON LOCALISÉE",

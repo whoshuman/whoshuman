@@ -158,6 +158,26 @@ describe("GameService", () => {
     expect(service.getGameCount()).toBe(0);
   });
 
+  it("avisa del abandono con un último snapshot y no guarda nada", async () => {
+    const trio = [...members, { userId: "u3", role: "hider" as const }];
+    service.startGame({ gameId: "g1", players: trio, minPlayers: 3 });
+    service.join({ userId: "u1", gameId: "g1" });
+    service.join({ userId: "u2", gameId: "g1" });
+    service.join({ userId: "u3", gameId: "g1" });
+
+    service.leave({ userId: "u3", gameId: "g1" });
+    await jest.advanceTimersByTimeAsync(envs.gameTickMs);
+
+    // El que sigue dentro tiene que enterarse: de ahí el snapshot final.
+    expect(snapshots().at(-1)!.round).toMatchObject({
+      phase: "finished",
+      endReason: "abandoned"
+    });
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(prisma.score.upsert).not.toHaveBeenCalled();
+    expect(service.getGameCount()).toBe(0);
+  });
+
   it("guarda partida, rondas y marcador una sola vez al terminar la tercera ronda", async () => {
     service.startGame({ gameId: "g1", players: members });
     const seeker = service.join({ userId: "u1", gameId: "g1" })!;

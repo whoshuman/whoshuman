@@ -11,8 +11,6 @@
     "system": "WHO'S HUMAN SURVEILLANCE SYSTEM // 42"
   },
   "common": {
-    "underConstruction": "MODULE UNDER CONSTRUCTION",
-    "underConstructionDesc": "This section is not available in the system yet. Come back later.",
     "back": "BACK TO HOME",
     "backShort": "BACK",
     "confirmationRequired": "CONFIRMATION REQUIRED",
@@ -30,10 +28,6 @@
     "music": "MUSIC"
   },
   "home": {
-    "title": "Who's Human",
-    "tagline": "Deceive. Observe. Survive.",
-    "claim": "Deceive · Observe · Survive",
-    "credits": "42 Final Project | Transcendence | Developed by: Jdelorme, smarin-a, zlu, descamil, ldiaz-ra",
     "play": "Play",
     "menu": {
       "play": "Play",
@@ -148,8 +142,7 @@
     "avatarProcessError": "The avatar could not be processed.",
     "save": "SAVE CHANGES",
     "saveShort": "SAVE",
-    "cancel": "CANCEL",
-    "saved": "PROFILE UPDATED"
+    "cancel": "CANCEL"
   },
   "profilePage": {
     "eyebrow": "UNIT RECORD",
@@ -446,9 +439,12 @@
     "eliminated": "UNIT ELIMINATED",
     "waitNextRound": "Wait for the next deployment.",
     "roundComplete": "ROUND COMPLETE",
+    "roundRestarted": "ROUND RESTARTED",
     "reasonAllFound": "The Hunter found every cyborg.",
     "reasonTime": "The round timer expired.",
+    "reasonSeekerLeft": "The Hunter abandoned the operation.",
     "nextRound": "Next round in {{seconds}} s",
+    "restartingRound": "Restarting round in {{seconds}} s",
     "scopeHeading": "Heading",
     "scopeDistance": "Range",
     "scopeAltitude": "Altitude",
@@ -459,7 +455,14 @@
     "operationComplete": "OPERATION COMPLETE",
     "winnerScore": "{{score}} points",
     "noWinner": "NO WINNER",
-    "returnLobby": "RETURN TO LOBBY"
+    "matchAbandoned": "OPERATION ABORTED",
+    "abandonedText": "Not enough operatives left to continue.",
+    "returnLobby": "RETURN TO LOBBY",
+    "accept": "ACCEPT",
+    "leaveTitle": "ABANDON THE MATCH?",
+    "leaveWarning": "Leaving now leaves the rest of your squad outnumbered for the remainder of the round. Abandoning matches repeatedly may lead to restrictions on your account.",
+    "leaveConfirm": "CONFIRM ABANDON",
+    "leaveKeepPlaying": "KEEP PLAYING"
   },
   "notFound": {
     "protocol": "SYSTEM ERROR — UNIT NOT LOCATED",
