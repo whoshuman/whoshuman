@@ -421,20 +421,71 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
       {/* Dos carteles colgados a la misma altura, uno en cada lado de la calle: la ficha de
           identidad a la izquierda y la terminal de operaciones a la derecha. El margen
           superior deja sitio a la burbuja del avatar, que asoma por encima de su cartel. */}
-      <div className="mt-6 flex flex-col gap-6 sm:mt-10 sm:flex-row sm:items-start sm:gap-14">
+      <div className="mt-6 flex flex-col gap-6 sm:mt-10 sm:grid sm:grid-cols-2 sm:items-start sm:gap-14">
         {/* Tarjeta de identidad: fila de accesos pegada encima (a la derecha) y, debajo, la
           ficha con la foto de perfil circular asomando por la esquina superior. Sin cabecera
           global en el lobby: estos son los unicos accesos a amigos/ajustes/notificaciones/salir. */}
-        <div className="mx-auto w-full sm:mx-0 sm:w-[26rem] sm:shrink-0">
-          <div className="mb-3 flex items-center justify-end gap-1.5">
-            {embedded ? (
-              <>
-                {onClose && (
+        <div className="mx-auto w-full sm:mx-0 sm:w-auto">
+          <div className="mb-3 h-10">
+            <div className="absolute right-4 top-4 z-20 flex items-center gap-1.5 sm:right-10 sm:top-8">
+              {embedded ? (
+                <>
+                  {onClose && (
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      title={t("lobby.exit")}
+                      aria-label={t("lobby.exit")}
+                      className="group flex h-10 w-10 items-center justify-center border border-sun-orange/60 bg-bg/60 text-sun-orange backdrop-blur-sm transition hover:border-sun-orange hover:bg-sun-orange/18 hover:shadow-[0_0_16px_rgba(255,159,28,0.3)]"
+                    >
+                      <LogOut
+                        aria-hidden="true"
+                        size={19}
+                        strokeWidth={1.8}
+                        className="group-hover:animate-icon-exit"
+                      />
+                    </button>
+                  )}
+                  <FullscreenButton />
+                  <SettingsMenu align="right" />
+                </>
+              ) : (
+                <>
+                  {/* Volver a la pantalla de inicio (la escena de la ciudad). */}
+                  <Link
+                    to="/"
+                    title={t("nav.home")}
+                    aria-label={t("nav.home")}
+                    className="group flex h-10 w-10 items-center justify-center border border-neon-cyan/60 bg-bg/60 text-neon-cyan backdrop-blur-sm transition hover:border-neon-cyan hover:bg-neon-cyan/18 hover:shadow-[0_0_16px_rgba(36,245,255,0.3)]"
+                  >
+                    <House
+                      aria-hidden="true"
+                      size={19}
+                      strokeWidth={1.8}
+                      className="group-hover:animate-icon-hop"
+                    />
+                  </Link>
+                  <NotificationCenter />
+                  <Link
+                    to="/friends"
+                    title={t("profilePage.contacts")}
+                    aria-label={t("profilePage.contacts")}
+                    className="group flex h-10 w-10 items-center justify-center border border-neon-violet/60 bg-bg/60 text-neon-violet backdrop-blur-sm transition hover:border-neon-violet hover:bg-neon-violet/18 hover:shadow-[0_0_16px_rgba(157,78,221,0.3)]"
+                  >
+                    <UsersRound
+                      aria-hidden="true"
+                      size={19}
+                      strokeWidth={1.8}
+                      className="transition-transform duration-300 group-hover:-scale-x-100"
+                    />
+                  </Link>
+                  <FullscreenButton />
+                  <SettingsMenu align="right" />
                   <button
                     type="button"
-                    onClick={onClose}
-                    title={t("lobby.exit")}
-                    aria-label={t("lobby.exit")}
+                    onClick={() => setLogoutOpen(true)}
+                    title={t("profilePage.logout")}
+                    aria-label={t("profilePage.logout")}
                     className="group flex h-10 w-10 items-center justify-center border border-sun-orange/60 bg-bg/60 text-sun-orange backdrop-blur-sm transition hover:border-sun-orange hover:bg-sun-orange/18 hover:shadow-[0_0_16px_rgba(255,159,28,0.3)]"
                   >
                     <LogOut
@@ -444,58 +495,9 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
                       className="group-hover:animate-icon-exit"
                     />
                   </button>
-                )}
-                <FullscreenButton />
-                <SettingsMenu align="right" />
-              </>
-            ) : (
-              <>
-                {/* Volver a la pantalla de inicio (la escena de la ciudad). */}
-                <Link
-                  to="/"
-                  title={t("nav.home")}
-                  aria-label={t("nav.home")}
-                  className="group flex h-10 w-10 items-center justify-center border border-neon-cyan/60 bg-bg/60 text-neon-cyan backdrop-blur-sm transition hover:border-neon-cyan hover:bg-neon-cyan/18 hover:shadow-[0_0_16px_rgba(36,245,255,0.3)]"
-                >
-                  <House
-                    aria-hidden="true"
-                    size={19}
-                    strokeWidth={1.8}
-                    className="group-hover:animate-icon-hop"
-                  />
-                </Link>
-                <NotificationCenter />
-                <Link
-                  to="/friends"
-                  title={t("profilePage.contacts")}
-                  aria-label={t("profilePage.contacts")}
-                  className="group flex h-10 w-10 items-center justify-center border border-neon-violet/60 bg-bg/60 text-neon-violet backdrop-blur-sm transition hover:border-neon-violet hover:bg-neon-violet/18 hover:shadow-[0_0_16px_rgba(157,78,221,0.3)]"
-                >
-                  <UsersRound
-                    aria-hidden="true"
-                    size={19}
-                    strokeWidth={1.8}
-                    className="transition-transform duration-300 group-hover:-scale-x-100"
-                  />
-                </Link>
-                <FullscreenButton />
-                <SettingsMenu align="right" />
-                <button
-                  type="button"
-                  onClick={() => setLogoutOpen(true)}
-                  title={t("profilePage.logout")}
-                  aria-label={t("profilePage.logout")}
-                  className="group flex h-10 w-10 items-center justify-center border border-sun-orange/60 bg-bg/60 text-sun-orange backdrop-blur-sm transition hover:border-sun-orange hover:bg-sun-orange/18 hover:shadow-[0_0_16px_rgba(255,159,28,0.3)]"
-                >
-                  <LogOut
-                    aria-hidden="true"
-                    size={19}
-                    strokeWidth={1.8}
-                    className="group-hover:animate-icon-exit"
-                  />
-                </button>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
 
           {/* Ficha del jugador, colgada del edificio de la izquierda. Abre la edicion de perfil. */}
@@ -508,12 +510,9 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
           la ficha de identidad (de ahi el margen superior en escritorio, que compensa la fila
           de accesos que la ficha lleva encima). El titulo se teclea al entrar, con cursor
           parpadeante, como un comando escrito en una consola. */}
-        <HangingSign
-          side="right"
-          className="w-full sm:ml-auto sm:mt-[3.25rem] sm:min-w-0 sm:max-w-md sm:flex-1"
-        >
+        <HangingSign side="right" className="w-full sm:mt-[3.25rem] sm:min-w-0">
           <div
-            className="panel-neon relative bg-bg/85 backdrop-blur-md"
+            className="panel-neon relative min-h-28 bg-bg/85 backdrop-blur-md"
             style={{ "--accent": "var(--color-neon-cyan)" } as CSSProperties}
           >
             {/* Barra de titulo de la ventana. */}
@@ -576,41 +575,43 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
       {/* Dentro de una sala (o conectando) → panel de sala. Fuera → menu de operaciones:
           despliegue automatico como opcion destacada (la que usa la mayoria), crear/unirse
           como par de opciones secundarias debajo — un menu de juego, no tres fichas iguales. */}
-      {inRoom ? (
-        <RoomPanel />
-      ) : mode === "menu" ? (
-        <div className="mx-auto mt-6 flex max-w-5xl flex-col gap-2 sm:mt-10 sm:gap-4">
-          <OperationCard
-            accent="var(--color-neon-violet)"
-            icon={<AutoDeployIcon />}
-            title={t("lobby.autoDeployTitle")}
-            description={t("lobby.autoDeployText")}
-            onClick={() => join()}
-            delay={0.1}
-            featured
-          />
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
+      <section className="mt-6 sm:mt-10">
+        {inRoom ? (
+          <RoomPanel />
+        ) : mode === "menu" ? (
+          <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:gap-4">
             <OperationCard
-              accent="var(--color-neon-magenta)"
-              icon={<CreateRoomIcon />}
-              title={t("lobby.createRoom")}
-              description={t("lobby.createRoomDesc")}
-              onClick={() => setMode("create")}
-              delay={0.2}
+              accent="var(--color-neon-violet)"
+              icon={<AutoDeployIcon />}
+              title={t("lobby.autoDeployTitle")}
+              description={t("lobby.autoDeployText")}
+              onClick={() => join()}
+              delay={0.1}
+              featured
             />
-            <OperationCard
-              accent="var(--color-neon-cyan)"
-              icon={<JoinRoomIcon />}
-              title={t("lobby.joinRoom")}
-              description={t("lobby.joinRoomDesc")}
-              onClick={() => setMode("join")}
-              delay={0.3}
-            />
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
+              <OperationCard
+                accent="var(--color-neon-magenta)"
+                icon={<CreateRoomIcon />}
+                title={t("lobby.createRoom")}
+                description={t("lobby.createRoomDesc")}
+                onClick={() => setMode("create")}
+                delay={0.2}
+              />
+              <OperationCard
+                accent="var(--color-neon-cyan)"
+                icon={<JoinRoomIcon />}
+                title={t("lobby.joinRoom")}
+                description={t("lobby.joinRoomDesc")}
+                onClick={() => setMode("join")}
+                delay={0.3}
+              />
+            </div>
           </div>
-        </div>
-      ) : (
-        <RoomModal mode={mode} onBack={() => setMode("menu")} />
-      )}
+        ) : (
+          <RoomModal mode={mode} onBack={() => setMode("menu")} />
+        )}
+      </section>
 
       {lobbyStatus === "inLobby" && lobbyId && <GroupChatDock scope="lobby" channelId={lobbyId} />}
     </main>

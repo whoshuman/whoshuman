@@ -35,7 +35,7 @@ function PlayerCard({ onClick }: PlayerCardProps) {
     <button
       type="button"
       onClick={onClick}
-      className="panel-neon animate-crt-on [transform-origin:center] group relative w-full bg-surface/90 py-3 pl-24 pr-3 text-left transition hover:-translate-y-0.5 sm:py-6 sm:pl-36 sm:pr-5"
+      className="panel-neon animate-crt-on [transform-origin:center] group relative min-h-28 w-full bg-surface/90 py-3 pl-24 pr-3 text-left transition hover:-translate-y-0.5 sm:py-6 sm:pl-36 sm:pr-5"
       style={{ "--accent": "var(--color-neon-cyan)", opacity: 0 } as CSSProperties}
     >
       <CornerBrackets color="var(--color-neon-magenta)" />
