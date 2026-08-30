@@ -8,7 +8,7 @@ Leyenda: ⬜ Pendiente · 🟨 En progreso · ✅ Hecho
 | #   | Punto                                 | Tipo   | Dónde vive                                          | Estado |
 | --- | ------------------------------------- | ------ | --------------------------------------------------- | :----: |
 | 1   | Botón de copiar código de sala        | Falta  | `pages/Lobby.tsx` (RoomPanel) + i18n                |   ✅   |
-| 2   | Pulir interfaz del chat de usuarios   | Mejora | `shared/ChatWindow.tsx`                             |   ⬜   |
+| 2   | Pulir interfaz del chat de usuarios   | Mejora | `shared/ChatWindow.tsx`                             |   ✅   |
 | 3   | Animación al recoger un coleccionable | Mejora | `game/scenes/GameScene.tsx` (`Collectibles`)        |   ⬜   |
 | 4   | Cámara que se mete en los edificios   | Bug    | `game/scenes/GameScene.tsx` (cámara del escondido)  |   ⬜   |
 | 5   | Transición andar ↔ idle               | Bug/UX | `game/scenes/GameScene.tsx` (`Units`, morph shader) |   ⬜   |
@@ -58,6 +58,19 @@ hora, contador de caracteres, estados de carga y error. Lo que falta es lectura.
 
 **Riesgo.** Bajo. Es el mismo componente para chat directo, de sala y de escuadra
 (`DirectChatDialog`, `GroupChatDock`), así que se revisan los tres sitios.
+
+**Hecho.** Los seis puntos, sin tocar sockets ni `mergeMessages`. Dos apuntes sobre
+decisiones que no estaban en el plan:
+
+- Dejar de arrastrar el scroll abría un agujero — un mensaje que llega mientras lees más
+  arriba pasaría desapercibido. Se añade un aviso flotante "MENSAJES NUEVOS" que baja al
+  final. Va posicionado en absoluto sobre la lista: como hermano en el flujo, aparecer y
+  desaparecer movería el panel entero.
+- Al enviar sí se baja siempre, aunque estuvieras leyendo arriba: avisarte de tu propio
+  mensaje no tiene sentido.
+
+Claves nuevas en `chat`: `today`, `yesterday`, `newMessages`. Los `Intl.DateTimeFormat`
+pasan a memorizarse: antes se construía uno nuevo por mensaje y por render.
 
 ---
 
