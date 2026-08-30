@@ -367,7 +367,9 @@ function MapPieceModel({ piece }: { piece: (typeof mapPieces)[number] }) {
       object={scene}
       position={[piece.x, piece.groundOffset, piece.z]}
       rotation={[0, piece.rotationY, 0]}
-      scale={piece.scale}
+      // scaleZ solo lo trae la losa de calle, que es cuadrada y hay que ajustar a una
+      // manzana rectangular; el resto de piezas escalan por igual en los tres ejes.
+      scale={[piece.scale, piece.scale, piece.scaleZ ?? piece.scale]}
     />
   );
 }

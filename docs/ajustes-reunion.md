@@ -108,6 +108,69 @@ Dos cosas que aparecieron al implementarlo:
 
 ---
 
+## 7. Añadidos sobre la marcha
+
+Puntos que fueron llegando después de la reunión. Mismo trato: un commit por punto.
+
+| #   | Punto                                     | Tipo | Dónde vive                        | Estado |
+| --- | ----------------------------------------- | ---- | --------------------------------- | :----: |
+| 7   | No se puede disparar mientras se apunta   | Bug  | `game/scenes/GameScene.tsx`       |   🟨   |
+| 8   | Zumbido de la nave: se reinicia y molesta | Bug  | `shared/sfx.ts` + `GameScene.tsx` |   🟨   |
+| 9   | Música de fin de partida demasiado alta   | Bug  | `shared/sfx.ts`                   |   🟨   |
+| 10  | Suelo visible que no se puede pisar       | Bug  | `game/maps/neonBlockLayout.ts`    |   🟨   |
+
+### 7. No se puede disparar con el izquierdo mientras se apunta con el derecho
+
+**Causa.** No es cosa del doble clic: los eventos de puntero **solo emiten `pointerdown` al
+pasar de cero botones a uno**. Con el derecho ya apretado, pulsar el izquierdo llega como
+`pointermove` con `button = 0` (los movimientos normales traen `-1`), y el disparo escuchaba
+solo `pointerdown`. Por eso con F sí se disparaba: ahí no hay ningún botón pulsado.
+
+**Arreglo.** Escuchar también `pointermove` y distinguir pulsar de soltar mirando si el bit
+del botón sigue en `buttons`. Se aplica igual a apuntar: soltar el derecho con el izquierdo
+aún pulsado tampoco daba `pointerup`, así que la mira se quedaba encendida.
+
+### 8 y 9. Sonido
+
+**El zumbido se reiniciaba** porque al volver a virar dentro del fundido de salida se
+cortaba la fuente y se lanzaba otra desde el principio del mp3. Ahora el corte va en un
+temporizador en vez de programado en el nodo (`stop()` no se puede deshacer), así que al
+volver se le da la vuelta al fundido y el motor **sigue sonando donde iba**.
+
+Además el fundido de salida pasa a 0,7 s frente a 0,25 s de entrada. Simulado: virando a
+izquierda y derecha muy rápido el volumen ahora solo baja al 85 % en vez de reiniciarse; a
+ritmo normal, al 70 %. Los virajes sueltos siguen apagándose del todo.
+
+**Volúmenes:** nave 0,45 → 0,3, y la atenuación por distancia pasa a ser cuadrática (antes
+la nave sonaba a media potencia a mitad de mapa). Música de cierre 0,7 → 0,4.
+
+### 10. Suelo visible que no se puede pisar
+
+**Causa, medida.** El suelo que se ve es la losa `street-simple.glb`, y **es cuadrada**: con
+la escala uniforme de 2,6267 cubre 5×5. Pero la manzana es de **5×4** — eso dicen los
+bounds, el heightmap, el suelo pintado de reserva, `ROADS.halfZ` y la posición de todos los
+edificios. Sobraba media unidad de losa por el norte y otra por el sur.
+
+Sumado al margen de medio cuerpo con el que el servidor recorta el área jugable, quedaban
+**0,64 unidades de suelo a la vista que no se pueden pisar** por el norte y el sur, frente a
+0,14 por el este y el oeste. Esa asimetría de 4× es justo lo que se nota al caminar.
+
+**Arreglo.** `scaleZ` propio para la losa, para que su canto coincida con el del mapa. Ahora
+el margen no pisable es 0,14 por los cuatro lados.
+
+**Comprobado y descartado por el camino** (para que no se vuelva a mirar):
+
+- El JSON del mapa del cliente y el del servidor son **idénticos**.
+- Los 14 colliders visuales y los 14 obstáculos del servidor **coinciden uno a uno**: no hay
+  ni paredes invisibles ni paredes atravesables.
+- El heightmap está **plano y sin huecos** (357 celdas, todas a 0), así que ni la pendiente
+  ni el "sin suelo" bloquean nada.
+- La superficie de la losa está **a ras de y = 0**, donde camina el jugador. No hay escalón.
+- El margen de 0,14 **no** es excesivo: medida la huella real de los cuatro personajes en sus
+  GLB, el más ancho da un radio de 0,147. Ahí no había nada que arreglar.
+
+---
+
 ## 4. La cámara se mete dentro de los edificios
 
 **Situación.** La cámara del escondido (`GameScene.tsx:751-758`) se coloca a
