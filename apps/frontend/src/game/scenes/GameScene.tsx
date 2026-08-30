@@ -1107,14 +1107,24 @@ function Units() {
       }
       shoot(targetEntityId);
     };
+    // Con el derecho ya pulsado (apuntando), pulsar el izquierdo NO genera un pointerdown.
+    // Los eventos de puntero solo lo emiten al pasar de CERO botones a uno; mientras haya
+    // alguno apretado, los demas cambios de boton llegan como pointermove, con `button`
+    // diciendo cual cambio (los movimientos normales traen -1). Por eso apuntando con el
+    // derecho el disparo estaba muerto y con F no: ahi no hay ningun boton pulsado.
     const handleShoot = (event: PointerEvent) => {
       if (event.button !== 0 || event.pointerType === "touch") return;
+      // En el pointermove hay que separar pulsar de soltar, que llegan igual: si el bit
+      // del izquierdo sigue en `buttons`, es una pulsacion.
+      if (event.type === "pointermove" && (event.buttons & 1) === 0) return;
       shootAtCrosshair();
     };
     gl.domElement.addEventListener("pointerdown", handleShoot);
+    gl.domElement.addEventListener("pointermove", handleShoot);
     window.addEventListener(TOUCH_SEEKER_SHOOT_EVENT, shootAtCrosshair);
     return () => {
       gl.domElement.removeEventListener("pointerdown", handleShoot);
+      gl.domElement.removeEventListener("pointermove", handleShoot);
       window.removeEventListener(TOUCH_SEEKER_SHOOT_EVENT, shootAtCrosshair);
     };
   }, [aiming, camera, gl, raycaster, scene, selfRole, shoot]);
@@ -1591,8 +1601,12 @@ function SeekerCamera() {
 
   useEffect(() => {
     if (selfRole !== "seeker") return;
+    // Mismo motivo que en el disparo: con otro boton ya pulsado, el derecho no genera
+    // pointerdown/pointerup sino pointermove, y hay que mirar `buttons` para saber si
+    // acaba de pulsarse o de soltarse.
     const startAiming = (event: PointerEvent) => {
       if (event.button !== 2) return;
+      if (event.type === "pointermove" && (event.buttons & 2) === 0) return;
       event.preventDefault();
       setAiming(true);
       void gl.domElement.requestPointerLock();
@@ -1616,14 +1630,20 @@ function SeekerCamera() {
       }
     };
     gl.domElement.addEventListener("pointerdown", startAiming);
+    gl.domElement.addEventListener("pointermove", startAiming);
     gl.domElement.addEventListener("contextmenu", preventMenu);
     window.addEventListener("pointerup", stopAiming);
+    // Soltar el derecho con el izquierdo aun pulsado tampoco da pointerup: sin esto la
+    // mira se quedaba encendida hasta soltar los dos botones.
+    window.addEventListener("pointermove", stopAiming);
     window.addEventListener("blur", cancelAiming);
     document.addEventListener("pointerlockchange", lockChanged);
     return () => {
       gl.domElement.removeEventListener("pointerdown", startAiming);
+      gl.domElement.removeEventListener("pointermove", startAiming);
       gl.domElement.removeEventListener("contextmenu", preventMenu);
       window.removeEventListener("pointerup", stopAiming);
+      window.removeEventListener("pointermove", stopAiming);
       window.removeEventListener("blur", cancelAiming);
       document.removeEventListener("pointerlockchange", lockChanged);
       if (document.pointerLockElement === gl.domElement) document.exitPointerLock();
