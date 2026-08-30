@@ -9,7 +9,7 @@ Leyenda: ⬜ Pendiente · 🟨 En progreso · ✅ Hecho
 | --- | ------------------------------------- | ------ | --------------------------------------------------- | :----: |
 | 1   | Botón de copiar código de sala        | Falta  | `pages/Lobby.tsx` (RoomPanel) + i18n                |   ✅   |
 | 2   | Pulir interfaz del chat de usuarios   | Mejora | `shared/ChatWindow.tsx`                             |   ✅   |
-| 3   | Animación al recoger un coleccionable | Mejora | `game/scenes/GameScene.tsx` (`Collectibles`)        |   ⬜   |
+| 3   | Animación al recoger un coleccionable | Mejora | `game/scenes/GameScene.tsx` (`Collectibles`)        |   🟨   |
 | 4   | Cámara que se mete en los edificios   | Bug    | `game/scenes/GameScene.tsx` (cámara del escondido)  |   ⬜   |
 | 5   | Transición andar ↔ idle               | Bug/UX | `game/scenes/GameScene.tsx` (`Units`, morph shader) |   ⬜   |
 | 6   | El sol no se renderiza bien en Home   | Bug    | `features/home-3d/HomeSun.tsx`                      |   ⬜   |
@@ -91,6 +91,20 @@ el array y React desmonta el `<group>`: desaparece en un fotograma. El sonido
 
 **Riesgo.** Bajo, pero hay que cuidar la limpieza de materiales para no filtrar memoria en
 partidas largas.
+
+**Hecho** (falta verlo en una partida real). Componente `VanishingCell` propio: sube 0.4
+en 450 ms con salida cúbica, gira acelerado, se agranda un 70 % y se apaga; el haz se
+cierra y da un destello a mitad de camino. Cada célula saliente clona sus dos materiales
+y los libera al desmontarse — bajarle el alfa al del GLTF apagaría todas las demás.
+
+Dos cosas que aparecieron al implementarlo:
+
+- La lista se vacía de golpe también al acabar la ronda y al salir de la partida
+  (`round: null`). Sin filtro, las siete células harían el gesto de recogida a la vez. Se
+  anima solo con `phase === "playing"`.
+- La retirada va por temporizador, no en `useFrame`: tocar el estado de React en cada
+  fotograma remontaría el árbol 60 veces por segundo. El filtro devuelve la misma
+  referencia si no sobra ninguna, o el efecto se relanzaría en bucle.
 
 ---
 

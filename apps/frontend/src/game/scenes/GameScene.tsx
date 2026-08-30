@@ -1,6 +1,6 @@
 import { AdaptiveDpr, Clone, PerformanceMonitor, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import type { GameEntityState } from "@whoshuman/shared-types";
+import type { GameCollectibleState, GameEntityState } from "@whoshuman/shared-types";
 import {
   Suspense,
   useCallback,
@@ -208,6 +208,12 @@ const HIDER_CAMERA_DISTANCE = 1.8;
 const CELL_SCALE = 1.0;
 const COLLECTIBLE_BEAM_HEIGHT = 4.8;
 const COLLECTIBLE_BEAM_RADIUS = 0.055;
+// Lo que dura en pantalla una célula ya recogida. Corto a propósito: es el remate de un
+// gesto, no una cinemática, y el jugador sigue corriendo mientras.
+const PICKUP_MS = 450;
+// Lo que se eleva al recogerse. Con personajes de 0.33 de alto, 0.4 la saca por encima
+// de la cabeza sin que parezca que sale disparada.
+const PICKUP_RISE = 0.4;
 // El modelo mide 1 unidad de largo; el mapa entero mide ~5, así que a 1:1 sería
 // gigante. 0.55 lo deja en algo menos de dos veces la altura de un personaje.
 const CHASER_SCALE = 0.55;
@@ -461,9 +467,87 @@ function Floor() {
   );
 }
 
+interface VanishingCollectible extends GameCollectibleState {
+  // Momento en que dejó de llegar en el snapshot, para medir su salida.
+  start: number;
+}
+
+// Célula ya recogida. El servidor deja de mandarla y hasta ahora se esfumaba en un
+// fotograma; aquí se queda el tiempo justo para rematar el gesto: sube girando cada vez
+// más rápido, se agranda y se apaga, mientras su haz se cierra con un último destello.
+function VanishingCell({
+  item,
+  geometry,
+  cellMaterial,
+  beamGeometry,
+  beamMaterial
+}: {
+  item: VanishingCollectible;
+  geometry: THREE.BufferGeometry;
+  cellMaterial: THREE.Material;
+  beamGeometry: THREE.BufferGeometry;
+  beamMaterial: THREE.Material;
+}) {
+  const cell = useRef<THREE.Mesh>(null);
+  const beam = useRef<THREE.Mesh>(null);
+  // Materiales propios y no los compartidos: bajarle el alfa al del GLTF apagaría de
+  // paso todas las células que siguen en el mapa.
+  const materials = useMemo(() => {
+    const fading = cellMaterial.clone();
+    fading.transparent = true;
+    fading.depthWrite = false;
+    return { cell: fading, beam: beamMaterial.clone() };
+  }, [cellMaterial, beamMaterial]);
+
+  useEffect(
+    () => () => {
+      materials.cell.dispose();
+      materials.beam.dispose();
+    },
+    [materials]
+  );
+
+  useFrame((_, delta) => {
+    const progress = Math.min(1, (performance.now() - item.start) / PICKUP_MS);
+    // Arranca de golpe y frena al final: ese tirón inicial es lo que se lee como que
+    // algo se la lleva, en vez de como que flota hacia arriba.
+    const eased = 1 - (1 - progress) ** 3;
+    if (cell.current) {
+      cell.current.position.y = item.y + PICKUP_RISE * eased;
+      cell.current.scale.setScalar(1 + 0.7 * eased);
+      // Al giro de reposo se le suma un impulso que se agota con la propia salida.
+      cell.current.rotation.y += delta * (1.4 + 9 * (1 - eased));
+      cell.current.rotation.x += delta * 0.7;
+      // Exponente > 1: aguanta visible casi todo el recorrido y se apaga al final, en
+      // vez de desvanecerse desde el primer fotograma.
+      materials.cell.opacity = 1 - progress ** 1.6;
+    }
+    if (beam.current) {
+      beam.current.scale.set(1 - eased, 1, 1 - eased);
+      materials.beam.opacity = 0.24 + 0.5 * Math.sin(Math.PI * progress);
+    }
+  });
+
+  return (
+    <group position={[item.x, 0, item.z]}>
+      <mesh ref={cell} geometry={geometry} material={materials.cell} position={[0, item.y, 0]} />
+      <mesh
+        ref={beam}
+        geometry={beamGeometry}
+        material={materials.beam}
+        position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
+        renderOrder={2}
+      />
+    </group>
+  );
+}
+
 function Collectibles() {
   const collectibles = useGameStore((state) => state.collectibles);
+  const phase = useGameStore((state) => state.round?.phase);
   const group = useRef<THREE.Group>(null);
+  const [vanishing, setVanishing] = useState<VanishingCollectible[]>([]);
+  const previous = useRef<GameCollectibleState[]>([]);
   const { scene } = useGLTF(CELL_MODEL_URL);
   // Una sola geometría y un solo material para las células: el GLB se carga una vez
   // y cada célula es un mesh que los reutiliza.
@@ -508,6 +592,34 @@ function Collectibles() {
     []
   );
 
+  // Las que dejan de venir en el snapshot es que alguien las ha recogido. Solo se
+  // animan en juego: al terminar la ronda o salir de la partida la lista se vacía de
+  // golpe, y ahí no hay recogida que rematar — se irían todas a la vez.
+  useEffect(() => {
+    const present = new Set(collectibles.map((item) => item.collectibleId));
+    const gone = previous.current.filter((item) => !present.has(item.collectibleId));
+    previous.current = collectibles;
+    if (gone.length === 0 || phase !== "playing") return;
+    const start = performance.now();
+    setVanishing((current) => [...current, ...gone.map((item) => ({ ...item, start }))]);
+  }, [collectibles, phase]);
+
+  // Retirada de las ya consumidas. Se hace con un temporizador y no en useFrame: cambiar
+  // el estado de React en cada fotograma volvería a montar el árbol 60 veces por segundo.
+  useEffect(() => {
+    if (vanishing.length === 0) return;
+    const timer = setTimeout(() => {
+      const cutoff = performance.now() - PICKUP_MS;
+      setVanishing((current) => {
+        const alive = current.filter((item) => item.start > cutoff);
+        // Misma referencia si no sobra ninguna: devolver un array nuevo relanzaría este
+        // efecto y con él el temporizador, en bucle.
+        return alive.length === current.length ? current : alive;
+      });
+    }, PICKUP_MS);
+    return () => clearTimeout(timer);
+  }, [vanishing]);
+
   useFrame((_, delta) => {
     for (const marker of group.current?.children ?? []) {
       const cell = marker.children[0];
@@ -528,19 +640,33 @@ function Collectibles() {
   );
 
   return (
-    <group ref={group}>
-      {collectibles.map((item) => (
-        <group key={item.collectibleId} position={[item.x, 0, item.z]}>
-          <mesh geometry={geometry} material={material} position={[0, item.y, 0]} />
-          <mesh
-            geometry={beamGeometry}
-            material={beamMaterial}
-            position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
-            renderOrder={2}
-          />
-        </group>
+    <>
+      {/* Las recogidas van fuera de este grupo: el giro de arriba recorre sus hijos y
+          cada una lleva ya el suyo propio, acelerado. */}
+      <group ref={group}>
+        {collectibles.map((item) => (
+          <group key={item.collectibleId} position={[item.x, 0, item.z]}>
+            <mesh geometry={geometry} material={material} position={[0, item.y, 0]} />
+            <mesh
+              geometry={beamGeometry}
+              material={beamMaterial}
+              position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
+              renderOrder={2}
+            />
+          </group>
+        ))}
+      </group>
+      {vanishing.map((item) => (
+        <VanishingCell
+          key={`${item.collectibleId}:${item.start}`}
+          item={item}
+          geometry={geometry}
+          cellMaterial={material}
+          beamGeometry={beamGeometry}
+          beamMaterial={beamMaterial}
+        />
       ))}
-    </group>
+    </>
   );
 }
 
