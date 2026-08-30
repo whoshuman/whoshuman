@@ -10,7 +10,7 @@ Leyenda: ⬜ Pendiente · 🟨 En progreso · ✅ Hecho
 | 1   | Botón de copiar código de sala        | Falta  | `pages/Lobby.tsx` (RoomPanel) + i18n                |   ✅   |
 | 2   | Pulir interfaz del chat de usuarios   | Mejora | `shared/ChatWindow.tsx`                             |   ✅   |
 | 3   | Animación al recoger un coleccionable | Mejora | `game/scenes/GameScene.tsx` (`Collectibles`)        |   🟨   |
-| 4   | Cámara que se mete en los edificios   | Bug    | `game/scenes/GameScene.tsx` (cámara del escondido)  |   ⬜   |
+| 4   | Cámara que se mete en los edificios   | Bug    | `game/scenes/GameScene.tsx` (cámara del escondido)  |   🟨   |
 | 5   | Transición andar ↔ idle               | Bug/UX | `game/scenes/GameScene.tsx` (`Units`, morph shader) |   ⬜   |
 | 6   | El sol no se renderiza bien en Home   | Bug    | `features/home-3d/HomeSun.tsx`                      |   ⬜   |
 
@@ -129,6 +129,33 @@ fachadas constantemente.
 
 **Riesgo.** Medio. Toca la cámara de juego: cualquier fallo se nota en cada partida. Se
 prueba escondido pegado a fachadas, en callejones y en esquinas.
+
+**Hecho** (falta jugarlo). `cameraClearance` traza desde la cabeza hacia donde iría la
+cámara contra los mismos AABB que usan el láser y el servidor, y recorta la distancia.
+Entrar es inmediato y salir se recupera despacio (exponencial, independiente de la tasa
+de fotogramas), o cada esquina daría un tirón; y mientras la empujan hacia dentro el
+viaje de la cámara sube de 0.08 a 0.45, porque a ritmo normal para cuando llegase ya se
+habría visto el interior.
+
+**Un suelo fijo de distancia no vale, y por poco se cuela.** Con `MIN_CAMERA_DISTANCE =
+0.45` y la pared a 0.10 de la cabeza, el mínimo gana y devuelve la cámara al interior del
+edificio — exactamente el fallo que se venía a arreglar. El retranqueo pasa a ser fijo
+(0.15) _o_ proporcional (80 % del hueco), lo que deje la cámara más cerca del muro sin
+cruzarlo.
+
+Verificado con un barrido exhaustivo del mapa real (483 912 combinaciones de posición
+válida × 24 orientaciones × 3 inclinaciones):
+
+- La cámara se recortaba contra un muro en el **30,2 %** de los casos. Eso es lo que se
+  venía atravesando.
+- Quedan 5 231 casos (1,1 %) con la cámara técnicamente dentro, todos con la cabeza a
+  menos de 1,6 cm de la fachada, y con una penetración máxima de 0,02 unidades. El plano
+  cercano de la cámara está a 0,1 — cinco veces más —, así que ese trozo de muro queda
+  recortado y no llega a verse.
+
+De propina: por debajo de 0.5 de distancia se oculta el personaje propio, que si no se ve
+por dentro de la cabeza. La órbita del cazador se deja como está: su radio (3,5 mínimo)
+la mantiene siempre fuera de la huella del mapa, no llega a entrar en ningún edificio.
 
 ---
 

@@ -202,6 +202,20 @@ const SCOPE_REFRESH_MS = 80;
 const TOUCH_CAMERA_SPEED = 1.8;
 const TOUCH_SEEKER_AIM_SPEED = 0.65;
 const HIDER_CAMERA_DISTANCE = 1.8;
+// Lo que se queda la cámara por delante de la fachada contra la que choca. El plano
+// cercano del canvas está a 0.1: pegada al muro, lo recorta y se ve el interior igual.
+const WALL_MARGIN = 0.15;
+// Cuando el hueco hasta el muro no da ni para el margen fijo, el retranqueo pasa a ser
+// esta fracción del hueco. Un suelo fijo NO vale: con la pared a 0.10 y un mínimo de
+// 0.45, el mínimo gana y devuelve la cámara al interior del edificio, que es justo lo
+// que se venía a arreglar.
+const WALL_MARGIN_RATIO = 0.8;
+// Único suelo duro, y solo para que la cámara no caiga exactamente sobre la cabeza: a
+// distancia 0, lookAt se queda sin dirección y la orientación sale NaN.
+const MIN_CAMERA_DISTANCE = 0.02;
+// Por debajo de esto la cámara está dentro del propio personaje y se le ve la cabeza por
+// dentro. Se oculta, como hace cualquier tercera persona al apretarla contra una pared.
+const SELF_HIDE_DISTANCE = 0.5;
 
 // El modelo mide 0.12 de alto; x1.0 lo deja en ~0.12, algo menos de un tercio de personaje.
 // A 1.7 abultaban demasiado y competían con los personajes en la lectura de la escena.
@@ -711,6 +725,10 @@ function Units() {
   const aimOffset = useMemo(() => new THREE.Vector3(), []);
   const cameraDestination = useMemo(() => new THREE.Vector3(), []);
   const cameraTarget = useMemo(() => new THREE.Vector3(), []);
+  const cameraDirection = useMemo(() => new THREE.Vector3(), []);
+  // Distancia real a la que va la cámara, ya recortada por los muros. Es un ref y no un
+  // cálculo suelto porque el retroceso se recupera poco a poco entre fotogramas.
+  const hiderCameraDistance = useRef(HIDER_CAMERA_DISTANCE);
   const selfMorphs = useRef<{ value: number }[]>([]);
   const characterAssets = useMemo(
     () =>
@@ -836,6 +854,7 @@ function Units() {
     touchCamera.current = { x: 0, y: 0 };
     hiderCameraYaw.current = 0;
     hiderCameraPitch.current = 0.45;
+    hiderCameraDistance.current = HIDER_CAMERA_DISTANCE;
   }, [selfRole]);
 
   useFrame(({ camera, clock }, delta) => {
@@ -873,14 +892,37 @@ function Units() {
           1.05
         );
         const yaw = self.rotationY + hiderCameraYaw.current;
-        const horizontalDistance = Math.cos(hiderCameraPitch.current) * HIDER_CAMERA_DISTANCE;
-        cameraDestination.set(
-          self.x - Math.sin(yaw) * horizontalDistance,
-          self.y + PLAYER_HEIGHT + Math.sin(hiderCameraPitch.current) * HIDER_CAMERA_DISTANCE,
-          self.z - Math.cos(yaw) * horizontalDistance
-        );
         cameraTarget.set(self.x, self.y + PLAYER_HEIGHT, self.z);
-        camera.position.lerp(cameraDestination, 0.08);
+        // Hacia dónde se iría la cámara si no hubiera nada en medio. Sale ya normalizado:
+        // el horizontal va escalado por cos(inclinación) y el vertical por su seno.
+        const horizontal = Math.cos(hiderCameraPitch.current);
+        cameraDirection.set(
+          -Math.sin(yaw) * horizontal,
+          Math.sin(hiderCameraPitch.current),
+          -Math.cos(yaw) * horizontal
+        );
+        // Hasta dónde puede retroceder sin atravesar una fachada.
+        const allowed = cameraClearance(cameraTarget, cameraDirection, HIDER_CAMERA_DISTANCE);
+        const previousDistance = hiderCameraDistance.current;
+        // Entrar es urgente y salir no: al pegarse a un muro hay que recortar en el acto,
+        // pero al despegarse conviene volver despacio, o cada esquina da un tirón. El
+        // factor exponencial mantiene ese ritmo igual a cualquier tasa de fotogramas.
+        hiderCameraDistance.current =
+          allowed < previousDistance
+            ? allowed
+            : THREE.MathUtils.lerp(previousDistance, allowed, 1 - Math.exp(-4 * delta));
+        cameraDestination
+          .copy(cameraTarget)
+          .addScaledVector(cameraDirection, hiderCameraDistance.current);
+        // Apretada contra un muro, la cámara acaba dentro del personaje: se oculta en vez
+        // de enseñar su cabeza por dentro.
+        selfRef.current.visible = hiderCameraDistance.current > SELF_HIDE_DISTANCE;
+        // Y el propio viaje de la cámara tampoco puede ir a su paso de siempre cuando la
+        // están empujando hacia dentro: para cuando llegase, ya se habría visto el
+        // interior del edificio.
+        const pushedIn =
+          camera.position.distanceTo(cameraTarget) > hiderCameraDistance.current + WALL_MARGIN;
+        camera.position.lerp(cameraDestination, pushedIn ? 0.45 : 0.08);
         camera.lookAt(cameraTarget);
       }
     }
@@ -1295,6 +1337,31 @@ function rayBoxDistance(
     if (near > far) return null;
   }
   return near;
+}
+
+/**
+ * Hasta dónde puede retroceder la cámara detrás del jugador sin colarse en un edificio.
+ * Se traza desde su cabeza hacia donde iría la cámara y se corta en el primer AABB del
+ * mapa — los mismos que ya usan el láser y el servidor, así que la cámara respeta
+ * exactamente los mismos muros que las balas.
+ */
+function cameraClearance(origin: THREE.Vector3, direction: THREE.Vector3, wanted: number): number {
+  let hit = wanted;
+  for (const rect of obstacles) {
+    const t = rayBoxDistance(
+      origin,
+      direction,
+      [rect.minX, 0, rect.minZ],
+      [rect.maxX, BUILDING_HEIGHT, rect.maxZ]
+    );
+    // t = 0 es la cabeza ya dentro de la caja (rozando una esquina): no hay nada que
+    // recortar por delante y el rayo no dice nada útil, así que se ignora.
+    if (t !== null && t > 0 && t < hit) hit = t;
+  }
+  // El margen fijo se descuenta del choque, pero cuando el hueco es más estrecho que el
+  // propio margen la resta se iría a negativo: ahí manda el proporcional, que siempre
+  // deja la cámara DENTRO del hueco en vez de al otro lado de la pared.
+  return Math.max(hit - WALL_MARGIN, hit * WALL_MARGIN_RATIO, MIN_CAMERA_DISTANCE);
 }
 
 /**
