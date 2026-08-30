@@ -80,6 +80,10 @@ const MOVEMENT_EPSILON_SQ = 1e-8;
 // poco más del doble de la cadencia de autor, que se lee como correr sin parecer que
 // va acelerado.
 const SPRINT_MAX_CYCLES_PER_SECOND = 2;
+// Lo que tarda un personaje en pasar de quieto a andando y al revés. Es el paso completo
+// (0 a 1 del peso), la mitad para cada tramo del cruce. Más largo se lee como que arranca
+// con desgana; más corto vuelve a parecer un salto.
+const WALK_BLEND_SECONDS = 0.18;
 
 interface Motion {
   x: number;
@@ -87,6 +91,17 @@ interface Motion {
   phase: number; // 0..1 dentro del ciclo de caminar, propio de cada entidad
   idleOffset: number; // desfase fijo del idle, para que no respiren todos a la vez
   moving: boolean;
+  // 0 = quieto, 1 = andando. Antes esto era el propio `moving`, y al cambiar el personaje
+  // saltaba de una zancada a media altura a la pose de reposo en un solo fotograma.
+  walkWeight: number;
+}
+
+// Reparto del peso entre los dos ciclos. Por encima de la mitad se dibuja en el de andar
+// y por debajo en el de quieto; el resto del camino lo cubre la mezcla hacia la pose
+// neutra, que es la MISMA en los dos conjuntos. Por eso las dos ramas coinciden en 0.5
+// (mezcla completa a esa pose) y el cambio de malla no se ve.
+function blendAmount(walkWeight: number): number {
+  return walkWeight >= 0.5 ? (1 - walkWeight) * 2 : walkWeight * 2;
 }
 
 // Acumula el recorrido de una entidad y avanza su fase de caminar en proporción a
@@ -106,7 +121,8 @@ function advanceMotion(
       // al unísono como un desfile.
       phase: Math.random(),
       idleOffset: Math.random(),
-      moving: false
+      moving: false,
+      walkWeight: 0
     };
     motions.set(entity.entityId, first);
     return first;
@@ -122,6 +138,13 @@ function advanceMotion(
     const step = Math.min(travelled / SPRINT_CYCLE_DISTANCE, SPRINT_MAX_CYCLES_PER_SECOND * delta);
     previous.phase = (previous.phase + step) % 1;
   }
+  // El peso viaja hacia su destino en vez de conmutar. De paso hace innecesaria cualquier
+  // histéresis sobre `moving`: una entidad que alterne durante un par de fotogramas
+  // apenas mueve el peso, así que no se nota.
+  const weightStep = delta / WALK_BLEND_SECONDS;
+  previous.walkWeight = previous.moving
+    ? Math.min(1, previous.walkWeight + weightStep)
+    : Math.max(0, previous.walkWeight - weightStep);
   return previous;
 }
 
@@ -133,29 +156,38 @@ function advanceMotion(
 // El avance dentro del fotograma viene por instancia en las mallas instanciadas, y por
 // uniform en la del propio jugador, que es una malla suelta. El resto del shader es
 // idéntico; la malla suelta simplemente ignora el atributo aMorph de la geometría.
-function patchMorphMaterial(material: THREE.Material, uniform?: { value: number }): void {
-  const declaration = uniform
-    ? "uniform float uMorph;\n#define MORPH uMorph"
-    : "attribute float aMorph;\n#define MORPH aMorph";
+function patchMorphMaterial(
+  material: THREE.Material,
+  uniforms?: { morph: { value: number }; blend: { value: number } }
+): void {
+  const declaration = uniforms
+    ? "uniform float uMorph;\nuniform float uBlend;\n#define MORPH uMorph\n#define BLEND uBlend"
+    : "attribute float aMorph;\nattribute float aBlend;\n#define MORPH aMorph\n#define BLEND aBlend";
   // three.js cachea los programas compilados por los parámetros del material, y dos
   // clones con onBeforeCompile distinto darían la misma clave: reutilizaría el shader
   // del otro. Hoy no chocan porque la clave incluye si la malla es instanciada, pero
   // eso es suerte; declararlo es lo que exige la API.
-  material.customProgramCacheKey = () => (uniform ? "morph-uniform" : "morph-attribute");
+  material.customProgramCacheKey = () => (uniforms ? "morph-uniform" : "morph-attribute");
   material.onBeforeCompile = (shader) => {
-    if (uniform) shader.uniforms.uMorph = uniform;
+    if (uniforms) {
+      shader.uniforms.uMorph = uniforms.morph;
+      shader.uniforms.uBlend = uniforms.blend;
+    }
+    // Dos mezclas encadenadas: primero la pose exacta dentro del ciclo (MORPH, entre este
+    // fotograma y el siguiente), y sobre ella el paso al otro ciclo (BLEND, hacia la pose
+    // neutra). Con BLEND a 0 no cuesta nada: es la misma cuenta de siempre.
     shader.vertexShader = shader.vertexShader
       .replace(
         "#include <common>",
-        `#include <common>\nattribute vec3 nextPosition;\nattribute vec3 nextNormal;\n${declaration}`
+        `#include <common>\nattribute vec3 nextPosition;\nattribute vec3 nextNormal;\nattribute vec3 restPosition;\nattribute vec3 restNormal;\n${declaration}`
       )
       .replace(
         "#include <beginnormal_vertex>",
-        "#include <beginnormal_vertex>\nobjectNormal = normalize(mix(objectNormal, nextNormal, MORPH));"
+        "#include <beginnormal_vertex>\nobjectNormal = normalize(mix(mix(objectNormal, nextNormal, MORPH), restNormal, BLEND));"
       )
       .replace(
         "#include <begin_vertex>",
-        "#include <begin_vertex>\ntransformed = mix(transformed, nextPosition, MORPH);"
+        "#include <begin_vertex>\ntransformed = mix(mix(transformed, nextPosition, MORPH), restPosition, BLEND);"
       );
   };
 }
@@ -163,7 +195,10 @@ function patchMorphMaterial(material: THREE.Material, uniform?: { value: number 
 // Empareja cada pose con la siguiente (la última con la primera, que el ciclo cierra).
 // Comparte los BufferAttribute de las horneadas en vez de copiarlos: lo único nuevo es
 // el atributo por instancia con su avance dentro del fotograma.
-function buildMorphSet(frames: THREE.BufferGeometry[]): THREE.BufferGeometry[] {
+function buildMorphSet(
+  frames: THREE.BufferGeometry[],
+  rest: THREE.BufferGeometry
+): THREE.BufferGeometry[] {
   return frames.map((frame, index) => {
     const next = frames[(index + 1) % frames.length];
     const geometry = new THREE.BufferGeometry();
@@ -174,8 +209,17 @@ function buildMorphSet(frames: THREE.BufferGeometry[]): THREE.BufferGeometry[] {
     }
     geometry.setAttribute("nextPosition", next.getAttribute("position"));
     geometry.setAttribute("nextNormal", next.getAttribute("normal"));
+    // Pose neutra por la que pasa el cambio de ciclo. Es el MISMO atributo para los dos
+    // conjuntos y para todos sus fotogramas: no ocupa memoria nueva en la GPU, y que sea
+    // el mismo destino en ambos lados es justo lo que hace que el cruce case.
+    geometry.setAttribute("restPosition", rest.getAttribute("position"));
+    geometry.setAttribute("restNormal", rest.getAttribute("normal"));
     geometry.setAttribute(
       "aMorph",
+      new THREE.InstancedBufferAttribute(new Float32Array(MAX_OTHER_ENTITIES), 1)
+    );
+    geometry.setAttribute(
+      "aBlend",
       new THREE.InstancedBufferAttribute(new Float32Array(MAX_OTHER_ENTITIES), 1)
     );
     // El bulto no cambia entre poses vecinas; reusarla evita recalcularla por fotograma.
@@ -729,7 +773,9 @@ function Units() {
   // Distancia real a la que va la cámara, ya recortada por los muros. Es un ref y no un
   // cálculo suelto porque el retroceso se recupera poco a poco entre fotogramas.
   const hiderCameraDistance = useRef(HIDER_CAMERA_DISTANCE);
-  const selfMorphs = useRef<{ value: number }[]>([]);
+  const selfUniformsByVariant = useRef<{ morph: { value: number }; blend: { value: number } }[]>(
+    []
+  );
   const characterAssets = useMemo(
     () =>
       characterModels.map(({ scene: characterScene, animations }) => {
@@ -806,27 +852,31 @@ function Units() {
           material.map.needsUpdate = true;
         }
         patchMorphMaterial(material);
-        const selfMorph = { value: 0 };
+        const selfUniforms = { morph: { value: 0 }, blend: { value: 0 } };
         const selfMaterial = material.clone();
-        patchMorphMaterial(selfMaterial, selfMorph);
+        patchMorphMaterial(selfMaterial, selfUniforms);
 
+        // La pose neutra del cruce es el primer fotograma del idle: los dos conjuntos
+        // mezclan hacia ella, así que el salto de un ciclo al otro pasa por un punto
+        // común en vez de por dos poses distintas.
+        const rest = idleFrames[0];
         return {
-          idleGeometries: buildMorphSet(idleFrames),
-          sprintGeometries: buildMorphSet(sprintFrames),
+          idleGeometries: buildMorphSet(idleFrames, rest),
+          sprintGeometries: buildMorphSet(sprintFrames, rest),
           // Las horneadas quedan como dueñas de los datos: las de morfeo solo las
           // referencian, así que se liberan aquí y no allí.
           bakedGeometries: [...idleFrames, ...sprintFrames],
           material,
           selfMaterial,
-          selfMorph
+          selfUniforms
         };
       }),
     [characterModels, gl]
   );
   useEffect(() => {
-    selfMorphs.current = characterAssets.map((asset) => asset.selfMorph);
+    selfUniformsByVariant.current = characterAssets.map((asset) => asset.selfUniforms);
     return () => {
-      selfMorphs.current = [];
+      selfUniformsByVariant.current = [];
     };
   }, [characterAssets]);
   useEffect(
@@ -870,18 +920,21 @@ function Units() {
         const motion = advanceMotion(motions.current, self, delta);
         if (selfMeshRef.current && asset) {
           selfMeshRef.current.material = asset.selfMaterial;
-          const selfMorph = selfMorphs.current[self.skinId];
-          if (motion.moving) {
+          const selfUniforms = selfUniformsByVariant.current[self.skinId];
+          // Ya no manda `moving` sino el peso: en el tramo intermedio se sigue dibujando
+          // en el ciclo que corresponda, pero mezclado hacia la pose neutra.
+          if (motion.walkWeight >= 0.5) {
             const exact = motion.phase * SPRINT_FRAME_COUNT;
             const frame = Math.min(SPRINT_FRAME_COUNT - 1, Math.floor(exact));
             selfMeshRef.current.geometry = asset.sprintGeometries[frame];
-            if (selfMorph) selfMorph.value = exact - frame;
+            if (selfUniforms) selfUniforms.morph.value = exact - frame;
           } else {
             const exact = ((idleCycles + motion.idleOffset) % 1) * IDLE_FRAME_COUNT;
             const frame = Math.min(IDLE_FRAME_COUNT - 1, Math.floor(exact));
             selfMeshRef.current.geometry = asset.idleGeometries[frame];
-            if (selfMorph) selfMorph.value = exact - frame;
+            if (selfUniforms) selfUniforms.morph.value = exact - frame;
           }
+          if (selfUniforms) selfUniforms.blend.value = blendAmount(motion.walkWeight);
         }
         selfRef.current.position.set(self.x, self.y, self.z);
         selfRef.current.rotation.y = self.rotationY;
@@ -969,7 +1022,7 @@ function Units() {
       let instance: number;
       let exact: number;
       let frame: number;
-      if (motion.moving) {
+      if (motion.walkWeight >= 0.5) {
         exact = motion.phase * SPRINT_FRAME_COUNT;
         frame = Math.min(SPRINT_FRAME_COUNT - 1, Math.floor(exact));
         instance = sprintingCounts[variant][frame]++;
@@ -990,6 +1043,8 @@ function Units() {
       mesh.setMatrixAt(instance, transform.matrix);
       const morph = mesh.geometry.getAttribute("aMorph") as THREE.InstancedBufferAttribute;
       morph.setX(instance, exact - frame);
+      const blend = mesh.geometry.getAttribute("aBlend") as THREE.InstancedBufferAttribute;
+      blend.setX(instance, blendAmount(motion.walkWeight));
     }
 
     for (let variant = 0; variant < CHARACTER_MODEL_URLS.length; variant += 1) {
@@ -1000,6 +1055,7 @@ function Units() {
         mesh.count = used;
         mesh.instanceMatrix.needsUpdate = true;
         mesh.geometry.getAttribute("aMorph").needsUpdate = true;
+        mesh.geometry.getAttribute("aBlend").needsUpdate = true;
       };
       for (let frame = 0; frame < IDLE_FRAME_COUNT; frame += 1) {
         flush(idleCharacters.current[variant][frame], idleCounts[variant][frame]);

@@ -11,7 +11,7 @@ Leyenda: ⬜ Pendiente · 🟨 En progreso · ✅ Hecho
 | 2   | Pulir interfaz del chat de usuarios   | Mejora | `shared/ChatWindow.tsx`                             |   ✅   |
 | 3   | Animación al recoger un coleccionable | Mejora | `game/scenes/GameScene.tsx` (`Collectibles`)        |   🟨   |
 | 4   | Cámara que se mete en los edificios   | Bug    | `game/scenes/GameScene.tsx` (cámara del escondido)  |   🟨   |
-| 5   | Transición andar ↔ idle               | Bug/UX | `game/scenes/GameScene.tsx` (`Units`, morph shader) |   ⬜   |
+| 5   | Transición andar ↔ idle               | Bug/UX | `game/scenes/GameScene.tsx` (`Units`, morph shader) |   🟨   |
 | 6   | El sol no se renderiza bien en Home   | Bug    | `features/home-3d/HomeSun.tsx`                      |   ⬜   |
 
 ---
@@ -188,6 +188,41 @@ altura a una pose de reposo, en un fotograma. Eso es lo que se ve raro al parars
 **Riesgo.** El más alto de los seis. Es el sistema de render de personajes entero (hasta
 71 entidades). Se mide el coste antes y después: si el atributo extra pesa demasiado, hay
 plan B — mezclar solo hacia una pose de reposo canónica en vez de al fotograma exacto.
+
+**Hecho** (falta jugarlo). Se ha ido directamente al plan B, porque resulta ser mejor que
+el plan A y no un apaño:
+
+`motion.moving` deja de mandar sobre la pose y pasa a alimentar un peso continuo
+(`walkWeight`, 0..1) que recorre el trayecto en 0,18 s — 11 fotogramas a 60 Hz. El shader
+encadena una segunda mezcla, hacia una **pose neutra** (el primer fotograma del idle):
+
+```glsl
+transformed = mix(mix(position, nextPosition, MORPH), restPosition, BLEND);
+```
+
+Por encima de 0,5 la entidad se dibuja en el ciclo de andar y por debajo en el de quieto,
+y en ambos casos el resto del camino lo cubre `BLEND` hacia esa pose. **La clave es que la
+pose neutra sea la misma en los dos conjuntos**: con `BLEND = 1` el vértice vale
+`restPosition` y nada más, así que las dos ramas coinciden exactamente en 0,5 y el cambio
+de malla no se ve. Comprobado numéricamente: el salto en el cruce es 2e-4 (cero en el
+límite).
+
+Por qué esto es mejor que mezclar al fotograma exacto del otro ciclo: haría falta un par
+de atributos por conjunto y, sobre todo, **las dos ramas no casarían en el cruce** — una
+llegaría a la pose de reposo y la otra a la de zancada, y el salto seguiría ahí, solo que
+más pequeño. Con destino común el problema desaparece por construcción.
+
+Coste: **cero memoria nueva en la GPU**. `restPosition`/`restNormal` referencian los
+BufferAttribute que ya existen del primer fotograma del idle, compartidos por los 20
+fotogramas de los dos conjuntos, igual que ya se compartía `nextPosition`. Se añade un
+`aBlend` por instancia (un float) y dos `mix` por vértice.
+
+De regalo, la histéresis sobre `moving` que pedía el plan sobra: un parpadeo de un
+fotograma mueve el peso un 9 % y, si acaba rondando el 0,5, ahí las dos ramas dan la misma
+pose — el parpadeo es invisible por construcción.
+
+Queda por comprobar en pantalla si además **el propio clip de idle** se lee pobre, que es
+la otra mitad de "se queda raro en quieto". Eso no se puede juzgar sin verlo.
 
 ---
 
