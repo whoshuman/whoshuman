@@ -1295,8 +1295,12 @@ function ChaserShip() {
       lastShipPos.current = { x: seeker.x, y: seeker.y, z: seeker.z };
       setSfxLoop("shipMove", speed > SHIP_AUDIBLE_SPEED);
       // Se oye mas fuerte cuanto mas cerca pasa: a SHIP_AUDIBLE_RANGE ya no se oye nada.
+      // Al cuadrado y no lineal: con la caida lineal la nave todavia sonaba a media
+      // potencia a mitad de mapa y resultaba pesada mientras te escondias. Asi solo se
+      // impone cuando de verdad la tienes encima, que es cuando debe acojonar.
       const distance = camera.position.distanceTo(ship.position);
-      setSfxLoopProximity("shipMove", 1 - Math.min(1, distance / SHIP_AUDIBLE_RANGE));
+      const closeness = 1 - Math.min(1, distance / SHIP_AUDIBLE_RANGE);
+      setSfxLoopProximity("shipMove", closeness * closeness);
 
       ship.position.set(seeker.x, seeker.y, seeker.z);
       direction.set(seeker.dirX, seeker.dirY, seeker.dirZ).normalize();
