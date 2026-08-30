@@ -12,7 +12,7 @@ Leyenda: ⬜ Pendiente · 🟨 En progreso · ✅ Hecho
 | 3   | Animación al recoger un coleccionable | Mejora | `game/scenes/GameScene.tsx` (`Collectibles`)        |   🟨   |
 | 4   | Cámara que se mete en los edificios   | Bug    | `game/scenes/GameScene.tsx` (cámara del escondido)  |   🟨   |
 | 5   | Transición andar ↔ idle               | Bug/UX | `game/scenes/GameScene.tsx` (`Units`, morph shader) |   🟨   |
-| 6   | El sol no se renderiza bien en Home   | Bug    | `features/home-3d/HomeSun.tsx`                      |   ⬜   |
+| 6   | El sol no se renderiza bien en Home   | Bug    | `features/home-3d/cameraPoses.ts`                   |   🟨   |
 
 ---
 
@@ -309,6 +309,42 @@ demasiado lejos".
 3. Verificación visual final en home y en el viaje a la ciudad, que comparten cámara.
 
 **Riesgo.** Bajo en código, pero es puro criterio visual: se valida con capturas.
+
+**Hecho, y NO era criterio visual: era un recorte.** Menos mal que no se ajustó a ojo — el
+tamaño del sol no tenía nada que ver.
+
+**Causa.** `react-three-fiber` crea su cámara con `new PerspectiveCamera(75, 0, 0.1, 1000)`,
+y el `<Canvas>` de la home solo le pasa posición, rotación y `fov`: **el plano lejano se
+quedaba en 1000**. El sol vive en `z = -1000` y la cámara de la home en `z = 56`, con lo que
+el disco queda a una profundidad de entre 989 y 1049 — el plano lejano lo **parte por la
+mitad**.
+
+Medido con la pose real de la cámara (`home`, mirando 12,6° hacia abajo):
+
+| Pieza                 | Se dibujaba | Con `far = 2000` |
+| --------------------- | :---------: | :--------------: |
+| Disco solar (r 138)   |  **18 %**   |      100 %       |
+| Halo interior (r 165) |    22 %     |      100 %       |
+| Halo exterior (r 215) |    28 %     |      100 %       |
+
+O sea: solo se veía la coronilla del sol. Y a las montañas del fondo les recortaba todo lo
+que quedara por debajo de `y = -12`, con el plano del relieve a `y = -50` — la base del
+horizonte también estaba cortada.
+
+"Como si estuviésemos demasiado lejos" era literal: lo estábamos, para el plano lejano de la
+cámara.
+
+**Arreglo.** Declarar `far: 2000` en `initialCameraProps()` — el valor por defecto de
+three.js. Lo más lejano de la escena (canto inferior del halo, cordilleras laterales desde la
+pose del coche) ronda 1080, así que sobra margen.
+
+**Deliberadamente NO se ha tocado el tamaño ni la altura del sol.** Con el 82 % restante ya
+en pantalla, lo más probable es que quede como se diseñó; retocar las medidas encima sería
+compensar a ciegas un fallo que ya está corregido. Si al verlo sigue pareciendo pequeño, se
+ajusta entonces, y sobre lo que se ve de verdad.
+
+**La escena de la partida no necesita nada:** monta el mismo `HomeSun` pero a escala 0,05,
+con todo a menos de 60 unidades de la cámara. Comprobado.
 
 ---
 

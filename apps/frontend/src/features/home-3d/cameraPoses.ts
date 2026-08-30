@@ -53,6 +53,17 @@ export function initialCameraProps() {
   return {
     position: [pose.x, pose.y, pose.z] as [number, number, number],
     rotation: [pose.rotationX, pose.rotationY, 0] as [number, number, number],
-    fov: 58
+    fov: 58,
+    // OBLIGATORIO declararlo: react-three-fiber crea su camara con far = 1000, y este
+    // paisaje no cabe ahi. El sol vive en z = -1000 y la camara de la home en z = 56, asi
+    // que el disco queda a una profundidad de entre 989 y 1049: el plano lejano lo partia
+    // por la mitad y solo se dibujaba el 18% de arriba, la pura coronilla. De ahi la
+    // sensacion de estar demasiado lejos — literalmente, lo estabamos. A las montanas del
+    // fondo les pasaba lo mismo y les recortaba la base.
+    //
+    // 2000 es el valor por defecto de three.js y deja de sobra: lo mas lejano de la escena
+    // (el canto inferior del halo, y las cordilleras laterales vistas desde la pose del
+    // coche) ronda 1080.
+    far: 2000
   };
 }
