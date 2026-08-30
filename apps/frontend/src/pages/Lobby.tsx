@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { House, LogOut, UsersRound } from "lucide-react";
+import { Check, Copy, House, LogOut, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -243,6 +243,37 @@ function OperationCard({
   );
 }
 
+// La API del portapapeles solo existe en contexto seguro (HTTPS o localhost), y la app
+// se prueba desde otros equipos de la red local, donde no lo hay. Ahí se cae al método
+// viejo: un campo oculto que se selecciona y se copia con execCommand.
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (window.isSecureContext && navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Permiso denegado o el documento no tiene el foco: se prueba la reserva.
+    }
+  }
+  const helper = document.createElement("textarea");
+  helper.value = text;
+  helper.setAttribute("readonly", "");
+  // Fuera de la vista pero dentro del layout: display:none no se puede seleccionar, y
+  // position:fixed evita que el navegador desplace la página al enfocarlo.
+  helper.style.position = "fixed";
+  helper.style.top = "0";
+  helper.style.opacity = "0";
+  document.body.appendChild(helper);
+  helper.select();
+  try {
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    helper.remove();
+  }
+}
+
 // Vista dentro de una sala: código, unidades conectadas con su estado y acciones.
 // Todo lo que se pinta viene del broadcast lobby:state — el cliente no decide nada.
 function RoomPanel() {
@@ -250,8 +281,22 @@ function RoomPanel() {
   const selfId = useAuthStore((s) => s.user?.id);
   const { status, lobbyId, players, count, min, selfReady, leave, setReady } = useLobbyStore();
   useHologramSound();
+  // null = aún no se ha copiado nada; true/false = resultado del último intento.
+  const [copied, setCopied] = useState<boolean | null>(null);
 
   const isMain = lobbyId === "main";
+
+  // El aviso se retira solo: es una confirmación, no un estado de la sala.
+  useEffect(() => {
+    if (copied === null) return;
+    const timer = setTimeout(() => setCopied(null), 2400);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  async function copyCode() {
+    if (!lobbyId) return;
+    setCopied(await copyToClipboard(lobbyId));
+  }
 
   return (
     <div className="animate-unfold-down origin-top relative mx-auto w-full max-w-lg border border-neon-cyan/50 bg-surface shadow-[0_0_48px_rgba(36,245,255,0.18)]">
@@ -276,12 +321,41 @@ function RoomPanel() {
         {/* Código de sala para compartir (las salas privadas no se listan en ningún sitio). */}
         {status === "inLobby" && !isMain && lobbyId && (
           <div>
-            <p className="mb-2 block text-xs font-bold uppercase tracking-widest text-text-muted">
-              {t("room.shareCode")}
+            {/* El propio rótulo hace de acuse de recibo: cambiarlo evita meter una línea
+                más que desplace el panel al copiar. */}
+            <p
+              aria-live="polite"
+              className={`mb-2 block text-xs font-bold uppercase tracking-widest ${
+                copied === null ? "text-text-muted" : copied ? "text-neon-cyan" : "text-sun-orange"
+              }`}
+            >
+              {copied === null
+                ? t("room.shareCode")
+                : copied
+                  ? t("room.codeCopied")
+                  : t("room.copyFailed")}
             </p>
-            <p className="border border-neon-cyan/35 bg-black/30 py-3 text-center font-display text-2xl font-black tracking-[0.3em] text-neon-cyan [text-shadow:0_0_18px_rgba(36,245,255,0.6)]">
-              {lobbyId}
-            </p>
+            {/* El código sigue siendo texto suelto y no la etiqueta del botón: así se
+                puede seleccionar a mano si el portapapeles no está disponible. El
+                relleno izquierdo compensa el ancho del botón para que quede centrado. */}
+            <div className="flex items-center border border-neon-cyan/35 bg-black/30">
+              <p className="flex-1 py-3 pl-12 text-center font-display text-2xl font-black tracking-[0.3em] text-neon-cyan [text-shadow:0_0_18px_rgba(36,245,255,0.6)]">
+                {lobbyId}
+              </p>
+              <button
+                type="button"
+                onClick={() => void copyCode()}
+                title={t("room.copyCode")}
+                aria-label={t("room.copyCode")}
+                className="mr-2 flex h-10 w-10 shrink-0 items-center justify-center border border-neon-cyan/40 text-neon-cyan transition hover:bg-neon-cyan/12 active:translate-y-px"
+              >
+                {copied ? (
+                  <Check aria-hidden="true" size={18} />
+                ) : (
+                  <Copy aria-hidden="true" size={18} />
+                )}
+              </button>
+            </div>
           </div>
         )}
 
