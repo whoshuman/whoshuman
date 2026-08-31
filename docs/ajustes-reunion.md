@@ -118,6 +118,7 @@ Puntos que fueron llegando después de la reunión. Mismo trato: un commit por p
 | 8   | Zumbido de la nave: se reinicia y molesta | Bug  | `shared/sfx.ts` + `GameScene.tsx` |   🟨   |
 | 9   | Música de fin de partida demasiado alta   | Bug  | `shared/sfx.ts`                   |   🟨   |
 | 10  | Suelo visible que no se puede pisar       | Bug  | `game/maps/neonBlockLayout.ts`    |   🟨   |
+| 11  | La nave salta al apuntar el cazador       | Bug  | `game/scenes/GameScene.tsx`       |   🟨   |
 
 ### 7. No se puede disparar con el izquierdo mientras se apunta con el derecho
 
@@ -143,6 +144,41 @@ ritmo normal, al 70 %. Los virajes sueltos siguen apagándose del todo.
 
 **Volúmenes:** nave 0,45 → 0,3, y la atenuación por distancia pasa a ser cuadrática (antes
 la nave sonaba a media potencia a mitad de mapa). Música de cierre 0,7 → 0,4.
+
+### 11. La nave da un salto cuando el cazador apunta
+
+**Causa.** La nave no vuela sola: cuelga de la cámara del cazador, y **esa posición es la
+que se publica a los demás**. Al apuntar se colocaba con un `if (aiming)` — un booleano, no
+el avance del zoom:
+
+- sin apuntar, 1,25 **por delante** de la cámara;
+- apuntando, 1,15 **por detrás**.
+
+Como el booleano cambia de golpe, la nave **saltaba 2,37 unidades en un solo fotograma**
+(unas 142 u/s) nada más pulsar el botón, y otro tanto al soltarlo. El zoom de la cámara dura
+0,16 s, pero la nave no lo acompañaba: se teletransportaba. Eso es lo que veían los
+escondidos. De propina disparaba el zumbido del motor, porque el umbral para considerar la
+nave en movimiento es 0,15 u/s.
+
+**Arreglo.** El rig de cámara publica el avance del zoom ya suavizado
+(`seekerAimBlend`, mismo patrón que `seekerTurn`) y la nave **encoge su separación de la
+cámara al mismo ritmo al que esta se acerca**. La cuenta sale exacta: la cámara va de 4,75 a
+3,50 del centro y la separación de 1,25 a 0, así que la nave se queda en 3,50 todo el rato.
+Es literalmente lo que ya decía el comentario del zoom — «el acercamiento acaba justo donde
+ella estaba» —, solo que ahora la nave no se aparta para dejarle el sitio.
+
+|                           |  Antes   | Ahora |
+| ------------------------- | :------: | :---: |
+| Salto en un fotograma     | **2,37** | 0,009 |
+| Recorrido durante el zoom |   1,36   | 0,36  |
+
+Con la mira puesta la cámara queda **dentro** de la nave, así que se deja de dibujar para el
+propio cazador (media eslora de umbral). El haz del láser sigue saliendo por detrás y debajo
+de la cámara: es un apaño de primera persona para verlo converger en la retícula, y no
+depende de dónde esté la nave.
+
+De paso, `ChaserShip` deja de suscribirse a `aiming`: la mira le entra por un valor de
+módulo, así que ya no se re-renderiza cada vez que se apunta.
 
 ### 10. Suelo visible que no se puede pisar
 

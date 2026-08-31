@@ -284,9 +284,14 @@ const CHASER_SCALE = 0.55;
 // recortaría por abajo.
 const CHASER_SCREEN_FORWARD = 1.25;
 const CHASER_SCREEN_DOWN = 0.36;
-// Apuntando se manda detrás de la cámara: ahí no tapa la mira.
+// De dónde sale el haz para el propio cazador: por detrás y por debajo de la cámara, o
+// saldría del punto de vista y no se vería converger en la retícula. Es un apaño de primera
+// persona y NO mueve la nave (que a esas alturas está justo en la cámara).
 const CHASER_BACK_OFFSET = 1.15;
 const CHASER_DOWN_OFFSET = 0.3;
+// La nave mide 0.55 de eslora: a menos de media, la cámara ya la tiene encima y hay que
+// dejar de dibujarla.
+const CHASER_HIDE_DISTANCE = 0.3;
 // Aleteo. El modelo es una malla rígida de una pieza (sin huesos, sin animaciones y
 // sin las alas como objetos aparte), así que las góndolas se doblan en el vertex
 // shader. Miden |x| 0.29-0.48 y las separa del fuselaje un estrechamiento en
@@ -1207,7 +1212,8 @@ vec3 chaserBendNormal(vec3 n, vec3 p) {
 // resto de entidades) encarando adonde apunta la cámara e inclinado hacia el suelo.
 function ChaserShip() {
   const { scene } = useGLTF(CHASER_MODEL_URL);
-  const aiming = useGameStore((s) => s.aiming);
+  // Ya no se suscribe a `aiming`: la mira entra por seekerAimBlend, que es un valor de
+  // modulo. Asi la nave deja de re-renderizarse cada vez que se apunta o se suelta.
   const selfRole = useGameStore((s) => s.selfRole);
   const sendAimPose = useGameStore((s) => s.sendAimPose);
   const isSeeker = selfRole === "seeker";
@@ -1319,22 +1325,28 @@ function ChaserShip() {
       return;
     }
 
-    ship.visible = true;
     camera.getWorldDirection(direction);
-    if (aiming) {
-      // Apuntando se sale del encuadre: por delante taparía la mira.
-      ship.position
-        .copy(camera.position)
-        .addScaledVector(direction, -CHASER_BACK_OFFSET)
-        .setY(camera.position.y - CHASER_DOWN_OFFSET);
-    } else {
-      // La cámara la mueve otro useFrame, así que su matriz puede ir un fotograma
-      // por detrás; sin esto la nave arrastraría al girar.
-      camera.updateMatrixWorld();
-      ship.position
-        .set(0, -CHASER_SCREEN_DOWN, -CHASER_SCREEN_FORWARD)
-        .applyMatrix4(camera.matrixWorld);
-    }
+    // La separación entre cámara y nave se encoge al mismo ritmo al que la cámara se
+    // acerca, así que la nave SE QUEDA QUIETA en el mundo mientras dura el zoom: la
+    // cámara le entra por dentro, que es justo lo que se buscaba.
+    //
+    // Antes esto era un `if (aiming)` con la nave 1.25 por delante o 1.15 por detrás. Al
+    // ser un booleano y no el avance del zoom, la nave DABA UN SALTO de 2.4 unidades en un
+    // solo fotograma nada más pulsar el botón — y esa posición es la que se publica a los
+    // demás, así que los escondidos veían la nave teletransportarse cada vez que el cazador
+    // apuntaba. De paso disparaba el zumbido del motor, porque el salto se lee como
+    // velocidad altísima.
+    const aimBlend = seekerAimBlend.value;
+    // La cámara la mueve otro useFrame, así que su matriz puede ir un fotograma
+    // por detrás; sin esto la nave arrastraría al girar.
+    camera.updateMatrixWorld();
+    ship.position
+      .set(0, -CHASER_SCREEN_DOWN * (1 - aimBlend), -CHASER_SCREEN_FORWARD * (1 - aimBlend))
+      .applyMatrix4(camera.matrixWorld);
+    // Con la mira puesta la cámara está DENTRO de la nave: se oculta, o se vería el modelo
+    // por dentro tapando la pantalla. El umbral es media eslora, que es cuando empieza a
+    // comerse el encuadre.
+    ship.visible = CHASER_SCREEN_FORWARD * (1 - aimBlend) > CHASER_HIDE_DISTANCE;
     // Sube y baja en vertical del mundo, no de la pantalla: así se lee como que la
     // nave flota, y no como que se mueve la cámara.
     ship.position.y += Math.sin(clock.elapsedTime * CHASER_BOB_SPEED) * CHASER_BOB_AMPLITUDE;
@@ -1382,6 +1394,12 @@ function ChaserShip() {
 // de camara y lo leen la nave (para el alabeo) y el zumbido del motor. Es un valor de modulo
 // y no estado de React a proposito: cambia en cada fotograma y no debe provocar renders.
 const seekerTurn = { value: 0 };
+
+// Avance del golpe de zoom de la mira (0 = vista general, 1 = mira puesta), ya suavizado.
+// Lo escribe el rig de camara y lo lee la nave para encogerle su separacion de la camara al
+// mismo ritmo que esta se acerca. Va aqui por lo mismo que seekerTurn: cambia cada fotograma
+// y no debe provocar renders.
+const seekerAimBlend = { value: 0 };
 
 const AIM_EPSILON = 1e-6;
 
@@ -1753,6 +1771,9 @@ function SeekerCamera() {
           : Math.max(goal, aimBlend.current - step);
     }
     const blend = aimBlend.current;
+    // Se publica ya suavizado, que es como lo consume la nave. Con blend 0 y 1 da 0 y 1
+    // exactos, asi que sirve igual para los tramos planos.
+    seekerAimBlend.value = blend * blend * (3 - 2 * blend);
 
     // Apuntando no se pilota: hay que bajar la mira para volver a mover la nave. Ademas de
     // ser la regla pedida, deja el alabeo a cero y apaga el motor mientras se apunta, que es
