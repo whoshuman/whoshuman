@@ -2,7 +2,12 @@ import { Crosshair, ScanSearch } from "lucide-react";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 
-import { normalizeJoystick, setTouchCamera, shootTouchSeeker } from "../input/touchInput";
+import {
+  isTouchPrimary,
+  normalizeJoystick,
+  setTouchCamera,
+  shootTouchSeeker
+} from "../input/touchInput";
 import { useGameStore } from "../store/gameStore";
 
 const DEAD_ZONE = 0.12;
@@ -54,6 +59,10 @@ function VirtualJoystick({ label, side, onChange }: VirtualJoystickProps) {
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (activePointer.current !== null) return;
+    // Solo dedos. En un aparato hibrido (tactil + raton) el joystick no debe responder
+    // al raton: pillaria el clic derecho de apuntar y capturaria el puntero, dejando la
+    // vista clavada.
+    if (event.pointerType !== "touch") return;
     event.preventDefault();
     const rect = zoneRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -230,9 +239,7 @@ interface MobileGameControlsProps {
 
 export default function MobileGameControls({ enabled }: MobileGameControlsProps) {
   const selfRole = useGameStore((state) => state.selfRole);
-  const [touchAvailable] = useState(
-    () => navigator.maxTouchPoints > 0 || window.matchMedia("(any-pointer: coarse)").matches
-  );
+  const [touchAvailable] = useState(isTouchPrimary);
   if (!enabled || !selfRole || !touchAvailable) return null;
   return selfRole === "seeker" ? <MobileSeekerControls /> : <MobileHiderControls />;
 }
