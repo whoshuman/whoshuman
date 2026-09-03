@@ -96,9 +96,11 @@ interface SessionNpc extends MovableState {
   speedScale: number; // su ritmo propio: una multitud a la misma velocidad parece un banco de peces
   velocity: number; // u/s actual; sube y baja por rampa en vez de saltar
   // Célula hacia la que sesga el rumbo mientras dure, o null si va a su aire (ver
-  // chooseNpcHeading). Sin esto el paseo es puro azar local y nunca parece que
-  // alguien va a algún sitio.
-  waypoint: { x: number; z: number } | null;
+  // chooseNpcHeading). `collectibleId` es para el cupo por célula (que no vayan
+  // varios al mismo sitio a la vez); `x,z` NO son la célula exacta sino su propio
+  // punto de mira, con un desvío al azar: si dos apuntan al mismo centro, sus rutas
+  // se pisan y eso es justo el "van de la mano" que se quiere evitar.
+  waypoint: { collectibleId: string; x: number; z: number } | null;
   waypointExpire: number; // segundos que le quedan antes de soltarlo y volver al azar
 }
 
@@ -214,6 +216,14 @@ const NPC_WAYPOINT_BUDGET_S = 8;
 // A esta distancia se da por "llegado" y suelta el waypoint (algo mayor que el radio
 // real de recogida: no hace falta pisarla, solo pasar cerca, como haría cualquiera).
 const NPC_WAYPOINT_ARRIVE = 0.4;
+// Cuántos NPC pueden llevar la MISMA célula de waypoint a la vez. Con 1 nunca hay dos
+// convergiendo al mismo punto exacto: es justo el "van de la mano" que se nota.
+const NPC_WAYPOINT_MAX_CLAIMS = 1;
+// Cada NPC apunta a un punto propio alrededor de la célula, no a su centro exacto: con
+// el mismo centro, dos rutas que pasen cerca se pisan y parecen una sola fila. El
+// desvío se sortea una vez por waypoint, no por tick, así que la ruta sigue siendo
+// una curva firme, no un temblor.
+const NPC_WAYPOINT_OFFSET = 0.35;
 // Tiempo encajonado tras el cual el NPC busca otra salida en vez de insistir.
 const NPC_UNBLOCK_SECONDS = 0.6;
 // Cuánto mira hacia delante, en radios de giro. Con 2 ve el obstáculo con el margen
@@ -930,13 +940,38 @@ export class GameSession {
     return this.freeHeading(npc, step, true) ?? npc.heading + Math.PI; // cercado: media vuelta
   }
 
+  /** Cuántos NPC llevan ya cada célula como waypoint, para no pasar de NPC_WAYPOINT_MAX_CLAIMS. */
+  private waypointClaims(): Map<string, number> {
+    const claims = new Map<string, number>();
+    for (const other of this.npcs) {
+      if (!other.waypoint) continue;
+      claims.set(other.waypoint.collectibleId, (claims.get(other.waypoint.collectibleId) ?? 0) + 1);
+    }
+    return claims;
+  }
+
   private chooseNpcHeading(npc: SessionNpc): void {
     // Sin waypoint en curso, a veces se engancha a una célula visible: así el paseo
     // parece que va a algún sitio en vez de ser puro azar local. Ver NPC_WAYPOINT_CHANCE.
     if (!npc.waypoint && this.collectibles.length > 0 && this.random() < NPC_WAYPOINT_CHANCE) {
-      const target = this.collectibles[Math.floor(this.random() * this.collectibles.length)];
-      npc.waypoint = { x: target.x, z: target.z };
-      npc.waypointExpire = NPC_WAYPOINT_BUDGET_S;
+      const claims = this.waypointClaims();
+      const eligible = this.collectibles.filter(
+        (item) => (claims.get(item.collectibleId) ?? 0) < NPC_WAYPOINT_MAX_CLAIMS
+      );
+      if (eligible.length > 0) {
+        const target = eligible[Math.floor(this.random() * eligible.length)];
+        // Punto de mira propio alrededor de la célula, no su centro: si el desvío
+        // fuera 0, dos NPC que se cruzaran de camino al mismo sitio pisarían la misma
+        // línea y eso es exactamente lo que se veía como "ir de la mano".
+        const angle = this.random() * Math.PI * 2;
+        const offset = this.random() * NPC_WAYPOINT_OFFSET;
+        npc.waypoint = {
+          collectibleId: target.collectibleId,
+          x: target.x + Math.sin(angle) * offset,
+          z: target.z + Math.cos(angle) * offset
+        };
+        npc.waypointExpire = NPC_WAYPOINT_BUDGET_S;
+      }
     }
 
     const heldWaypoint = npc.waypoint;
