@@ -171,7 +171,14 @@ describe("GameSession", () => {
       // La vuelta es una ACCIÓN disparada de una vez, no una rotación que se sostiene
       // mientras se aguanta la tecla: se completa sola en un giro corto (REVERSE_FLIP_SECONDS).
       s.setInput("u1", -1, 0);
-      for (let i = 0; i < 10; i += 1) s.tick(0.05);
+      // A media vuelta (antes de completarse el giro de 0.18s) todavía no ha andado:
+      // gira sobre el sitio, no en arco.
+      s.tick(0.05);
+      s.tick(0.05);
+      expect(find(s, "u1").z).toBeCloseTo(start.z, 5);
+      expect(find(s, "u1").x).toBeCloseTo(start.x, 5);
+
+      for (let i = 0; i < 6; i += 1) s.tick(0.05);
       expect(find(s, "u1").rotationY).toBeCloseTo(Math.PI, 5);
 
       for (let i = 0; i < 40; i += 1) s.tick(0.05);

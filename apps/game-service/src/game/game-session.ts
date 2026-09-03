@@ -840,6 +840,9 @@ export class GameSession {
       player.flipFrom = player.heading;
       player.flipElapsed = 0;
       player.reversedFacing = true;
+      // Se para en seco al empezar a girar: si arrastrara la velocidad que ya llevaba
+      // saldría derrapando en la vieja dirección mientras gira, en vez de plantarse.
+      player.velocity = 0;
     } else if (player.forward >= 0 && !player.flipping) {
       player.reversedFacing = false;
     }
@@ -855,8 +858,10 @@ export class GameSession {
 
     // De aquí en adelante solo cuenta la magnitud: el giro de arriba ya puso (o está
     // poniendo) el rumbo en la dirección pedida, así que "atrás" ya no invierte el
-    // sentido del avance.
-    const target = cruise * clamp(Math.abs(player.forward), 0, 1);
+    // sentido del avance. Mientras gira no anda: es un giro sobre el sitio, no un
+    // arco caminando — si no, con el heading todavía a medio girar el paso saldría
+    // en diagonal en vez de hacia donde estaba mirando.
+    const target = player.flipping ? 0 : cruise * clamp(Math.abs(player.forward), 0, 1);
     const braking = target < player.velocity;
     const rate = (braking ? NPC_BRAKING : NPC_ACCELERATION) * cruise * dtSeconds;
     player.velocity =
