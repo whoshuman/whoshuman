@@ -8,14 +8,55 @@ import type {
   ChatScope,
   ChatSocketResponse
 } from "@whoshuman/shared-types";
-import { Send, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowDown, Send, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { connectSocket } from "../game/network/socket";
 import { useAuthStore } from "./authStore";
 
 const MESSAGE_MAX_LENGTH = 500;
+// El contador solo aparece cuando queda poco: verlo siempre no informa de nada y mete
+// ruido bajo el campo de escritura.
+const COUNTER_VISIBLE_FROM = MESSAGE_MAX_LENGTH - 100;
+// Alto máximo del campo al crecer. Cuatro líneas largas; a partir de ahí hace scroll y
+// no se come la conversación, que es lo que se está leyendo.
+const INPUT_MAX_HEIGHT = 120;
+// Dos mensajes seguidos del mismo autor dentro de este margen se agrupan bajo una sola
+// cabecera. Más allá, la pausa es lo bastante larga como para volver a fechar.
+const GROUP_WINDOW_MS = 5 * 60 * 1000;
+// Margen para considerar que estás "abajo del todo". No es 0: al escribir, el campo
+// crece y desplaza la lista unos píxeles sin que el usuario haya tocado el scroll.
+const STUCK_TO_BOTTOM_PX = 48;
+
+// Fila ya resuelta para pintar: quién la manda, si continúa al mensaje anterior y si
+// abre un día nuevo. Se calcula una vez por lista y no dentro del map del render.
+interface MessageRow {
+  message: ChatMessage;
+  own: boolean;
+  // Continúa un bloque del mismo autor: se pinta sin cabecera y más pegada.
+  grouped: boolean;
+  daySeparator: Date | null;
+}
+
+function buildRows(messages: ChatMessage[], selfId: string | undefined): MessageRow[] {
+  return messages.map((message, index) => {
+    const previous = index > 0 ? messages[index - 1] : null;
+    const date = new Date(message.createdAt);
+    const previousDate = previous ? new Date(previous.createdAt) : null;
+    const newDay = !previousDate || previousDate.toDateString() !== date.toDateString();
+    return {
+      message,
+      own: message.sender.id === selfId,
+      grouped:
+        !newDay &&
+        !!previous &&
+        previous.sender.id === message.sender.id &&
+        date.getTime() - (previousDate?.getTime() ?? 0) < GROUP_WINDOW_MS,
+      daySeparator: newDay ? date : null
+    };
+  });
+}
 
 function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
   const byId = new Map(current.map((message) => [message.id, message]));
@@ -57,7 +98,12 @@ function ChatWindow({ scope, title, channelId, peer, onClose }: ChatWindowProps)
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Han llegado mensajes mientras leías más arriba: se avisa en vez de arrastrarte abajo.
+  const [pendingBelow, setPendingBelow] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  // Arranca en true: al abrir la ventana se entra por el final de la conversación.
+  const stuckToBottom = useRef(true);
 
   const loadHistory = useCallback(() => {
     const socket = connectSocket();
@@ -107,9 +153,47 @@ function ChatWindow({ scope, title, channelId, peer, onClose }: ChatWindowProps)
     };
   }, [channelId, loadHistory, peer?.id, scope, selfId]);
 
+  const scrollToEnd = useCallback((behavior: ScrollBehavior = "auto") => {
+    stuckToBottom.current = true;
+    setPendingBelow(false);
+    endRef.current?.scrollIntoView({ block: "end", behavior });
+  }, []);
+
+  // Antes se bajaba a la fuerza con cada mensaje: si estabas leyendo hacia arriba, te
+  // sacaba de donde estabas. Ahora solo sigue la conversación a quien ya estaba al final.
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
+    if (stuckToBottom.current) endRef.current?.scrollIntoView({ block: "end" });
+    else if (messages.length > 0) setPendingBelow(true);
   }, [messages]);
+
+  // El campo crece con lo escrito hasta su tope. Se pone a "auto" primero porque
+  // scrollHeight no encoge por sí solo al borrar texto.
+  useEffect(() => {
+    const node = inputRef.current;
+    if (!node) return;
+    node.style.height = "auto";
+    node.style.height = `${Math.min(node.scrollHeight, INPUT_MAX_HEIGHT)}px`;
+  }, [content]);
+
+  const rows = useMemo(() => buildRows(messages, selfId), [messages, selfId]);
+  const timeFormat = useMemo(
+    () => new Intl.DateTimeFormat(i18n.language, { hour: "2-digit", minute: "2-digit" }),
+    [i18n.language]
+  );
+  const dayFormat = useMemo(
+    () => new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "short" }),
+    [i18n.language]
+  );
+
+  // Etiqueta del separador de día: hoy y ayer por su nombre, el resto por su fecha.
+  function dayLabel(date: Date): string {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (date.toDateString() === today.toDateString()) return t("chat.today");
+    if (date.toDateString() === yesterday.toDateString()) return t("chat.yesterday");
+    return dayFormat.format(date);
+  }
 
   function sendMessage() {
     const trimmed = content.trim();
@@ -133,6 +217,9 @@ function ChatWindow({ scope, title, channelId, peer, onClose }: ChatWindowProps)
             return;
           }
           setContent("");
+          // Mandar es querer ver lo que mandas: aunque estuvieras leyendo más arriba, la
+          // vista vuelve al final en vez de avisarte de tu propio mensaje.
+          scrollToEnd();
           setMessages((current) => mergeMessages(current, [response.data as ChatMessage]));
         }
       );
@@ -162,49 +249,88 @@ function ChatWindow({ scope, title, channelId, peer, onClose }: ChatWindowProps)
         )}
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3" aria-live="polite">
-        {loading && messages.length === 0 && (
-          <p className="animate-pulse py-8 text-center font-display text-xs font-bold uppercase tracking-widest text-neon-cyan">
-            {t("chat.loading")}
-          </p>
-        )}
-        {!loading && messages.length === 0 && !error && (
-          <p className="py-8 text-center font-display text-xs font-bold uppercase tracking-widest text-text-muted/70">
-            // {t("chat.empty")}
-          </p>
-        )}
-        <div className="flex flex-col gap-2">
-          {messages.map((message) => {
-            const own = message.sender.id === selfId;
-            const time = new Intl.DateTimeFormat(i18n.language, {
-              hour: "2-digit",
-              minute: "2-digit"
-            }).format(new Date(message.createdAt));
-            return (
-              <article
-                key={message.id}
-                className={`max-w-[88%] border px-3 py-2 ${
-                  own
-                    ? "ml-auto border-neon-magenta/45 bg-neon-magenta/8"
-                    : "mr-auto border-neon-cyan/30 bg-neon-cyan/6"
-                }`}
-              >
-                <div className="mb-1 flex items-center justify-between gap-4">
-                  <span
-                    className={`font-display text-[0.65rem] font-bold uppercase ${own ? "text-neon-magenta" : "text-neon-cyan"}`}
-                  >
-                    {own ? t("chat.you") : message.sender.username}
-                  </span>
-                  <time className="text-[0.65rem] text-text-muted/65">{time}</time>
-                </div>
-                <p className="whitespace-pre-wrap break-words text-sm text-text-main">
-                  {message.content}
-                </p>
-              </article>
-            );
-          })}
+      {/* El aviso de mensajes nuevos flota sobre la lista, por eso el envoltorio: si
+          fuese un hermano en el flujo, aparecer y desaparecer movería el panel. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          onScroll={(event) => {
+            const node = event.currentTarget;
+            stuckToBottom.current =
+              node.scrollHeight - node.scrollTop - node.clientHeight < STUCK_TO_BOTTOM_PX;
+            if (stuckToBottom.current) setPendingBelow(false);
+          }}
+          className="min-h-0 flex-1 overflow-y-auto px-4 py-3"
+          aria-live="polite"
+        >
+          {loading && messages.length === 0 && (
+            <p className="animate-pulse py-8 text-center font-display text-xs font-bold uppercase tracking-widest text-neon-cyan">
+              {t("chat.loading")}
+            </p>
+          )}
+          {!loading && messages.length === 0 && !error && (
+            <p className="py-8 text-center font-display text-xs font-bold uppercase tracking-widest text-text-muted/70">
+              // {t("chat.empty")}
+            </p>
+          )}
+          <div className="flex flex-col">
+            {rows.map(({ message, own, grouped, daySeparator }) => (
+              <div key={message.id} className="flex flex-col">
+                {daySeparator && (
+                  <div className="my-3 flex items-center gap-3">
+                    <span className="h-px flex-1 bg-neon-cyan/15" />
+                    <span className="font-display text-[0.6rem] font-bold uppercase tracking-[0.2em] text-text-muted/80">
+                      {dayLabel(daySeparator)}
+                    </span>
+                    <span className="h-px flex-1 bg-neon-cyan/15" />
+                  </div>
+                )}
+                {/* Los mensajes seguidos de un mismo autor se pegan entre sí y pierden la
+                  cabecera: antes cada uno repetía nombre y hora, y una ráfaga de tres
+                  frases ocupaba el triple de alto del que le corresponde. */}
+                <article
+                  className={`max-w-[88%] border px-3 py-2 ${grouped ? "mt-0.5" : "mt-2"} ${
+                    own
+                      ? "ml-auto border-neon-magenta/45 bg-neon-magenta/8"
+                      : "mr-auto border-neon-cyan/30 bg-neon-cyan/6"
+                  }`}
+                >
+                  {!grouped && (
+                    <div className="mb-1 flex items-center justify-between gap-4">
+                      <span
+                        className={`font-display text-[0.65rem] font-bold uppercase ${own ? "text-neon-magenta" : "text-neon-cyan"}`}
+                      >
+                        {own ? t("chat.you") : message.sender.username}
+                      </span>
+                      <time
+                        dateTime={message.createdAt}
+                        className="text-[0.65rem] text-text-muted/80"
+                      >
+                        {timeFormat.format(new Date(message.createdAt))}
+                      </time>
+                    </div>
+                  )}
+                  <p className="whitespace-pre-wrap break-words text-sm text-text-main">
+                    {message.content}
+                  </p>
+                </article>
+              </div>
+            ))}
+          </div>
+          <div ref={endRef} />
         </div>
-        <div ref={endRef} />
+
+        {/* Contrapartida de no arrastrar el scroll: si llega algo mientras lees más
+            arriba, hay que decirlo, o el mensaje pasa desapercibido. */}
+        {pendingBelow && (
+          <button
+            type="button"
+            onClick={() => scrollToEnd("smooth")}
+            className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 border border-neon-cyan/60 bg-bg/92 px-3 py-1.5 font-display text-[0.65rem] font-bold uppercase tracking-widest text-neon-cyan shadow-[0_0_16px_rgba(36,245,255,0.25)] backdrop-blur-sm transition hover:bg-neon-cyan/12"
+          >
+            <ArrowDown aria-hidden="true" size={13} />
+            {t("chat.newMessages")}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -214,9 +340,10 @@ function ChatWindow({ scope, title, channelId, peer, onClose }: ChatWindowProps)
       <div className="shrink-0 border-t border-neon-cyan/25 p-3">
         <div className="flex items-end gap-2">
           <textarea
+            ref={inputRef}
             value={content}
             maxLength={MESSAGE_MAX_LENGTH}
-            rows={2}
+            rows={1}
             onChange={(event) => setContent(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -226,7 +353,7 @@ function ChatWindow({ scope, title, channelId, peer, onClose }: ChatWindowProps)
             }}
             placeholder={t("chat.placeholder")}
             aria-label={t("chat.placeholder")}
-            className="min-h-12 min-w-0 flex-1 resize-none border border-neon-cyan/30 bg-black/25 px-3 py-2 text-sm text-text-main outline-none transition focus:border-neon-cyan"
+            className="min-h-12 min-w-0 flex-1 resize-none overflow-y-auto border border-neon-cyan/30 bg-black/25 px-3 py-3 text-sm leading-snug text-text-main outline-none transition focus:border-neon-cyan"
           />
           <button
             type="button"
@@ -239,9 +366,16 @@ function ChatWindow({ scope, title, channelId, peer, onClose }: ChatWindowProps)
             <Send aria-hidden="true" size={19} />
           </button>
         </div>
-        <p className="mt-1 text-right text-[0.65rem] tabular-nums text-text-muted/60">
-          {content.length}/{MESSAGE_MAX_LENGTH}
-        </p>
+        {/* Solo cuando queda poco margen: el resto del tiempo no aporta nada. */}
+        {content.length >= COUNTER_VISIBLE_FROM && (
+          <p
+            className={`mt-1 text-right text-[0.65rem] tabular-nums ${
+              content.length >= MESSAGE_MAX_LENGTH ? "text-sun-orange" : "text-text-muted/80"
+            }`}
+          >
+            {content.length}/{MESSAGE_MAX_LENGTH}
+          </p>
+        )}
       </div>
     </section>
   );

@@ -1,6 +1,6 @@
 import { AdaptiveDpr, Clone, PerformanceMonitor, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import type { GameEntityState } from "@whoshuman/shared-types";
+import type { GameCollectibleState, GameEntityState } from "@whoshuman/shared-types";
 import {
   Suspense,
   useCallback,
@@ -80,6 +80,10 @@ const MOVEMENT_EPSILON_SQ = 1e-8;
 // poco más del doble de la cadencia de autor, que se lee como correr sin parecer que
 // va acelerado.
 const SPRINT_MAX_CYCLES_PER_SECOND = 2;
+// Lo que tarda un personaje en pasar de quieto a andando y al revés. Es el paso completo
+// (0 a 1 del peso), la mitad para cada tramo del cruce. Más largo se lee como que arranca
+// con desgana; más corto vuelve a parecer un salto.
+const WALK_BLEND_SECONDS = 0.18;
 
 interface Motion {
   x: number;
@@ -87,6 +91,17 @@ interface Motion {
   phase: number; // 0..1 dentro del ciclo de caminar, propio de cada entidad
   idleOffset: number; // desfase fijo del idle, para que no respiren todos a la vez
   moving: boolean;
+  // 0 = quieto, 1 = andando. Antes esto era el propio `moving`, y al cambiar el personaje
+  // saltaba de una zancada a media altura a la pose de reposo en un solo fotograma.
+  walkWeight: number;
+}
+
+// Reparto del peso entre los dos ciclos. Por encima de la mitad se dibuja en el de andar
+// y por debajo en el de quieto; el resto del camino lo cubre la mezcla hacia la pose
+// neutra, que es la MISMA en los dos conjuntos. Por eso las dos ramas coinciden en 0.5
+// (mezcla completa a esa pose) y el cambio de malla no se ve.
+function blendAmount(walkWeight: number): number {
+  return walkWeight >= 0.5 ? (1 - walkWeight) * 2 : walkWeight * 2;
 }
 
 // Acumula el recorrido de una entidad y avanza su fase de caminar en proporción a
@@ -106,7 +121,8 @@ function advanceMotion(
       // al unísono como un desfile.
       phase: Math.random(),
       idleOffset: Math.random(),
-      moving: false
+      moving: false,
+      walkWeight: 0
     };
     motions.set(entity.entityId, first);
     return first;
@@ -122,6 +138,13 @@ function advanceMotion(
     const step = Math.min(travelled / SPRINT_CYCLE_DISTANCE, SPRINT_MAX_CYCLES_PER_SECOND * delta);
     previous.phase = (previous.phase + step) % 1;
   }
+  // El peso viaja hacia su destino en vez de conmutar. De paso hace innecesaria cualquier
+  // histéresis sobre `moving`: una entidad que alterne durante un par de fotogramas
+  // apenas mueve el peso, así que no se nota.
+  const weightStep = delta / WALK_BLEND_SECONDS;
+  previous.walkWeight = previous.moving
+    ? Math.min(1, previous.walkWeight + weightStep)
+    : Math.max(0, previous.walkWeight - weightStep);
   return previous;
 }
 
@@ -133,29 +156,38 @@ function advanceMotion(
 // El avance dentro del fotograma viene por instancia en las mallas instanciadas, y por
 // uniform en la del propio jugador, que es una malla suelta. El resto del shader es
 // idéntico; la malla suelta simplemente ignora el atributo aMorph de la geometría.
-function patchMorphMaterial(material: THREE.Material, uniform?: { value: number }): void {
-  const declaration = uniform
-    ? "uniform float uMorph;\n#define MORPH uMorph"
-    : "attribute float aMorph;\n#define MORPH aMorph";
+function patchMorphMaterial(
+  material: THREE.Material,
+  uniforms?: { morph: { value: number }; blend: { value: number } }
+): void {
+  const declaration = uniforms
+    ? "uniform float uMorph;\nuniform float uBlend;\n#define MORPH uMorph\n#define BLEND uBlend"
+    : "attribute float aMorph;\nattribute float aBlend;\n#define MORPH aMorph\n#define BLEND aBlend";
   // three.js cachea los programas compilados por los parámetros del material, y dos
   // clones con onBeforeCompile distinto darían la misma clave: reutilizaría el shader
   // del otro. Hoy no chocan porque la clave incluye si la malla es instanciada, pero
   // eso es suerte; declararlo es lo que exige la API.
-  material.customProgramCacheKey = () => (uniform ? "morph-uniform" : "morph-attribute");
+  material.customProgramCacheKey = () => (uniforms ? "morph-uniform" : "morph-attribute");
   material.onBeforeCompile = (shader) => {
-    if (uniform) shader.uniforms.uMorph = uniform;
+    if (uniforms) {
+      shader.uniforms.uMorph = uniforms.morph;
+      shader.uniforms.uBlend = uniforms.blend;
+    }
+    // Dos mezclas encadenadas: primero la pose exacta dentro del ciclo (MORPH, entre este
+    // fotograma y el siguiente), y sobre ella el paso al otro ciclo (BLEND, hacia la pose
+    // neutra). Con BLEND a 0 no cuesta nada: es la misma cuenta de siempre.
     shader.vertexShader = shader.vertexShader
       .replace(
         "#include <common>",
-        `#include <common>\nattribute vec3 nextPosition;\nattribute vec3 nextNormal;\n${declaration}`
+        `#include <common>\nattribute vec3 nextPosition;\nattribute vec3 nextNormal;\nattribute vec3 restPosition;\nattribute vec3 restNormal;\n${declaration}`
       )
       .replace(
         "#include <beginnormal_vertex>",
-        "#include <beginnormal_vertex>\nobjectNormal = normalize(mix(objectNormal, nextNormal, MORPH));"
+        "#include <beginnormal_vertex>\nobjectNormal = normalize(mix(mix(objectNormal, nextNormal, MORPH), restNormal, BLEND));"
       )
       .replace(
         "#include <begin_vertex>",
-        "#include <begin_vertex>\ntransformed = mix(transformed, nextPosition, MORPH);"
+        "#include <begin_vertex>\ntransformed = mix(mix(transformed, nextPosition, MORPH), restPosition, BLEND);"
       );
   };
 }
@@ -163,7 +195,10 @@ function patchMorphMaterial(material: THREE.Material, uniform?: { value: number 
 // Empareja cada pose con la siguiente (la última con la primera, que el ciclo cierra).
 // Comparte los BufferAttribute de las horneadas en vez de copiarlos: lo único nuevo es
 // el atributo por instancia con su avance dentro del fotograma.
-function buildMorphSet(frames: THREE.BufferGeometry[]): THREE.BufferGeometry[] {
+function buildMorphSet(
+  frames: THREE.BufferGeometry[],
+  rest: THREE.BufferGeometry
+): THREE.BufferGeometry[] {
   return frames.map((frame, index) => {
     const next = frames[(index + 1) % frames.length];
     const geometry = new THREE.BufferGeometry();
@@ -174,8 +209,17 @@ function buildMorphSet(frames: THREE.BufferGeometry[]): THREE.BufferGeometry[] {
     }
     geometry.setAttribute("nextPosition", next.getAttribute("position"));
     geometry.setAttribute("nextNormal", next.getAttribute("normal"));
+    // Pose neutra por la que pasa el cambio de ciclo. Es el MISMO atributo para los dos
+    // conjuntos y para todos sus fotogramas: no ocupa memoria nueva en la GPU, y que sea
+    // el mismo destino en ambos lados es justo lo que hace que el cruce case.
+    geometry.setAttribute("restPosition", rest.getAttribute("position"));
+    geometry.setAttribute("restNormal", rest.getAttribute("normal"));
     geometry.setAttribute(
       "aMorph",
+      new THREE.InstancedBufferAttribute(new Float32Array(MAX_OTHER_ENTITIES), 1)
+    );
+    geometry.setAttribute(
+      "aBlend",
       new THREE.InstancedBufferAttribute(new Float32Array(MAX_OTHER_ENTITIES), 1)
     );
     // El bulto no cambia entre poses vecinas; reusarla evita recalcularla por fotograma.
@@ -202,12 +246,32 @@ const SCOPE_REFRESH_MS = 80;
 const TOUCH_CAMERA_SPEED = 1.8;
 const TOUCH_SEEKER_AIM_SPEED = 0.65;
 const HIDER_CAMERA_DISTANCE = 1.8;
+// Lo que se queda la cámara por delante de la fachada contra la que choca. El plano
+// cercano del canvas está a 0.1: pegada al muro, lo recorta y se ve el interior igual.
+const WALL_MARGIN = 0.15;
+// Cuando el hueco hasta el muro no da ni para el margen fijo, el retranqueo pasa a ser
+// esta fracción del hueco. Un suelo fijo NO vale: con la pared a 0.10 y un mínimo de
+// 0.45, el mínimo gana y devuelve la cámara al interior del edificio, que es justo lo
+// que se venía a arreglar.
+const WALL_MARGIN_RATIO = 0.8;
+// Único suelo duro, y solo para que la cámara no caiga exactamente sobre la cabeza: a
+// distancia 0, lookAt se queda sin dirección y la orientación sale NaN.
+const MIN_CAMERA_DISTANCE = 0.02;
+// Por debajo de esto la cámara está dentro del propio personaje y se le ve la cabeza por
+// dentro. Se oculta, como hace cualquier tercera persona al apretarla contra una pared.
+const SELF_HIDE_DISTANCE = 0.5;
 
 // El modelo mide 0.12 de alto; x1.0 lo deja en ~0.12, algo menos de un tercio de personaje.
 // A 1.7 abultaban demasiado y competían con los personajes en la lectura de la escena.
 const CELL_SCALE = 1.0;
 const COLLECTIBLE_BEAM_HEIGHT = 4.8;
 const COLLECTIBLE_BEAM_RADIUS = 0.055;
+// Lo que dura en pantalla una célula ya recogida. Corto a propósito: es el remate de un
+// gesto, no una cinemática, y el jugador sigue corriendo mientras.
+const PICKUP_MS = 450;
+// Lo que se eleva al recogerse. Con personajes de 0.33 de alto, 0.4 la saca por encima
+// de la cabeza sin que parezca que sale disparada.
+const PICKUP_RISE = 0.4;
 // El modelo mide 1 unidad de largo; el mapa entero mide ~5, así que a 1:1 sería
 // gigante. 0.55 lo deja en algo menos de dos veces la altura de un personaje.
 const CHASER_SCALE = 0.55;
@@ -220,9 +284,14 @@ const CHASER_SCALE = 0.55;
 // recortaría por abajo.
 const CHASER_SCREEN_FORWARD = 1.25;
 const CHASER_SCREEN_DOWN = 0.36;
-// Apuntando se manda detrás de la cámara: ahí no tapa la mira.
+// De dónde sale el haz para el propio cazador: por detrás y por debajo de la cámara, o
+// saldría del punto de vista y no se vería converger en la retícula. Es un apaño de primera
+// persona y NO mueve la nave (que a esas alturas está justo en la cámara).
 const CHASER_BACK_OFFSET = 1.15;
 const CHASER_DOWN_OFFSET = 0.3;
+// La nave mide 0.55 de eslora: a menos de media, la cámara ya la tiene encima y hay que
+// dejar de dibujarla.
+const CHASER_HIDE_DISTANCE = 0.3;
 // Aleteo. El modelo es una malla rígida de una pieza (sin huesos, sin animaciones y
 // sin las alas como objetos aparte), así que las góndolas se doblan en el vertex
 // shader. Miden |x| 0.29-0.48 y las separa del fuselaje un estrechamiento en
@@ -303,7 +372,9 @@ function MapPieceModel({ piece }: { piece: (typeof mapPieces)[number] }) {
       object={scene}
       position={[piece.x, piece.groundOffset, piece.z]}
       rotation={[0, piece.rotationY, 0]}
-      scale={piece.scale}
+      // scaleZ solo lo trae la losa de calle, que es cuadrada y hay que ajustar a una
+      // manzana rectangular; el resto de piezas escalan por igual en los tres ejes.
+      scale={[piece.scale, piece.scale, piece.scaleZ ?? piece.scale]}
     />
   );
 }
@@ -461,9 +532,87 @@ function Floor() {
   );
 }
 
+interface VanishingCollectible extends GameCollectibleState {
+  // Momento en que dejó de llegar en el snapshot, para medir su salida.
+  start: number;
+}
+
+// Célula ya recogida. El servidor deja de mandarla y hasta ahora se esfumaba en un
+// fotograma; aquí se queda el tiempo justo para rematar el gesto: sube girando cada vez
+// más rápido, se agranda y se apaga, mientras su haz se cierra con un último destello.
+function VanishingCell({
+  item,
+  geometry,
+  cellMaterial,
+  beamGeometry,
+  beamMaterial
+}: {
+  item: VanishingCollectible;
+  geometry: THREE.BufferGeometry;
+  cellMaterial: THREE.Material;
+  beamGeometry: THREE.BufferGeometry;
+  beamMaterial: THREE.Material;
+}) {
+  const cell = useRef<THREE.Mesh>(null);
+  const beam = useRef<THREE.Mesh>(null);
+  // Materiales propios y no los compartidos: bajarle el alfa al del GLTF apagaría de
+  // paso todas las células que siguen en el mapa.
+  const materials = useMemo(() => {
+    const fading = cellMaterial.clone();
+    fading.transparent = true;
+    fading.depthWrite = false;
+    return { cell: fading, beam: beamMaterial.clone() };
+  }, [cellMaterial, beamMaterial]);
+
+  useEffect(
+    () => () => {
+      materials.cell.dispose();
+      materials.beam.dispose();
+    },
+    [materials]
+  );
+
+  useFrame((_, delta) => {
+    const progress = Math.min(1, (performance.now() - item.start) / PICKUP_MS);
+    // Arranca de golpe y frena al final: ese tirón inicial es lo que se lee como que
+    // algo se la lleva, en vez de como que flota hacia arriba.
+    const eased = 1 - (1 - progress) ** 3;
+    if (cell.current) {
+      cell.current.position.y = item.y + PICKUP_RISE * eased;
+      cell.current.scale.setScalar(1 + 0.7 * eased);
+      // Al giro de reposo se le suma un impulso que se agota con la propia salida.
+      cell.current.rotation.y += delta * (1.4 + 9 * (1 - eased));
+      cell.current.rotation.x += delta * 0.7;
+      // Exponente > 1: aguanta visible casi todo el recorrido y se apaga al final, en
+      // vez de desvanecerse desde el primer fotograma.
+      materials.cell.opacity = 1 - progress ** 1.6;
+    }
+    if (beam.current) {
+      beam.current.scale.set(1 - eased, 1, 1 - eased);
+      materials.beam.opacity = 0.24 + 0.5 * Math.sin(Math.PI * progress);
+    }
+  });
+
+  return (
+    <group position={[item.x, 0, item.z]}>
+      <mesh ref={cell} geometry={geometry} material={materials.cell} position={[0, item.y, 0]} />
+      <mesh
+        ref={beam}
+        geometry={beamGeometry}
+        material={materials.beam}
+        position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
+        renderOrder={2}
+      />
+    </group>
+  );
+}
+
 function Collectibles() {
   const collectibles = useGameStore((state) => state.collectibles);
+  const phase = useGameStore((state) => state.round?.phase);
   const group = useRef<THREE.Group>(null);
+  const [vanishing, setVanishing] = useState<VanishingCollectible[]>([]);
+  const previous = useRef<GameCollectibleState[]>([]);
   const { scene } = useGLTF(CELL_MODEL_URL);
   // Una sola geometría y un solo material para las células: el GLB se carga una vez
   // y cada célula es un mesh que los reutiliza.
@@ -508,6 +657,34 @@ function Collectibles() {
     []
   );
 
+  // Las que dejan de venir en el snapshot es que alguien las ha recogido. Solo se
+  // animan en juego: al terminar la ronda o salir de la partida la lista se vacía de
+  // golpe, y ahí no hay recogida que rematar — se irían todas a la vez.
+  useEffect(() => {
+    const present = new Set(collectibles.map((item) => item.collectibleId));
+    const gone = previous.current.filter((item) => !present.has(item.collectibleId));
+    previous.current = collectibles;
+    if (gone.length === 0 || phase !== "playing") return;
+    const start = performance.now();
+    setVanishing((current) => [...current, ...gone.map((item) => ({ ...item, start }))]);
+  }, [collectibles, phase]);
+
+  // Retirada de las ya consumidas. Se hace con un temporizador y no en useFrame: cambiar
+  // el estado de React en cada fotograma volvería a montar el árbol 60 veces por segundo.
+  useEffect(() => {
+    if (vanishing.length === 0) return;
+    const timer = setTimeout(() => {
+      const cutoff = performance.now() - PICKUP_MS;
+      setVanishing((current) => {
+        const alive = current.filter((item) => item.start > cutoff);
+        // Misma referencia si no sobra ninguna: devolver un array nuevo relanzaría este
+        // efecto y con él el temporizador, en bucle.
+        return alive.length === current.length ? current : alive;
+      });
+    }, PICKUP_MS);
+    return () => clearTimeout(timer);
+  }, [vanishing]);
+
   useFrame((_, delta) => {
     for (const marker of group.current?.children ?? []) {
       const cell = marker.children[0];
@@ -528,19 +705,33 @@ function Collectibles() {
   );
 
   return (
-    <group ref={group}>
-      {collectibles.map((item) => (
-        <group key={item.collectibleId} position={[item.x, 0, item.z]}>
-          <mesh geometry={geometry} material={material} position={[0, item.y, 0]} />
-          <mesh
-            geometry={beamGeometry}
-            material={beamMaterial}
-            position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
-            renderOrder={2}
-          />
-        </group>
+    <>
+      {/* Las recogidas van fuera de este grupo: el giro de arriba recorre sus hijos y
+          cada una lleva ya el suyo propio, acelerado. */}
+      <group ref={group}>
+        {collectibles.map((item) => (
+          <group key={item.collectibleId} position={[item.x, 0, item.z]}>
+            <mesh geometry={geometry} material={material} position={[0, item.y, 0]} />
+            <mesh
+              geometry={beamGeometry}
+              material={beamMaterial}
+              position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
+              renderOrder={2}
+            />
+          </group>
+        ))}
+      </group>
+      {vanishing.map((item) => (
+        <VanishingCell
+          key={`${item.collectibleId}:${item.start}`}
+          item={item}
+          geometry={geometry}
+          cellMaterial={material}
+          beamGeometry={beamGeometry}
+          beamMaterial={beamMaterial}
+        />
       ))}
-    </group>
+    </>
   );
 }
 
@@ -585,7 +776,13 @@ function Units() {
   const aimOffset = useMemo(() => new THREE.Vector3(), []);
   const cameraDestination = useMemo(() => new THREE.Vector3(), []);
   const cameraTarget = useMemo(() => new THREE.Vector3(), []);
-  const selfMorphs = useRef<{ value: number }[]>([]);
+  const cameraDirection = useMemo(() => new THREE.Vector3(), []);
+  // Distancia real a la que va la cámara, ya recortada por los muros. Es un ref y no un
+  // cálculo suelto porque el retroceso se recupera poco a poco entre fotogramas.
+  const hiderCameraDistance = useRef(HIDER_CAMERA_DISTANCE);
+  const selfUniformsByVariant = useRef<{ morph: { value: number }; blend: { value: number } }[]>(
+    []
+  );
   const characterAssets = useMemo(
     () =>
       characterModels.map(({ scene: characterScene, animations }) => {
@@ -662,27 +859,31 @@ function Units() {
           material.map.needsUpdate = true;
         }
         patchMorphMaterial(material);
-        const selfMorph = { value: 0 };
+        const selfUniforms = { morph: { value: 0 }, blend: { value: 0 } };
         const selfMaterial = material.clone();
-        patchMorphMaterial(selfMaterial, selfMorph);
+        patchMorphMaterial(selfMaterial, selfUniforms);
 
+        // La pose neutra del cruce es el primer fotograma del idle: los dos conjuntos
+        // mezclan hacia ella, así que el salto de un ciclo al otro pasa por un punto
+        // común en vez de por dos poses distintas.
+        const rest = idleFrames[0];
         return {
-          idleGeometries: buildMorphSet(idleFrames),
-          sprintGeometries: buildMorphSet(sprintFrames),
+          idleGeometries: buildMorphSet(idleFrames, rest),
+          sprintGeometries: buildMorphSet(sprintFrames, rest),
           // Las horneadas quedan como dueñas de los datos: las de morfeo solo las
           // referencian, así que se liberan aquí y no allí.
           bakedGeometries: [...idleFrames, ...sprintFrames],
           material,
           selfMaterial,
-          selfMorph
+          selfUniforms
         };
       }),
     [characterModels, gl]
   );
   useEffect(() => {
-    selfMorphs.current = characterAssets.map((asset) => asset.selfMorph);
+    selfUniformsByVariant.current = characterAssets.map((asset) => asset.selfUniforms);
     return () => {
-      selfMorphs.current = [];
+      selfUniformsByVariant.current = [];
     };
   }, [characterAssets]);
   useEffect(
@@ -710,6 +911,7 @@ function Units() {
     touchCamera.current = { x: 0, y: 0 };
     hiderCameraYaw.current = 0;
     hiderCameraPitch.current = 0.45;
+    hiderCameraDistance.current = HIDER_CAMERA_DISTANCE;
   }, [selfRole]);
 
   useFrame(({ camera, clock }, delta) => {
@@ -725,18 +927,21 @@ function Units() {
         const motion = advanceMotion(motions.current, self, delta);
         if (selfMeshRef.current && asset) {
           selfMeshRef.current.material = asset.selfMaterial;
-          const selfMorph = selfMorphs.current[self.skinId];
-          if (motion.moving) {
+          const selfUniforms = selfUniformsByVariant.current[self.skinId];
+          // Ya no manda `moving` sino el peso: en el tramo intermedio se sigue dibujando
+          // en el ciclo que corresponda, pero mezclado hacia la pose neutra.
+          if (motion.walkWeight >= 0.5) {
             const exact = motion.phase * SPRINT_FRAME_COUNT;
             const frame = Math.min(SPRINT_FRAME_COUNT - 1, Math.floor(exact));
             selfMeshRef.current.geometry = asset.sprintGeometries[frame];
-            if (selfMorph) selfMorph.value = exact - frame;
+            if (selfUniforms) selfUniforms.morph.value = exact - frame;
           } else {
             const exact = ((idleCycles + motion.idleOffset) % 1) * IDLE_FRAME_COUNT;
             const frame = Math.min(IDLE_FRAME_COUNT - 1, Math.floor(exact));
             selfMeshRef.current.geometry = asset.idleGeometries[frame];
-            if (selfMorph) selfMorph.value = exact - frame;
+            if (selfUniforms) selfUniforms.morph.value = exact - frame;
           }
+          if (selfUniforms) selfUniforms.blend.value = blendAmount(motion.walkWeight);
         }
         selfRef.current.position.set(self.x, self.y, self.z);
         selfRef.current.rotation.y = self.rotationY;
@@ -747,14 +952,37 @@ function Units() {
           1.05
         );
         const yaw = self.rotationY + hiderCameraYaw.current;
-        const horizontalDistance = Math.cos(hiderCameraPitch.current) * HIDER_CAMERA_DISTANCE;
-        cameraDestination.set(
-          self.x - Math.sin(yaw) * horizontalDistance,
-          self.y + PLAYER_HEIGHT + Math.sin(hiderCameraPitch.current) * HIDER_CAMERA_DISTANCE,
-          self.z - Math.cos(yaw) * horizontalDistance
-        );
         cameraTarget.set(self.x, self.y + PLAYER_HEIGHT, self.z);
-        camera.position.lerp(cameraDestination, 0.08);
+        // Hacia dónde se iría la cámara si no hubiera nada en medio. Sale ya normalizado:
+        // el horizontal va escalado por cos(inclinación) y el vertical por su seno.
+        const horizontal = Math.cos(hiderCameraPitch.current);
+        cameraDirection.set(
+          -Math.sin(yaw) * horizontal,
+          Math.sin(hiderCameraPitch.current),
+          -Math.cos(yaw) * horizontal
+        );
+        // Hasta dónde puede retroceder sin atravesar una fachada.
+        const allowed = cameraClearance(cameraTarget, cameraDirection, HIDER_CAMERA_DISTANCE);
+        const previousDistance = hiderCameraDistance.current;
+        // Entrar es urgente y salir no: al pegarse a un muro hay que recortar en el acto,
+        // pero al despegarse conviene volver despacio, o cada esquina da un tirón. El
+        // factor exponencial mantiene ese ritmo igual a cualquier tasa de fotogramas.
+        hiderCameraDistance.current =
+          allowed < previousDistance
+            ? allowed
+            : THREE.MathUtils.lerp(previousDistance, allowed, 1 - Math.exp(-4 * delta));
+        cameraDestination
+          .copy(cameraTarget)
+          .addScaledVector(cameraDirection, hiderCameraDistance.current);
+        // Apretada contra un muro, la cámara acaba dentro del personaje: se oculta en vez
+        // de enseñar su cabeza por dentro.
+        selfRef.current.visible = hiderCameraDistance.current > SELF_HIDE_DISTANCE;
+        // Y el propio viaje de la cámara tampoco puede ir a su paso de siempre cuando la
+        // están empujando hacia dentro: para cuando llegase, ya se habría visto el
+        // interior del edificio.
+        const pushedIn =
+          camera.position.distanceTo(cameraTarget) > hiderCameraDistance.current + WALL_MARGIN;
+        camera.position.lerp(cameraDestination, pushedIn ? 0.45 : 0.08);
         camera.lookAt(cameraTarget);
       }
     }
@@ -801,7 +1029,7 @@ function Units() {
       let instance: number;
       let exact: number;
       let frame: number;
-      if (motion.moving) {
+      if (motion.walkWeight >= 0.5) {
         exact = motion.phase * SPRINT_FRAME_COUNT;
         frame = Math.min(SPRINT_FRAME_COUNT - 1, Math.floor(exact));
         instance = sprintingCounts[variant][frame]++;
@@ -822,6 +1050,8 @@ function Units() {
       mesh.setMatrixAt(instance, transform.matrix);
       const morph = mesh.geometry.getAttribute("aMorph") as THREE.InstancedBufferAttribute;
       morph.setX(instance, exact - frame);
+      const blend = mesh.geometry.getAttribute("aBlend") as THREE.InstancedBufferAttribute;
+      blend.setX(instance, blendAmount(motion.walkWeight));
     }
 
     for (let variant = 0; variant < CHARACTER_MODEL_URLS.length; variant += 1) {
@@ -832,6 +1062,7 @@ function Units() {
         mesh.count = used;
         mesh.instanceMatrix.needsUpdate = true;
         mesh.geometry.getAttribute("aMorph").needsUpdate = true;
+        mesh.geometry.getAttribute("aBlend").needsUpdate = true;
       };
       for (let frame = 0; frame < IDLE_FRAME_COUNT; frame += 1) {
         flush(idleCharacters.current[variant][frame], idleCounts[variant][frame]);
@@ -883,14 +1114,24 @@ function Units() {
       }
       shoot(targetEntityId);
     };
+    // Con el derecho ya pulsado (apuntando), pulsar el izquierdo NO genera un pointerdown.
+    // Los eventos de puntero solo lo emiten al pasar de CERO botones a uno; mientras haya
+    // alguno apretado, los demas cambios de boton llegan como pointermove, con `button`
+    // diciendo cual cambio (los movimientos normales traen -1). Por eso apuntando con el
+    // derecho el disparo estaba muerto y con F no: ahi no hay ningun boton pulsado.
     const handleShoot = (event: PointerEvent) => {
       if (event.button !== 0 || event.pointerType === "touch") return;
+      // En el pointermove hay que separar pulsar de soltar, que llegan igual: si el bit
+      // del izquierdo sigue en `buttons`, es una pulsacion.
+      if (event.type === "pointermove" && (event.buttons & 1) === 0) return;
       shootAtCrosshair();
     };
     gl.domElement.addEventListener("pointerdown", handleShoot);
+    gl.domElement.addEventListener("pointermove", handleShoot);
     window.addEventListener(TOUCH_SEEKER_SHOOT_EVENT, shootAtCrosshair);
     return () => {
       gl.domElement.removeEventListener("pointerdown", handleShoot);
+      gl.domElement.removeEventListener("pointermove", handleShoot);
       window.removeEventListener(TOUCH_SEEKER_SHOOT_EVENT, shootAtCrosshair);
     };
   }, [aiming, camera, gl, raycaster, scene, selfRole, shoot]);
@@ -971,7 +1212,8 @@ vec3 chaserBendNormal(vec3 n, vec3 p) {
 // resto de entidades) encarando adonde apunta la cámara e inclinado hacia el suelo.
 function ChaserShip() {
   const { scene } = useGLTF(CHASER_MODEL_URL);
-  const aiming = useGameStore((s) => s.aiming);
+  // Ya no se suscribe a `aiming`: la mira entra por seekerAimBlend, que es un valor de
+  // modulo. Asi la nave deja de re-renderizarse cada vez que se apunta o se suelta.
   const selfRole = useGameStore((s) => s.selfRole);
   const sendAimPose = useGameStore((s) => s.sendAimPose);
   const isSeeker = selfRole === "seeker";
@@ -1061,8 +1303,12 @@ function ChaserShip() {
       lastShipPos.current = { x: seeker.x, y: seeker.y, z: seeker.z };
       setSfxLoop("shipMove", speed > SHIP_AUDIBLE_SPEED);
       // Se oye mas fuerte cuanto mas cerca pasa: a SHIP_AUDIBLE_RANGE ya no se oye nada.
+      // Al cuadrado y no lineal: con la caida lineal la nave todavia sonaba a media
+      // potencia a mitad de mapa y resultaba pesada mientras te escondias. Asi solo se
+      // impone cuando de verdad la tienes encima, que es cuando debe acojonar.
       const distance = camera.position.distanceTo(ship.position);
-      setSfxLoopProximity("shipMove", 1 - Math.min(1, distance / SHIP_AUDIBLE_RANGE));
+      const closeness = 1 - Math.min(1, distance / SHIP_AUDIBLE_RANGE);
+      setSfxLoopProximity("shipMove", closeness * closeness);
 
       ship.position.set(seeker.x, seeker.y, seeker.z);
       direction.set(seeker.dirX, seeker.dirY, seeker.dirZ).normalize();
@@ -1079,22 +1325,28 @@ function ChaserShip() {
       return;
     }
 
-    ship.visible = true;
     camera.getWorldDirection(direction);
-    if (aiming) {
-      // Apuntando se sale del encuadre: por delante taparía la mira.
-      ship.position
-        .copy(camera.position)
-        .addScaledVector(direction, -CHASER_BACK_OFFSET)
-        .setY(camera.position.y - CHASER_DOWN_OFFSET);
-    } else {
-      // La cámara la mueve otro useFrame, así que su matriz puede ir un fotograma
-      // por detrás; sin esto la nave arrastraría al girar.
-      camera.updateMatrixWorld();
-      ship.position
-        .set(0, -CHASER_SCREEN_DOWN, -CHASER_SCREEN_FORWARD)
-        .applyMatrix4(camera.matrixWorld);
-    }
+    // La separación entre cámara y nave se encoge al mismo ritmo al que la cámara se
+    // acerca, así que la nave SE QUEDA QUIETA en el mundo mientras dura el zoom: la
+    // cámara le entra por dentro, que es justo lo que se buscaba.
+    //
+    // Antes esto era un `if (aiming)` con la nave 1.25 por delante o 1.15 por detrás. Al
+    // ser un booleano y no el avance del zoom, la nave DABA UN SALTO de 2.4 unidades en un
+    // solo fotograma nada más pulsar el botón — y esa posición es la que se publica a los
+    // demás, así que los escondidos veían la nave teletransportarse cada vez que el cazador
+    // apuntaba. De paso disparaba el zumbido del motor, porque el salto se lee como
+    // velocidad altísima.
+    const aimBlend = seekerAimBlend.value;
+    // La cámara la mueve otro useFrame, así que su matriz puede ir un fotograma
+    // por detrás; sin esto la nave arrastraría al girar.
+    camera.updateMatrixWorld();
+    ship.position
+      .set(0, -CHASER_SCREEN_DOWN * (1 - aimBlend), -CHASER_SCREEN_FORWARD * (1 - aimBlend))
+      .applyMatrix4(camera.matrixWorld);
+    // Con la mira puesta la cámara está DENTRO de la nave: se oculta, o se vería el modelo
+    // por dentro tapando la pantalla. El umbral es media eslora, que es cuando empieza a
+    // comerse el encuadre.
+    ship.visible = CHASER_SCREEN_FORWARD * (1 - aimBlend) > CHASER_HIDE_DISTANCE;
     // Sube y baja en vertical del mundo, no de la pantalla: así se lee como que la
     // nave flota, y no como que se mueve la cámara.
     ship.position.y += Math.sin(clock.elapsedTime * CHASER_BOB_SPEED) * CHASER_BOB_AMPLITUDE;
@@ -1143,6 +1395,12 @@ function ChaserShip() {
 // y no estado de React a proposito: cambia en cada fotograma y no debe provocar renders.
 const seekerTurn = { value: 0 };
 
+// Avance del golpe de zoom de la mira (0 = vista general, 1 = mira puesta), ya suavizado.
+// Lo escribe el rig de camara y lo lee la nave para encogerle su separacion de la camara al
+// mismo ritmo que esta se acerca. Va aqui por lo mismo que seekerTurn: cambia cada fotograma
+// y no debe provocar renders.
+const seekerAimBlend = { value: 0 };
+
 const AIM_EPSILON = 1e-6;
 
 // Slab test: distancia al primer corte del rayo con una caja alineada a los ejes.
@@ -1169,6 +1427,31 @@ function rayBoxDistance(
     if (near > far) return null;
   }
   return near;
+}
+
+/**
+ * Hasta dónde puede retroceder la cámara detrás del jugador sin colarse en un edificio.
+ * Se traza desde su cabeza hacia donde iría la cámara y se corta en el primer AABB del
+ * mapa — los mismos que ya usan el láser y el servidor, así que la cámara respeta
+ * exactamente los mismos muros que las balas.
+ */
+function cameraClearance(origin: THREE.Vector3, direction: THREE.Vector3, wanted: number): number {
+  let hit = wanted;
+  for (const rect of obstacles) {
+    const t = rayBoxDistance(
+      origin,
+      direction,
+      [rect.minX, 0, rect.minZ],
+      [rect.maxX, BUILDING_HEIGHT, rect.maxZ]
+    );
+    // t = 0 es la cabeza ya dentro de la caja (rozando una esquina): no hay nada que
+    // recortar por delante y el rayo no dice nada útil, así que se ignora.
+    if (t !== null && t > 0 && t < hit) hit = t;
+  }
+  // El margen fijo se descuenta del choque, pero cuando el hueco es más estrecho que el
+  // propio margen la resta se iría a negativo: ahí manda el proporcional, que siempre
+  // deja la cámara DENTRO del hueco en vez de al otro lado de la pared.
+  return Math.max(hit - WALL_MARGIN, hit * WALL_MARGIN_RATIO, MIN_CAMERA_DISTANCE);
 }
 
 /**
@@ -1342,8 +1625,12 @@ function SeekerCamera() {
 
   useEffect(() => {
     if (selfRole !== "seeker") return;
+    // Mismo motivo que en el disparo: con otro boton ya pulsado, el derecho no genera
+    // pointerdown/pointerup sino pointermove, y hay que mirar `buttons` para saber si
+    // acaba de pulsarse o de soltarse.
     const startAiming = (event: PointerEvent) => {
       if (event.button !== 2) return;
+      if (event.type === "pointermove" && (event.buttons & 2) === 0) return;
       event.preventDefault();
       setAiming(true);
       void gl.domElement.requestPointerLock();
@@ -1367,14 +1654,20 @@ function SeekerCamera() {
       }
     };
     gl.domElement.addEventListener("pointerdown", startAiming);
+    gl.domElement.addEventListener("pointermove", startAiming);
     gl.domElement.addEventListener("contextmenu", preventMenu);
     window.addEventListener("pointerup", stopAiming);
+    // Soltar el derecho con el izquierdo aun pulsado tampoco da pointerup: sin esto la
+    // mira se quedaba encendida hasta soltar los dos botones.
+    window.addEventListener("pointermove", stopAiming);
     window.addEventListener("blur", cancelAiming);
     document.addEventListener("pointerlockchange", lockChanged);
     return () => {
       gl.domElement.removeEventListener("pointerdown", startAiming);
+      gl.domElement.removeEventListener("pointermove", startAiming);
       gl.domElement.removeEventListener("contextmenu", preventMenu);
       window.removeEventListener("pointerup", stopAiming);
+      window.removeEventListener("pointermove", stopAiming);
       window.removeEventListener("blur", cancelAiming);
       document.removeEventListener("pointerlockchange", lockChanged);
       if (document.pointerLockElement === gl.domElement) document.exitPointerLock();
@@ -1478,6 +1771,9 @@ function SeekerCamera() {
           : Math.max(goal, aimBlend.current - step);
     }
     const blend = aimBlend.current;
+    // Se publica ya suavizado, que es como lo consume la nave. Con blend 0 y 1 da 0 y 1
+    // exactos, asi que sirve igual para los tramos planos.
+    seekerAimBlend.value = blend * blend * (3 - 2 * blend);
 
     // Apuntando no se pilota: hay que bajar la mira para volver a mover la nave. Ademas de
     // ser la regla pedida, deja el alabeo a cero y apaga el motor mientras se apunta, que es

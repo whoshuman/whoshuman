@@ -33,9 +33,12 @@ const GAME_SFX: SfxName[] = ["shot", "collect", "matchStart", "matchEnd", "shipM
 const SFX_GAIN: Partial<Record<SfxName, number>> = {
   shot: 0.85,
   matchStart: 0.7,
-  matchEnd: 0.7,
-  // Suena continuo mientras vuela: por debajo del resto para no tapar disparos ni voces.
-  shipMove: 0.45
+  // La musiquita de cierre estaba grabada bastante mas alta que el resto y pegaba un
+  // susto al acabar la partida.
+  matchEnd: 0.4,
+  // Suena continuo mientras vuela: bastante por debajo del resto para no tapar disparos
+  // ni voces. Es un zumbido de fondo, no un protagonista.
+  shipMove: 0.3
 };
 
 let context: AudioContext | null = null;
@@ -120,9 +123,23 @@ export function sfxDurationMs(name: SfxName): number {
 // Los efectos normales son de usar y tirar. El zumbido de la nave, en cambio, tiene que
 // sostenerse mientras el cazador se mueve y apagarse al parar, con fundidos: sin ellos el
 // arranque y el corte suenan a chasquido.
-const LOOP_FADE_SECONDS = 0.25;
+// El fundido de entrada es corto (el motor responde al acelerar) y el de salida bastante
+// mas largo. Esa asimetria es lo que hace llevadero el virar a izquierda y derecha sin
+// parar: cada hueco de un par de decimas apenas baja el volumen antes de que vuelva a
+// subir, asi que se oye un vaiven suave en vez de un motor arrancando y parando.
+const LOOP_FADE_IN_SECONDS = 0.25;
+const LOOP_FADE_OUT_SECONDS = 0.7;
 
-type Loop = { source: AudioBufferSourceNode; trim: GainNode; near: GainNode; stopping: boolean };
+type Loop = {
+  source: AudioBufferSourceNode;
+  trim: GainNode;
+  near: GainNode;
+  stopping: boolean;
+  // Temporizador que cortara la fuente cuando termine el fundido de salida. El corte NO
+  // se programa en el nodo (source.stop(cuando)) porque eso no se puede deshacer, y hace
+  // falta poder reanudar si el sonido vuelve antes de que el fundido acabe.
+  stopTimer: ReturnType<typeof setTimeout> | null;
+};
 const loops: Partial<Record<SfxName, Loop>> = {};
 
 /**
@@ -141,13 +158,25 @@ export function setSfxLoop(name: SfxName, active: boolean) {
     if (current && !current.stopping) return;
     const buffer = buffers[name];
     if (!buffer) return;
-    // Estaba en pleno fundido de salida: se corta y se relanza limpio.
-    if (current) {
-      current.source.onended = null;
-      current.source.stop();
-      delete loops[name];
-    }
     if (context.state === "suspended") void context.resume();
+
+    // Estaba en pleno fundido de salida: se le da la vuelta al fundido y sigue sonando.
+    // Antes se cortaba y se relanzaba, y el bucle volvia al principio del mp3: por eso un
+    // cazador virando a izquierda y derecha reiniciaba el zumbido en cada toque. La fuente
+    // no llega a pararse, asi que el motor continua desde donde iba.
+    if (current) {
+      if (current.stopTimer !== null) clearTimeout(current.stopTimer);
+      current.stopTimer = null;
+      current.stopping = false;
+      const resumeAt = context.currentTime;
+      current.trim.gain.cancelScheduledValues(resumeAt);
+      current.trim.gain.setValueAtTime(current.trim.gain.value, resumeAt);
+      current.trim.gain.linearRampToValueAtTime(
+        SFX_GAIN[name] ?? 1,
+        resumeAt + LOOP_FADE_IN_SECONDS
+      );
+      return;
+    }
 
     const trim = context.createGain();
     trim.gain.value = 0;
@@ -162,8 +191,11 @@ export function setSfxLoop(name: SfxName, active: boolean) {
     source.loop = true;
     source.connect(near);
     source.start(0);
-    trim.gain.linearRampToValueAtTime(SFX_GAIN[name] ?? 1, context.currentTime + LOOP_FADE_SECONDS);
-    loops[name] = { source, trim, near, stopping: false };
+    trim.gain.linearRampToValueAtTime(
+      SFX_GAIN[name] ?? 1,
+      context.currentTime + LOOP_FADE_IN_SECONDS
+    );
+    loops[name] = { source, trim, near, stopping: false, stopTimer: null };
     return;
   }
 
@@ -174,11 +206,11 @@ export function setSfxLoop(name: SfxName, active: boolean) {
   // salida arranca donde estuviera y no da un salto.
   current.trim.gain.cancelScheduledValues(now);
   current.trim.gain.setValueAtTime(current.trim.gain.value, now);
-  current.trim.gain.linearRampToValueAtTime(0, now + LOOP_FADE_SECONDS);
-  current.source.stop(now + LOOP_FADE_SECONDS);
-  current.source.onended = () => {
+  current.trim.gain.linearRampToValueAtTime(0, now + LOOP_FADE_OUT_SECONDS);
+  current.stopTimer = setTimeout(() => {
+    current.source.stop();
     if (loops[name] === current) delete loops[name];
-  };
+  }, LOOP_FADE_OUT_SECONDS * 1000);
 }
 
 /**

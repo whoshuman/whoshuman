@@ -7,6 +7,10 @@
 // que la divide por la mitad; los edificios ocupan las dos medias manzanas que quedan.
 // groundOffset apoya cada modelo en el suelo (los GLB salen centrados en su origen) y
 // collider es el AABB en XZ mas la altura real de la pieza.
+//
+// UNICO retoque a mano sobre lo generado: el `scaleZ` de la losa de calle. La generacion
+// da una escala uniforme por pieza y la losa es cuadrada, asi que sobresalia del mapa por
+// el norte y el sur. Si se vuelve a generar este archivo, hay que reponerlo.
 
 export type MapPieceCollider = {
   minX: number;
@@ -22,6 +26,9 @@ export type MapPiece = {
   z: number;
   rotationY: number;
   scale: number;
+  // Escala propia en Z. Solo la usa la losa de calle (ver abajo); si falta, `scale` vale
+  // para los tres ejes, que es lo que quieren edificios, arboles y farolas.
+  scaleZ?: number;
   groundOffset: number;
   collider: MapPieceCollider | null;
 };
@@ -39,6 +46,11 @@ export const mapPieces: MapPiece[] = [
     z: 0,
     rotationY: 0,
     scale: 2.6267,
+    // La losa del GLB es CUADRADA: a escala uniforme cubre 5x5 y la manzana es de 5x4.
+    // Sobraban 0.5 de suelo por el norte y otros 0.5 por el sur, y ahi se veia calzada
+    // que el servidor no deja pisar — el area jugable acaba en z=±2. Se aplasta en Z lo
+    // justo para que el canto de la losa coincida con el del mapa.
+    scaleZ: (2.6267 * ROADS.halfZ) / ROADS.halfX,
     groundOffset: -0.0729,
     collider: null
   },
