@@ -84,10 +84,9 @@ interface SessionPlayer extends MovableState {
   // la simula, solo retransmite la última pose recibida para que el resto la vea.
   pose: SeekerPose | null;
   present: boolean; // ha hecho game:join
-  // Rumbo al que gira mientras se pide "atrás": null = no está en ese giro. Se fija
-  // una vez (heading + 180°) al empezar, no se recalcula cada tick, o el objetivo
-  // huiría según gira (ver tickPlayer).
-  reverseTargetHeading: number | null;
+  // true mientras se está pidiendo "atrás", para dar la vuelta una sola vez al
+  // empezar a pedirlo y no en cada tick (ver tickPlayer).
+  reversedFacing: boolean;
 }
 
 interface SessionNpc extends MovableState {
@@ -353,7 +352,7 @@ export class GameSession {
         aiming: false,
         pose: null,
         present: false,
-        reverseTargetHeading: null
+        reversedFacing: false
       });
     });
 
@@ -399,7 +398,7 @@ export class GameSession {
       player.turn = 0;
       player.velocity = 0;
       player.aiming = false;
-      player.reverseTargetHeading = null;
+      player.reversedFacing = false;
     });
 
     this.spawnNpcs();
@@ -648,7 +647,7 @@ export class GameSession {
     player.turn = 0;
     player.velocity = 0;
     player.aiming = false;
-    player.reverseTargetHeading = null;
+    player.reversedFacing = false;
     return true;
   }
 
@@ -816,23 +815,18 @@ export class GameSession {
   private tickPlayer(player: SessionPlayer, dtSeconds: number): void {
     const cruise = this.cruiseSpeed(player.speedScale);
 
-    // "Atrás" no es marcha atrás: se da la vuelta (con el mismo giro en curva que un
-    // NPC cambiando de rumbo) y anda de frente en la nueva dirección, como cualquiera
-    // — nadie en este juego camina de espaldas. El objetivo se fija UNA vez al empezar
-    // a pedir atrás (heading + 180°) y no se recalcula cada tick: si se recalculara,
-    // seguiría girando siempre a 180° de sí mismo y jamás llegaría.
+    // "Atrás" no es marcha atrás: es la ACCIÓN de darse la vuelta, de golpe (no una
+    // rotación en curso), y a partir de ahí se anda de frente en la nueva dirección
+    // — nadie en este juego camina de espaldas. reversedFacing marca que el giro YA
+    // se hizo: sin él, cada tick que se mantenga pulsado sumaría otro medio giro y
+    // acabaría dando vueltas sobre sí mismo en vez de quedarse mirando para atrás.
     if (player.forward < 0) {
-      if (player.reverseTargetHeading === null) {
-        player.reverseTargetHeading = player.heading + Math.PI;
+      if (!player.reversedFacing) {
+        player.heading += Math.PI;
+        player.reversedFacing = true;
       }
-      const difference = this.shortestAngle(player.reverseTargetHeading - player.heading);
-      const turn = this.turnRate() * dtSeconds;
-      player.heading =
-        Math.abs(difference) <= turn
-          ? player.reverseTargetHeading
-          : player.heading + Math.sign(difference) * turn;
     } else {
-      player.reverseTargetHeading = null;
+      player.reversedFacing = false;
     }
 
     // De aquí en adelante solo cuenta la magnitud: el giro de arriba ya puso el rumbo
