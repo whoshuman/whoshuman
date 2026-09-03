@@ -173,7 +173,14 @@ function AppLayout() {
         />
       )}
 
+      {/* Mientras carga no basta con opacity-0: el contenido seguiria montado y
+          navegable con el tabulador y por un lector de pantalla, o sea que se podria
+          usar a ciegas por debajo de la pantalla de carga. visibility lo saca tambien
+          del orden de foco (el fundido sigue funcionando: visibility salta a visible y
+          la opacidad es la que se anima). */}
       <div
+        aria-hidden={!bootReady}
+        style={{ visibility: bootReady ? "visible" : "hidden" }}
         className={`relative z-10 flex min-h-screen flex-col transition-opacity duration-700 ${
           bootReady ? "opacity-100" : "opacity-0"
         }`}

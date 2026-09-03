@@ -30,7 +30,15 @@ export function useBootReady(waitForScene: boolean, authReady: boolean) {
   const [latched, setLatched] = useState(false);
 
   useEffect(() => {
-    document.fonts.ready.then(() => setFontsReady(true)).catch(() => setFontsReady(true));
+    // document.fonts no existe en todos los entornos (navegadores viejos, jsdom en los
+    // tests). Sin el guard, esto revienta dentro del efecto y las fuentes no se darian
+    // nunca por listas: la pantalla de carga se quedaria puesta hasta el tope de 6s.
+    const fuentes = (document as Partial<Document>).fonts;
+    if (!fuentes) {
+      setFontsReady(true);
+      return;
+    }
+    fuentes.ready.then(() => setFontsReady(true)).catch(() => setFontsReady(true));
   }, []);
 
   useEffect(() => {

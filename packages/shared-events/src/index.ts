@@ -34,7 +34,9 @@ export const GameSubjects = {
   leave: "game.leave",
   aim: "game.aim",
   shoot: "game.shoot",
-  switchRole: "game.switchRole",
+  // MODO DEBUG. El subject sigue el patron del resto: segmentos en minusculas
+  // separados por puntos, como "game.player.moved" o "game.state.snapshot".
+  switchRole: "game.practice.role",
   playerMoved: "game.player.moved",
   stateSnapshot: "game.state.snapshot",
   health: "game.health"
