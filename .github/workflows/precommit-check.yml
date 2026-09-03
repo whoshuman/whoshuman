@@ -44,3 +44,8 @@ jobs:
 
       - name: Run precommit checks
         run: pnpm run check
+
+      # Formato y lint no dicen nada de si el juego sigue funcionando: sin este paso, un
+      # PR que rompa la logica de la partida se mergea con el visto bueno en verde.
+      - name: Run tests
+        run: pnpm -r --if-present test
