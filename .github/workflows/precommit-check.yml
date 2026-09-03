@@ -47,5 +47,14 @@ jobs:
 
       # Formato y lint no dicen nada de si el juego sigue funcionando: sin este paso, un
       # PR que rompa la lógica de la partida se mergea con el visto bueno en verde.
+      #
+      # Los servicios validan su configuración al importarse, así que un spec que importe uno
+      # revienta si faltan estas variables. En local salen del .env de cada app, que no está
+      # en el repo. Son valores de mentira: ningún test abre NATS ni la base de datos.
       - name: Run tests
+        env:
+          NATS_SERVERS: nats://localhost:4222
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          JWT_SECRET: ci-solo-para-los-tests
+          JWT_REFRESH_SECRET: ci-solo-para-los-tests
         run: pnpm run test
