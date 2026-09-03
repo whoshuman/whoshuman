@@ -105,13 +105,21 @@ export class MatchmakingService {
 
   /** Tras cualquier cambio: arranca si hay >= min y TODOS ready; si no, emite el estado. */
   private async evaluate(lobby: Lobby) {
-    const enough = lobby.players.length >= envs.matchmakingMinPlayers;
+    const minPlayers = this.minPlayersFor(lobby.lobbyId);
+    const enough = lobby.players.length >= minPlayers;
     const allReady = lobby.players.length > 0 && lobby.players.every((p) => p.ready);
     if (enough && allReady) {
       await this.startMatch(lobby);
       return;
     }
     await this.emitLobbyState(lobby);
+  }
+
+  // El lobby "practice" es el modo debug en solitario contra la multitud: arranca con
+  // 1 jugador, sin tocar el umbral de una partida real. No aparece en ningún lobby
+  // normal, solo lo pide quien entra directo a esa cola.
+  private minPlayersFor(lobbyId: string): number {
+    return lobbyId === "practice" ? 1 : envs.matchmakingMinPlayers;
   }
 
   /** Saca a TODOS los jugadores (todos ready), asigna roles y emite match.found. */
@@ -122,7 +130,7 @@ export class MatchmakingService {
       lobbyId: lobby.lobbyId,
       gameId: randomUUID(),
       players: this.assignRoles(players),
-      minPlayers: envs.matchmakingMinPlayers
+      minPlayers: this.minPlayersFor(lobby.lobbyId)
     };
 
     try {

@@ -9,6 +9,13 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.nest.json ./
 COPY prisma ./prisma
 COPY packages ./packages
+# Instalacion comun: raiz + packages, SIN el manifest de ningun servicio. Todo lo que
+# se copia hasta aqui es identico en todas las imagenes, asi que esta capa —la gorda:
+# NestJS, TypeScript, Prisma, ESLint— sale con el mismo hash y Docker la guarda UNA
+# vez para todas. Antes el COPY del manifest iba delante y cambiaba el hash, asi que
+# cada servicio se llevaba sus ~600 MB repetidos.
+RUN pnpm install --frozen-lockfile
+
 COPY apps/chat-service/package.json ./apps/chat-service/package.json
 
 RUN pnpm install --frozen-lockfile

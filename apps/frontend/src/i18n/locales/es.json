@@ -10,6 +10,9 @@
   "footer": {
     "system": "SISTEMA DE VIGILANCIA WHO'S HUMAN // 42"
   },
+  "boot": {
+    "loading": "INICIALIZANDO SISTEMA..."
+  },
   "common": {
     "back": "VOLVER A INICIO",
     "backShort": "ATRÁS",

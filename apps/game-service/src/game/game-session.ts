@@ -44,6 +44,13 @@ export interface GameSessionConfig {
   // Por debajo de esto la partida se abandona. Llega en match.found, para que sea el
   // mismo umbral con el que el matchmaking decidió que había gente suficiente.
   minPlayers: number;
+  // ── MODO DEBUG: retirar borrando este campo, GameSession.practiceSwitchRole y el
+  // "if (this.config.practice ...)" del reloj en tick(). Nada más en este fichero
+  // depende de él. Ver también matchmaking.service.ts (lobby "practice") y
+  // game.service.ts (donde se pone a partir del lobbyId). ──
+  // Partida en solitario contra la multitud, sin cronómetro, para poder alternar el
+  // propio rol (cazador ⇄ infiltrado) y ver el juego desde los dos lados.
+  practice?: boolean;
 }
 
 export interface GameRoundRecord {
@@ -77,6 +84,16 @@ interface SessionPlayer extends MovableState {
   // la simula, solo retransmite la última pose recibida para que el resto la vea.
   pose: SeekerPose | null;
   present: boolean; // ha hecho game:join
+  // true mientras se está pidiendo "atrás", para dar la vuelta una sola vez al
+  // empezar a pedirlo y no en cada tick (ver tickPlayer).
+  reversedFacing: boolean;
+  // Giro de 180° en curso al pedir "atrás" (ver REVERSE_FLIP_SECONDS en tickPlayer).
+  flipping: boolean;
+  flipElapsed: number;
+  // Radianes del medio giro YA aplicados al heading. El giro se suma en trozos en vez
+  // de asignar el rumbo entero: así lo que gire el jugador con `turn` durante esos
+  // 0.18 s se conserva, en vez de que el siguiente tick lo pise.
+  flipTurned: number;
 }
 
 interface SessionNpc extends MovableState {
@@ -88,10 +105,21 @@ interface SessionNpc extends MovableState {
   blockedTime: number; // segundos seguidos sin poder avanzar
   speedScale: number; // su ritmo propio: una multitud a la misma velocidad parece un banco de peces
   velocity: number; // u/s actual; sube y baja por rampa en vez de saltar
+  // Célula hacia la que sesga el rumbo mientras dure, o null si va a su aire (ver
+  // chooseNpcHeading). `collectibleId` es para el cupo por célula (que no vayan
+  // varios al mismo sitio a la vez); `x,z` NO son la célula exacta sino su propio
+  // punto de mira, con un desvío al azar: si dos apuntan al mismo centro, sus rutas
+  // se pisan y eso es justo el "van de la mano" que se quiere evitar.
+  waypoint: { collectibleId: string; x: number; z: number } | null;
+  waypointExpire: number; // segundos que le quedan antes de soltarlo y volver al azar
 }
 
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v);
-const NPC_SEPARATION = 0.28;
+// Distancia mínima entre centros para CUALQUIER par (NPC-NPC, jugador-NPC,
+// jugador-jugador): por debajo de esto uno se atravesaría al otro. Bajada de 0.28 a
+// petición explícita, para que la multitud vaya más apretada y se pueda llegar a
+// rozar sin que eso cuente como colisión.
+const NPC_SEPARATION = 0.18;
 // Columnas de la rejilla de separación. Codifica (fila, columna) en un solo entero y
 // admite coordenadas negativas con el desplazamiento de la mitad.
 const CROWD_GRID_STRIDE = 4096;
@@ -162,6 +190,29 @@ class CrowdGrid {
     }
     return true;
   }
+
+  /** Cuántos miembros (salvo `ignore`) hay dentro de `radius` de (x,z). Radio libre,
+   *  no atado a la celda: para medir aglomeración, no colisión. */
+  countNearby(x: number, z: number, radius: number, ignore?: MovableState): number {
+    const cellRadius = Math.ceil(radius / NPC_SEPARATION);
+    const col = Math.floor(x / NPC_SEPARATION) + CROWD_GRID_ORIGIN;
+    const row = Math.floor(z / NPC_SEPARATION) + CROWD_GRID_ORIGIN;
+    const radiusSq = radius * radius;
+    let count = 0;
+    for (let dRow = -cellRadius; dRow <= cellRadius; dRow += 1) {
+      for (let dCol = -cellRadius; dCol <= cellRadius; dCol += 1) {
+        const bucket = this.buckets.get((row + dRow) * CROWD_GRID_STRIDE + col + dCol);
+        if (!bucket) continue;
+        for (const other of bucket) {
+          if (other === ignore) continue;
+          const dx = other.x - x;
+          const dz = other.z - z;
+          if (dx * dx + dz * dz <= radiusSq) count += 1;
+        }
+      }
+    }
+    return count;
+  }
 }
 // Radio de la curva que traza el NPC al cambiar de rumbo, en unidades de mundo
 // (~3 anchos de personaje). El giro se deriva de él: ω = v/r. Fijar el radio y no
@@ -182,6 +233,37 @@ const NPC_TURN_RADIUS = 0.22;
 // Amplitud del cambio de rumbo al elegir paseo (±63°). Cuanto más abierto, más
 // largo es el arco y más difícil que quepa libre en un mapa de 4×5.
 const NPC_HEADING_SPREAD = Math.PI * 0.7;
+// Con qué probabilidad, al agotar el tramo, un NPC sin waypoint se engancha a una
+// célula visible en vez de tirar rumbo al azar. Baja a propósito: si todos fueran
+// detrás de las células a la vez, la multitud entera convergería en fila, que es lo
+// contrario de "parecer gente". Cada NPC tira su propio dado, así que no hay reloj
+// compartido que los sincronice.
+const NPC_WAYPOINT_CHANCE = 0.2;
+// Cono al caminar HACIA el waypoint: bastante más cerrado que el paseo libre, para
+// que la curva se note dirigida en vez de errática, pero sin ser una línea recta
+// (un beeline exacto se ve tan artificial como el azar puro).
+const NPC_WAYPOINT_SPREAD = Math.PI * 0.32;
+// Tiempo máximo enganchado a una célula antes de soltarla y volver al azar: si queda
+// detrás de un muro que no rodea a tiempo, no se queda mirándola para siempre.
+const NPC_WAYPOINT_BUDGET_S = 8;
+// A esta distancia se da por "llegado" y suelta el waypoint (algo mayor que el radio
+// real de recogida: no hace falta pisarla, solo pasar cerca, como haría cualquiera).
+const NPC_WAYPOINT_ARRIVE = 0.4;
+// Cuántos NPC pueden llevar la MISMA célula de waypoint a la vez. Con 1 nunca hay dos
+// convergiendo al mismo punto exacto: es justo el "van de la mano" que se nota.
+const NPC_WAYPOINT_MAX_CLAIMS = 1;
+// Cada NPC apunta a un punto propio alrededor de la célula, no a su centro exacto: con
+// el mismo centro, dos rutas que pasen cerca se pisan y parecen una sola fila. El
+// desvío se sortea una vez por waypoint, no por tick, así que la ruta sigue siendo
+// una curva firme, no un temblor.
+const NPC_WAYPOINT_OFFSET = 0.35;
+// Radio (bastante mayor que NPC_SEPARATION) en el que se cuenta cuánta gente hay ya
+// para preferir zonas menos concurridas en el paseo libre. Ni una manzana entera ni
+// un cuerpo: lo bastante ancho para notar "aquí hay aglomeración" antes de meterse.
+const NPC_SPREAD_RADIUS = 1.2;
+// Mínimo de rumbos válidos que prueba antes de conformarse, aunque el primero ya
+// saliera con densidad 0: con 1 solo intento no hay entre qué elegir de verdad.
+const NPC_SPREAD_MIN_SAMPLES = 3;
 // Tiempo encajonado tras el cual el NPC busca otra salida en vez de insistir.
 const NPC_UNBLOCK_SECONDS = 0.6;
 // Cuánto mira hacia delante, en radios de giro. Con 2 ve el obstáculo con el margen
@@ -198,20 +280,40 @@ const NPC_ESCAPE_OFFSETS = [0.4, 0.8, 1.2, 1.6, 2.0, 2.4, Math.PI];
 const NPC_BUMP_KEEP = 0.85;
 // Cuánto de ese paso se aprovecha para escurrirse de lado al topar de frente.
 const NPC_SLIDE_FACTOR = 0.7;
-// Cada NPC anda a su propio ritmo dentro de ±25% del configurado. Sin esto los 32 se
-// mueven en bloque, que es lo que delata que son autómatas.
-const NPC_SPEED_VARIATION = 0.25;
+// Variación de ritmo por individuo, como fracción de la velocidad configurada. A CERO
+// a propósito: la regla es que nadie va más rápido ni más lento que nadie, ni NPC ni
+// humano. Estuvo en 0.25 para que la multitud no pareciera un banco de peces, pero ese
+// dado se lo llevaba también el jugador: le tocaba su ritmo al empezar la partida y se
+// lo quedaba las tres rondas, así que había partidas a 0.29 y partidas a 0.43 (49% de
+// diferencia) rodeado siempre de algún NPC cerca del tope. Se notaba como "hoy voy
+// lento" y era exactamente eso. La multitud parece viva por su forma de andar —
+// rumbos, esperas, rodeos—, no por ir cada uno a una velocidad distinta.
+const NPC_SPEED_VARIATION = 0;
 // Rampas de arranque y frenada, como múltiplo de la velocidad de crucero por segundo:
 // arrancar de 0 a tope cuesta ~0.55s y frenar ~0.36s. Antes pasaban de parado a
 // velocidad máxima en un tick, y el tirón se notaba.
 const NPC_ACCELERATION = 1.8;
 const NPC_BRAKING = 2.8;
+// Duración del giro de 180° al pedir "atrás" (tickPlayer). Antes era un salto en un
+// solo tick y se veía como un corte brusco; con esto sigue siendo una acción, no una
+// rotación sostenida, pero se ve como un giro rápido en vez de un chasquido.
+const REVERSE_FLIP_SECONDS = 0.18;
+// Cuánto hay que pedir "atrás" para que cuente como querer darse la vuelta. El teclado
+// manda -1, así que le da igual; el umbral es para el joystick del móvil, donde el
+// valor es analógico y pasar la zona muerta (0.12) no es una intención, es el pulgar.
+const REVERSE_TRIGGER = 0.6;
 // Nº de modelos en apps/frontend/public/models/personajes: el cliente indexa por skinId.
 const CHARACTER_SKIN_COUNT = 4;
-const COLLECTIBLE_SEPARATION = 0.4;
+// Separación a la que se deja de buscar sitio para una célula: no es un mínimo duro,
+// es el "ya está bastante lejos" que corta la búsqueda de mejor candidato. En el mapa
+// real (5×4 con manzanas) 7 células no pueden estar mucho más repartidas que esto.
+const COLLECTIBLE_SEPARATION = 1;
+// Cuántos puntos se sortean antes de quedarse con el más despejado. Más candidatos =
+// reparto más regular; 24 ya deja el mapa cubierto sin que se note el coste (solo se
+// paga al empezar la ronda y en cada respawn suelto).
+const COLLECTIBLE_SPAWN_CANDIDATES = 24;
 
 interface PendingCollectible {
-  item: GameCollectibleState;
   respawnAt: number;
 }
 
@@ -220,7 +322,7 @@ export const GAME_RULES = {
   roundSeconds: 90,
   intermissionSeconds: 5,
   collectibleCount: 7,
-  collectibleRespawnSeconds: 5,
+  collectibleRespawnSeconds: 3,
   collectibleRadius: 0.24,
   hiderHitPoints: 100,
   npcHitPoints: -25,
@@ -277,7 +379,11 @@ export class GameSession {
         velocity: 0,
         aiming: false,
         pose: null,
-        present: false
+        present: false,
+        reversedFacing: false,
+        flipping: false,
+        flipTurned: 0,
+        flipElapsed: 0
       });
     });
 
@@ -323,6 +429,8 @@ export class GameSession {
       player.turn = 0;
       player.velocity = 0;
       player.aiming = false;
+      player.reversedFacing = false;
+      player.flipping = false;
     });
 
     this.spawnNpcs();
@@ -348,44 +456,64 @@ export class GameSession {
         modeTime: 0.2 + this.random() * 1.8,
         blockedTime: 0,
         speedScale: 1 + (this.random() * 2 - 1) * NPC_SPEED_VARIATION,
-        velocity: 0
+        velocity: 0,
+        waypoint: null,
+        waypointExpire: 0
       };
       this.npcs.push(npc);
       this.crowd.add(npc);
     }
   }
 
+  // Antes, si el mapa traia `collectibleSpawns`, las celulas nacian siempre en esos
+  // mismos puntos fijos ("cruces" del mapa); en neon-block, 4 de los 7 caian justo en
+  // las esquinas. Ahora siempre se sortean por el area jugable, como el resto de
+  // puntos aleatorios del mapa.
   private spawnCollectibles(): void {
-    if (this.config.collectibleSpawns?.length) {
-      for (const spawn of this.config.collectibleSpawns.slice(0, GAME_RULES.collectibleCount)) {
-        const height = sampleHeight(this.config.heightmap, spawn.x, spawn.z);
-        if (height === null) continue;
-        this.collectibles.push({
-          collectibleId: randomUUID(),
-          x: spawn.x,
-          y: height + 0.14,
-          z: spawn.z
-        });
-      }
-      return;
-    }
-
     for (let i = 0; i < GAME_RULES.collectibleCount; i += 1) {
-      let spawn = this.randomWalkablePoint();
-      for (let attempt = 0; attempt < 20; attempt += 1) {
-        const separated = this.collectibles.every(
-          (item) => Math.hypot(item.x - spawn.x, item.z - spawn.z) >= COLLECTIBLE_SEPARATION
-        );
-        if (separated) break;
-        spawn = this.randomWalkablePoint();
-      }
-      this.collectibles.push({
-        collectibleId: randomUUID(),
-        x: spawn.x,
-        y: spawn.h + 0.14,
-        z: spawn.z
-      });
+      this.collectibles.push(this.spawnOneCollectible());
     }
+  }
+
+  /**
+   * Punto aleatorio para una célula, repartido por "mejor candidato": se sortean varios
+   * puntos y se elige el que MÁS lejos cae de la célula más cercana, en vez de quedarse
+   * con el primero que respete una distancia mínima.
+   *
+   * El azar uniforme agrupa: con solo un mínimo corto salían racimos en un lado del mapa
+   * y media manzana vacía, porque en cuanto el primer punto valía se dejaba de buscar.
+   * Así el reparto tiende a rejilla sin dejar de ser aleatorio, y encima nunca falla: si
+   * el mapa no da para COLLECTIBLE_SEPARATION, se queda con lo mejor que haya encontrado
+   * en vez de rendirse y soltarla encima de otra.
+   *
+   * La usan tanto el reparto inicial como cada respawn, así que una recién repuesta
+   * también busca el hueco más despejado que quede.
+   */
+  private spawnOneCollectible(): GameCollectibleState {
+    let best = this.randomWalkablePoint();
+    let bestGap = this.nearestCollectibleDistance(best.x, best.z);
+    for (
+      let attempt = 1;
+      attempt < COLLECTIBLE_SPAWN_CANDIDATES && bestGap < COLLECTIBLE_SEPARATION;
+      attempt += 1
+    ) {
+      const candidate = this.randomWalkablePoint();
+      const gap = this.nearestCollectibleDistance(candidate.x, candidate.z);
+      if (gap > bestGap) {
+        best = candidate;
+        bestGap = gap;
+      }
+    }
+    return { collectibleId: randomUUID(), x: best.x, y: best.h + 0.14, z: best.z };
+  }
+
+  /** Distancia a la célula ya colocada más cercana. Infinito si aún no hay ninguna. */
+  private nearestCollectibleDistance(x: number, z: number): number {
+    let nearest = Infinity;
+    for (const item of this.collectibles) {
+      nearest = Math.min(nearest, Math.hypot(item.x - x, item.z - z));
+    }
+    return nearest;
   }
 
   private seed(value: string): number {
@@ -551,6 +679,36 @@ export class GameSession {
     return true;
   }
 
+  // MODO DEBUG: retirar junto con el campo `practice` de arriba.
+  // Alterna al jugador entre cazador e infiltrado sin pasar por intermision. Como
+  // infiltrado nace en un punto libre nuevo; como cazador no necesita posicion en
+  // el suelo, la nave la lleva el propio cliente.
+  practiceSwitchRole(userId: string): boolean {
+    if (!this.config.practice) return false;
+    const player = this.players.get(userId);
+    if (!player) return false;
+
+    if (player.role === "seeker") {
+      const spawn = this.randomWalkablePoint(true);
+      player.role = "hider";
+      player.x = spawn.x;
+      player.z = spawn.z;
+      player.h = spawn.h;
+      player.alive = true;
+      this.seekerUserId = "";
+    } else {
+      player.role = "seeker";
+      this.seekerUserId = userId;
+    }
+    player.forward = 0;
+    player.turn = 0;
+    player.velocity = 0;
+    player.aiming = false;
+    player.reversedFacing = false;
+    player.flipping = false;
+    return true;
+  }
+
   removePlayer(userId: string): GameScoreState | null {
     const player = this.players.get(userId);
     if (!player) return null;
@@ -585,7 +743,13 @@ export class GameSession {
   tick(dtSeconds: number): void {
     if (this.roundPhase === "finished") return;
     this.elapsedSeconds += dtSeconds;
-    this.remainingSeconds = Math.max(0, this.remainingSeconds - dtSeconds);
+    // MODO DEBUG: en practice la ronda no se acaba por reloj. La INTERMISIÓN sí lo
+    // gasta igual: es lo único que la saca de ahí, y sin esto una ronda que terminase
+    // por otra vía (restartRound al irse el cazador, con más de uno en la cola) dejaba
+    // la sesión congelada para siempre en la pantalla de intermisión.
+    if (!this.config.practice || this.roundPhase === "intermission") {
+      this.remainingSeconds = Math.max(0, this.remainingSeconds - dtSeconds);
+    }
     if (this.roundPhase === "intermission") {
       if (this.remainingSeconds === 0) this.startNextRound();
       return;
@@ -614,9 +778,8 @@ export class GameSession {
         if (Math.hypot(player.x - item.x, player.z - item.z) > GAME_RULES.collectibleRadius) {
           continue;
         }
-        const [collected] = this.collectibles.splice(i, 1);
+        this.collectibles.splice(i, 1);
         this.pendingCollectibles.push({
-          item: collected,
           respawnAt: this.elapsedSeconds + GAME_RULES.collectibleRespawnSeconds
         });
         player.score += GAME_RULES.collectiblePoints;
@@ -624,12 +787,14 @@ export class GameSession {
     }
   }
 
+  // Repone en un punto NUEVO, no en el que se cogió: si volviera al mismo sitio, un
+  // hider parado encima la recogería sola nada más cumplirse el delay.
   private respawnCollectibles(): void {
     for (let i = this.pendingCollectibles.length - 1; i >= 0; i -= 1) {
       const pending = this.pendingCollectibles[i];
       if (pending.respawnAt > this.elapsedSeconds) continue;
       this.pendingCollectibles.splice(i, 1);
-      this.collectibles.push(pending.item);
+      this.collectibles.push(this.spawnOneCollectible());
     }
   }
 
@@ -709,10 +874,58 @@ export class GameSession {
    */
   private tickPlayer(player: SessionPlayer, dtSeconds: number): void {
     const cruise = this.cruiseSpeed(player.speedScale);
-    // Con signo: así andar hacia atrás y soltar la tecla frenan por la misma rampa,
-    // sin que al llegar a cero se dé la vuelta.
-    const target = cruise * clamp(player.forward, -1, 1);
-    const braking = Math.abs(target) < Math.abs(player.velocity);
+
+    // "Atrás" no es marcha atrás: es la ACCIÓN de darse la vuelta, de un solo tirón
+    // (no una rotación que se sostiene mientras se aguanta la tecla), y a partir de ahí
+    // se anda de frente en la nueva dirección — nadie en este juego camina de espaldas.
+    // El giro en sí dura REVERSE_FLIP_SECONDS para no verse como un salto en seco.
+    // reversedFacing marca que el giro YA se disparó: sin él, cada tick que se
+    // mantenga pulsado dispararía otro medio giro y acabaría dando vueltas sobre sí
+    // mismo en vez de quedarse mirando para atrás.
+    //
+    // Hace falta pedirlo A PROPÓSITO (REVERSE_TRIGGER): en teclado `forward` es -1/0/1,
+    // pero con joystick es analógico y el pulgar cruza el cero constantemente al trazar
+    // el arco de un giro. Disparando con cualquier valor negativo, rozar la zona muerta
+    // (~5 px de stick) bastaba para media vuelta + parada en seco, y encadenadas dejaban
+    // al personaje girando sobre sí mismo sin avanzar: medido, 34 medias vueltas y 1/18
+    // del recorrido en 10 s. Entre 0 y -REVERSE_TRIGGER no se pide nada.
+    if (player.forward < -REVERSE_TRIGGER && !player.reversedFacing && !player.flipping) {
+      player.flipping = true;
+      player.flipTurned = 0;
+      player.flipElapsed = 0;
+      player.reversedFacing = true;
+      // Se para en seco al empezar a girar: si arrastrara la velocidad que ya llevaba
+      // saldría derrapando en la vieja dirección mientras gira, en vez de plantarse.
+      player.velocity = 0;
+    } else if (player.forward >= 0 && !player.flipping) {
+      player.reversedFacing = false;
+    }
+
+    if (player.flipping) {
+      player.flipElapsed += dtSeconds;
+      const t = Math.min(1, player.flipElapsed / REVERSE_FLIP_SECONDS);
+      // ease-out: arranca rápido y se asienta, no lineal ni instantáneo.
+      const eased = 1 - (1 - t) * (1 - t);
+      // Se suma lo que falta por girar, no se asigna el rumbo entero: asignándolo, el
+      // giro que el jugador metiera con `turn` se perdía al tick siguiente.
+      const turned = Math.PI * eased;
+      player.heading += turned - player.flipTurned;
+      player.flipTurned = turned;
+      if (t >= 1) player.flipping = false;
+    }
+
+    // De aquí en adelante solo cuenta la magnitud: el giro de arriba ya puso (o está
+    // poniendo) el rumbo en la dirección pedida, así que "atrás" ya no invierte el
+    // sentido del avance. Mientras gira no anda: es un giro sobre el sitio, no un
+    // arco caminando — si no, con el heading todavía a medio girar el paso saldría
+    // en diagonal en vez de hacia donde estaba mirando.
+    //
+    // Un "atrás" que no llega al umbral tampoco es un "adelante": se deja de pedir
+    // marcha y se frena por la rampa. Tomarlo como magnitud haría andar hacia delante
+    // a quien está tirando del stick justo al revés.
+    const requested = player.forward < 0 && !player.reversedFacing ? 0 : Math.abs(player.forward);
+    const target = player.flipping ? 0 : cruise * clamp(requested, 0, 1);
+    const braking = target < player.velocity;
     const rate = (braking ? NPC_BRAKING : NPC_ACCELERATION) * cruise * dtSeconds;
     player.velocity =
       target > player.velocity
@@ -730,10 +943,21 @@ export class GameSession {
     // los NPC conservaban NPC_BUMP_KEEP, asi que bastaba con mirar como reacciona alguien al
     // rozar una pared para saber si era humano. En un juego que va de no distinguirlos, eso
     // era un delator: humanos y multitud comparten ahora la misma fisica de choque.
-    if (!moved) player.velocity *= NPC_BUMP_KEEP;
+    if (!moved) {
+      player.velocity *= NPC_BUMP_KEEP;
+      // A los NPC esto ya les tocaba (ver tickNpc): sin ella, rozar una esquina en las
+      // calles estrechas del mapa real dejaba al jugador perdiendo velocidad en cada
+      // roce mientras el NPC se escurría y seguía — la causa real de que "el jugador
+      // vaya más lento" pese a compartir fórmula de velocidad.
+      this.slideAside(player, player.velocity * dtSeconds);
+    }
   }
 
   private tickNpc(npc: SessionNpc, dtSeconds: number): void {
+    if (npc.waypoint) {
+      npc.waypointExpire -= dtSeconds;
+      if (npc.waypointExpire <= 0) npc.waypoint = null;
+    }
     // La velocidad persigue a la de crucero por rampa: ni arranca ni frena de golpe.
     const cruise = this.npcCruiseSpeed(npc);
     const target = npc.mode === "walking" ? cruise : 0;
@@ -776,10 +1000,10 @@ export class GameSession {
 
     if (moved) {
       npc.blockedTime = 0;
-      if (npc.modeTime <= 0) {
-        npc.mode = "idle";
-        npc.modeTime = 0.4 + this.random() * 1.8;
-      }
+      // Antes de aqui pasaba por "idle" un rato al agotar el tramo: la multitud se
+      // paraba en seco cada pocos segundos. Encadenar el siguiente tramo sin soltar
+      // la marcha la mantiene fluida; el giro entre tramos ya se traza como curva.
+      if (npc.modeTime <= 0) this.chooseNpcHeading(npc);
       return;
     }
 
@@ -809,15 +1033,16 @@ export class GameSession {
   /**
    * Al topar de frente, prueba a desplazarse en perpendicular (a un lado y a otro).
    * Es lo que hace cualquiera al cruzarse con alguien: apartarse un poco sin dejar de
-   * andar. Sin esto el NPC se quedaba clavado hasta completar el giro.
+   * andar. Sin esto se queda clavado hasta completar el giro — genérico (jugador o
+   * NPC) porque solo toca `.heading`, que comparten los dos.
    */
-  private slideAside(npc: SessionNpc, distance: number): void {
+  private slideAside(entity: MovableState, distance: number): void {
     if (distance <= 0) return;
-    const original = npc.heading;
+    const original = entity.heading;
     for (const sign of [1, -1]) {
-      npc.heading = original + (Math.PI / 2) * sign;
-      const moved = this.moveForward(npc, distance * NPC_SLIDE_FACTOR, npc);
-      npc.heading = original;
+      entity.heading = original + (Math.PI / 2) * sign;
+      const moved = this.moveForward(entity, distance * NPC_SLIDE_FACTOR, entity);
+      entity.heading = original;
       if (moved) return;
     }
   }
@@ -867,19 +1092,92 @@ export class GameSession {
     return this.freeHeading(npc, step, true) ?? npc.heading + Math.PI; // cercado: media vuelta
   }
 
+  /** Cuántos NPC llevan ya cada célula como waypoint, para no pasar de NPC_WAYPOINT_MAX_CLAIMS. */
+  private waypointClaims(): Map<string, number> {
+    const claims = new Map<string, number>();
+    for (const other of this.npcs) {
+      if (!other.waypoint) continue;
+      claims.set(other.waypoint.collectibleId, (claims.get(other.waypoint.collectibleId) ?? 0) + 1);
+    }
+    return claims;
+  }
+
   private chooseNpcHeading(npc: SessionNpc): void {
-    for (let i = 0; i < 12; i += 1) {
-      const heading = npc.heading + (this.random() - 0.5) * NPC_HEADING_SPREAD;
-      const distance = 0.3 + this.random() * 0.6;
-      if (this.pathIsClear(npc, heading, distance)) {
-        this.startNpcWalk(npc, heading, distance);
+    // Sin waypoint en curso, a veces se engancha a una célula visible: así el paseo
+    // parece que va a algún sitio en vez de ser puro azar local. Ver NPC_WAYPOINT_CHANCE.
+    if (!npc.waypoint && this.collectibles.length > 0 && this.random() < NPC_WAYPOINT_CHANCE) {
+      const claims = this.waypointClaims();
+      const eligible = this.collectibles.filter(
+        (item) => (claims.get(item.collectibleId) ?? 0) < NPC_WAYPOINT_MAX_CLAIMS
+      );
+      if (eligible.length > 0) {
+        const target = eligible[Math.floor(this.random() * eligible.length)];
+        // Punto de mira propio alrededor de la célula, no su centro: si el desvío
+        // fuera 0, dos NPC que se cruzaran de camino al mismo sitio pisarían la misma
+        // línea y eso es exactamente lo que se veía como "ir de la mano".
+        const angle = this.random() * Math.PI * 2;
+        const offset = this.random() * NPC_WAYPOINT_OFFSET;
+        npc.waypoint = {
+          collectibleId: target.collectibleId,
+          x: target.x + Math.sin(angle) * offset,
+          z: target.z + Math.cos(angle) * offset
+        };
+        npc.waypointExpire = NPC_WAYPOINT_BUDGET_S;
+      }
+    }
+
+    const heldWaypoint = npc.waypoint;
+    // sin(heading)/cos(heading) son dx/dz en moveForward: atan2(dx,dz) es la fórmula
+    // inversa, el rumbo que apunta exactamente al waypoint.
+    const center = heldWaypoint
+      ? Math.atan2(heldWaypoint.x - npc.x, heldWaypoint.z - npc.z)
+      : npc.heading;
+    const spread = heldWaypoint ? NPC_WAYPOINT_SPREAD : NPC_HEADING_SPREAD;
+
+    if (heldWaypoint) {
+      // Yendo a una célula el rumbo ya es dirigido a propósito: el primero que quepa
+      // vale, no hace falta preferir zona.
+      for (let i = 0; i < 12; i += 1) {
+        const heading = center + (this.random() - 0.5) * spread;
+        const distance = 0.3 + this.random() * 0.6;
+        if (this.pathIsClear(npc, heading, distance)) {
+          this.startNpcWalk(npc, heading, distance);
+          if (Math.hypot(heldWaypoint.x - npc.x, heldWaypoint.z - npc.z) <= NPC_WAYPOINT_ARRIVE) {
+            npc.waypoint = null;
+          }
+          return;
+        }
+      }
+    } else {
+      // Paseo libre: entre los rumbos que caben, no se queda con el primero — prueba
+      // varios y prefiere el que lleva a una zona menos concurrida (NPC_SPREAD_RADIUS,
+      // bastante más ancho que la separación de cuerpo). Sin esto el azar puro tiende
+      // a amontonar la multitud en la parte más abierta del mapa, porque ahí caben más
+      // rumbos válidos y nunca hay presión para repartirse.
+      let best: { heading: number; distance: number; density: number } | null = null;
+      let tried = 0;
+      for (let i = 0; i < 12; i += 1) {
+        const heading = center + (this.random() - 0.5) * spread;
+        const distance = 0.3 + this.random() * 0.6;
+        if (!this.pathIsClear(npc, heading, distance)) continue;
+        tried += 1;
+        const nx = npc.x + Math.sin(heading) * distance;
+        const nz = npc.z + Math.cos(heading) * distance;
+        const density = this.crowd.countNearby(nx, nz, NPC_SPREAD_RADIUS, npc);
+        if (!best || density < best.density) best = { heading, distance, density };
+        if (density === 0 && tried >= NPC_SPREAD_MIN_SAMPLES) break;
+      }
+      if (best) {
+        this.startNpcWalk(npc, best.heading, best.distance);
         return;
       }
     }
     // Encajonado: ningún trayecto sale limpio. Se arranca igualmente, porque el
     // avance ya va con colisiones y al rozar una pared se desliza, que es como
     // consigue salir. Sin esta válvula se quedaría mirando al muro para siempre,
-    // ya que parado no gira.
+    // ya que parado no gira. Suelta el waypoint: si el sitio no dejaba ni un hueco
+    // libre, insistir en él solo lo dejaría encajonado otra vez a la próxima.
+    npc.waypoint = null;
     this.startNpcWalk(npc, npc.heading + (this.random() - 0.5) * Math.PI * 2, 0.3);
   }
 

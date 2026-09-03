@@ -283,6 +283,9 @@ const CHASER_SCALE = 0.55;
 // justo dentro de los 30° que llegan al borde de la pantalla. Acercarla más la
 // recortaría por abajo.
 const CHASER_SCREEN_FORWARD = 1.25;
+// Cuánto vuela por debajo de la cámara. A diferencia del avance, esto es una caída fija
+// en vertical del mundo y no se encoge al apuntar: es la única forma de que la nave
+// ocupe SIEMPRE el mismo punto del mundo, que es lo que ven los demás jugadores.
 const CHASER_SCREEN_DOWN = 0.36;
 // De dónde sale el haz para el propio cazador: por detrás y por debajo de la cámara, o
 // saldría del punto de vista y no se vería converger en la retícula. Es un apaño de primera
@@ -537,6 +540,57 @@ interface VanishingCollectible extends GameCollectibleState {
   start: number;
 }
 
+// Célula activa. El haz solo se enciende cuando hace falta para ubicarla: si ya se ve
+// la célula en sí (nada de un edificio por medio) sobra, así que se apaga. El cazador
+// es la excepción — los ve todos siempre, le sirve para leer por dónde ha andado la
+// multitud sin tener que rastrear cada célula una a una.
+function CollectibleMarker({
+  item,
+  geometry,
+  material,
+  beamGeometry,
+  beamMaterial
+}: {
+  item: GameCollectibleState;
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material;
+  beamGeometry: THREE.BufferGeometry;
+  beamMaterial: THREE.Material;
+}) {
+  const selfRole = useGameStore((state) => state.selfRole);
+  const cell = useRef<THREE.Mesh>(null);
+  const beam = useRef<THREE.Mesh>(null);
+  const direction = useMemo(() => new THREE.Vector3(), []);
+  const target = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame(({ camera }, delta) => {
+    if (cell.current) {
+      cell.current.rotation.y += delta * 1.4;
+      cell.current.rotation.x += delta * 0.7;
+    }
+    if (!beam.current) return;
+    if (selfRole === "seeker") {
+      beam.current.visible = true;
+      return;
+    }
+    target.set(item.x, item.y, item.z);
+    beam.current.visible = beamOccluded(camera.position, target, direction);
+  });
+
+  return (
+    <group position={[item.x, 0, item.z]}>
+      <mesh ref={cell} geometry={geometry} material={material} position={[0, item.y, 0]} />
+      <mesh
+        ref={beam}
+        geometry={beamGeometry}
+        material={beamMaterial}
+        position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
+        renderOrder={2}
+      />
+    </group>
+  );
+}
+
 // Célula ya recogida. El servidor deja de mandarla y hasta ahora se esfumaba en un
 // fotograma; aquí se queda el tiempo justo para rematar el gesto: sube girando cada vez
 // más rápido, se agranda y se apaga, mientras su haz se cierra con un último destello.
@@ -610,7 +664,6 @@ function VanishingCell({
 function Collectibles() {
   const collectibles = useGameStore((state) => state.collectibles);
   const phase = useGameStore((state) => state.round?.phase);
-  const group = useRef<THREE.Group>(null);
   const [vanishing, setVanishing] = useState<VanishingCollectible[]>([]);
   const previous = useRef<GameCollectibleState[]>([]);
   const { scene } = useGLTF(CELL_MODEL_URL);
@@ -685,15 +738,6 @@ function Collectibles() {
     return () => clearTimeout(timer);
   }, [vanishing]);
 
-  useFrame((_, delta) => {
-    for (const marker of group.current?.children ?? []) {
-      const cell = marker.children[0];
-      if (!cell) continue;
-      cell.rotation.y += delta * 1.4;
-      cell.rotation.x += delta * 0.7;
-    }
-  });
-
   // El material de la célula lo gestiona useGLTF; el haz sí pertenece a este componente.
   useEffect(
     () => () => {
@@ -706,21 +750,16 @@ function Collectibles() {
 
   return (
     <>
-      {/* Las recogidas van fuera de este grupo: el giro de arriba recorre sus hijos y
-          cada una lleva ya el suyo propio, acelerado. */}
-      <group ref={group}>
-        {collectibles.map((item) => (
-          <group key={item.collectibleId} position={[item.x, 0, item.z]}>
-            <mesh geometry={geometry} material={material} position={[0, item.y, 0]} />
-            <mesh
-              geometry={beamGeometry}
-              material={beamMaterial}
-              position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
-              renderOrder={2}
-            />
-          </group>
-        ))}
-      </group>
+      {collectibles.map((item) => (
+        <CollectibleMarker
+          key={item.collectibleId}
+          item={item}
+          geometry={geometry}
+          material={material}
+          beamGeometry={beamGeometry}
+          beamMaterial={beamMaterial}
+        />
+      ))}
       {vanishing.map((item) => (
         <VanishingCell
           key={`${item.collectibleId}:${item.start}`}
@@ -1340,9 +1379,18 @@ function ChaserShip() {
     // La cámara la mueve otro useFrame, así que su matriz puede ir un fotograma
     // por detrás; sin esto la nave arrastraría al girar.
     camera.updateMatrixWorld();
+    // Solo el AVANCE se encoge con el zoom, y lo hace exactamente al ritmo al que la
+    // cámara se acerca (4.75 -> 3.5 son los mismos 1.25 que vuela por delante), así que
+    // la nave se queda clavada en el mundo. La caída vertical NO puede encogerse: la
+    // cámara no baja para compensarla, así que si se anulaba al apuntar la nave subía
+    // ~0.33 en el mundo — y esa es la posición que se publica, o sea que los escondidos
+    // veían la nave levantarse cada vez que el cazador ponía la mira. Se aplica aparte y
+    // en vertical de MUNDO, no de cámara: apuntando la orientación es libre y en ejes de
+    // cámara el desvío giraría con ella.
     ship.position
-      .set(0, -CHASER_SCREEN_DOWN * (1 - aimBlend), -CHASER_SCREEN_FORWARD * (1 - aimBlend))
+      .set(0, 0, -CHASER_SCREEN_FORWARD * (1 - aimBlend))
       .applyMatrix4(camera.matrixWorld);
+    ship.position.y -= CHASER_SCREEN_DOWN;
     // Con la mira puesta la cámara está DENTRO de la nave: se oculta, o se vería el modelo
     // por dentro tapando la pantalla. El umbral es media eslora, que es cuando empieza a
     // comerse el encuadre.
@@ -1405,6 +1453,46 @@ const AIM_EPSILON = 1e-6;
 
 // Slab test: distancia al primer corte del rayo con una caja alineada a los ejes.
 // null si no la corta.
+// Lo que de verdad puede esconder una célula. Los AABB del mapa no traen altura, así
+// que el resto del código los trata a todos como columnas de BUILDING_HEIGHT — para la
+// cámara y para el láser eso vale (pecar de prudente no molesta), pero para encender el
+// haz no: de los 14 obstáculos del mapa real solo 3 son edificios; los otros 11 son
+// farolas (0.08), carteles (0.09) y árboles (0.2), y tomarlos por muros hacía parpadear
+// el haz cada vez que una farola cruzaba la línea de visión. Se filtra por planta: nada
+// tan estrecho tapa a nadie.
+const BEAM_BLOCKER_MIN_SIDE = 0.3;
+const beamBlockers = obstacles.filter(
+  (rect) => Math.min(rect.maxX - rect.minX, rect.maxZ - rect.minZ) >= BEAM_BLOCKER_MIN_SIDE
+);
+
+/**
+ * ¿Un edificio tapa la línea directa de `origin` a `target`? Mismos AABB que ya usan
+ * la cámara y el láser (rayBoxDistance): si el primer edificio que corta el rayo
+ * queda más cerca que el propio objetivo, no se ve a simple vista. `direction` es un
+ * Vector3 del llamador, reescrito aquí — evita reservar uno nuevo cada fotograma por
+ * cada célula.
+ */
+function beamOccluded(
+  origin: THREE.Vector3,
+  target: THREE.Vector3,
+  direction: THREE.Vector3
+): boolean {
+  direction.subVectors(target, origin);
+  const distance = direction.length();
+  if (distance < 0.001) return false;
+  direction.divideScalar(distance);
+  for (const rect of beamBlockers) {
+    const t = rayBoxDistance(
+      origin,
+      direction,
+      [rect.minX, 0, rect.minZ],
+      [rect.maxX, BUILDING_HEIGHT, rect.maxZ]
+    );
+    if (t !== null && t > 0.05 && t < distance - 0.05) return true;
+  }
+  return false;
+}
+
 function rayBoxDistance(
   origin: THREE.Vector3,
   direction: THREE.Vector3,
@@ -1522,6 +1610,7 @@ function AimLaser() {
       const seeker = sampleSeeker();
       container.visible = !!seeker?.aiming;
       if (!seeker?.aiming) return;
+      // El haz sale de la nave, en la posición real que ocupa: la misma que se dibuja.
       origin.set(seeker.x, seeker.y, seeker.z);
       target.set(seeker.aimX, seeker.aimY, seeker.aimZ);
     }

@@ -122,6 +122,13 @@ export interface GameLeavePayload {
   gameId?: string;
 }
 
+// Solo la partida en solitario contra la multitud (config.practice en el
+// game-service) atiende este evento: alterna al propio jugador entre cazador
+// e infiltrado sin reiniciar nada, para verlo desde los dos lados.
+export interface GamePracticeSwitchRolePayload {
+  gameId: string;
+}
+
 export interface PlayerInputPayload {
   gameId: string;
   forward: number; // -1..1  (W = +1, S = -1)

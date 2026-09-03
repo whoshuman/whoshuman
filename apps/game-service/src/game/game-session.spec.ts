@@ -162,6 +162,58 @@ describe("GameSession", () => {
   // El juego consiste en no saber quién es humano. Cualquier diferencia mecánica entre
   // un jugador y un NPC sería un atajo para cazarlos sin observarles la conducta.
   describe("el humano se mueve como la multitud", () => {
+    it('pedir "atrás" da la vuelta de un tirón (giro corto) y anda de frente, no hace marcha atrás', () => {
+      const s = crowdSession("media-vuelta");
+      s.markPresent("u1");
+      const start = find(s, "u1");
+      expect(start.rotationY).toBe(0);
+
+      // La vuelta es una ACCIÓN disparada de una vez, no una rotación que se sostiene
+      // mientras se aguanta la tecla: se completa sola en un giro corto (REVERSE_FLIP_SECONDS).
+      s.setInput("u1", -1, 0);
+      // A media vuelta (antes de completarse el giro de 0.18s) todavía no ha andado:
+      // gira sobre el sitio, no en arco.
+      s.tick(0.05);
+      s.tick(0.05);
+      expect(find(s, "u1").z).toBeCloseTo(start.z, 5);
+      expect(find(s, "u1").x).toBeCloseTo(start.x, 5);
+
+      for (let i = 0; i < 6; i += 1) s.tick(0.05);
+      expect(find(s, "u1").rotationY).toBeCloseTo(Math.PI, 5);
+
+      for (let i = 0; i < 40; i += 1) s.tick(0.05);
+      const after = find(s, "u1");
+      // Sigue mirando para allá (no ha vuelto a girar tick a tick).
+      expect(after.rotationY).toBeCloseTo(Math.PI, 5);
+      // Con heading π camina hacia -z (cos π = -1): se ha alejado, no clavado en su sitio.
+      expect(after.z - start.z).toBeLessThan(-0.1);
+    });
+
+    // El joystick del móvil manda un valor analógico, y el pulgar cruza el cero cada
+    // dos por tres al trazar el arco de un giro. Cuando cualquier negativo disparaba la
+    // media vuelta, rozar la zona muerta bastaba: el personaje giraba sobre sí mismo sin
+    // avanzar (medido: 34 medias vueltas y 1/18 del recorrido en 10 s).
+    it("un roce hacia atrás del joystick no dispara la media vuelta", () => {
+      const s = crowdSession("joystick");
+      s.markPresent("u1");
+      const start = find(s, "u1");
+
+      let medias = 0;
+      let anterior = start.rotationY;
+      for (let tick = 0; tick < 200; tick += 1) {
+        // Gesto de girar en el que el pulgar roza el borde de abajo cada 12 ticks.
+        s.setInput("u1", tick % 12 === 0 ? -0.13 : 0.6, 0.3);
+        s.tick(0.05);
+        const ahora = find(s, "u1").rotationY;
+        if (Math.abs(ahora - anterior) > 1) medias += 1;
+        anterior = ahora;
+      }
+
+      expect(medias).toBe(0);
+      const after = find(s, "u1");
+      expect(Math.hypot(after.x - start.x, after.z - start.z)).toBeGreaterThan(0.5);
+    });
+
     it("no anda más rápido que un NPC", () => {
       const s = crowdSession("mimetismo");
       s.markPresent("u1");
@@ -207,7 +259,9 @@ describe("GameSession", () => {
       }
 
       // Antes el jugador los atravesaba de lado a lado y la distancia bajaba a ~0.
-      expect(closest).toBeGreaterThan(0.2);
+      // Umbral por debajo de NPC_SEPARATION (0.18): se pidió que pudieran rozarse, así
+      // que el margen es pequeño a propósito, solo para pillar el "atravesar" real.
+      expect(closest).toBeGreaterThan(0.12);
     });
   });
 
@@ -459,7 +513,7 @@ describe("GameSession", () => {
     });
   });
 
-  it("los hiders recogen objetos cercanos y reaparecen a los cinco segundos", () => {
+  it("los hiders recogen objetos cercanos y reaparecen tras el delay en un punto nuevo", () => {
     const tinyHeightmap = makeHM(-0.05, -0.05, 0.05, 0.05, 0.05, () => 0);
     const s = new GameSession("collectibles", [{ userId: "u1", username: "Uno", role: "hider" }], {
       ...config,
@@ -470,6 +524,7 @@ describe("GameSession", () => {
 
     const initial = s.collectibleSnapshot();
     expect(initial).toHaveLength(GAME_RULES.collectibleCount);
+    const initialIds = new Set(initial.map((item) => item.collectibleId));
     s.tick(0.05);
     expect(s.collectibleSnapshot()).toHaveLength(0);
     expect(find(s, "u1").score).toBe(GAME_RULES.collectibleCount * GAME_RULES.collectiblePoints);
@@ -477,8 +532,46 @@ describe("GameSession", () => {
     s.tick(GAME_RULES.collectibleRespawnSeconds - 0.1);
     expect(s.collectibleSnapshot()).toHaveLength(0);
     s.tick(0.11);
-    expect(s.collectibleSnapshot()).toEqual(expect.arrayContaining(initial));
+    // Repone el mismo número, pero como objetos nuevos: nunca vuelve el id recogido, así
+    // que quien se quedara plantado encima no la recuperaría sola al cumplirse el delay.
+    const respawned = s.collectibleSnapshot();
+    expect(respawned).toHaveLength(GAME_RULES.collectibleCount);
+    expect(respawned.every((item) => !initialIds.has(item.collectibleId))).toBe(true);
     expect(find(s, "u1").score).toBe(GAME_RULES.collectibleCount * GAME_RULES.collectiblePoints);
+  });
+
+  // El azar uniforme agrupa: antes del reparto por mejor candidato salían racimos de
+  // células en un lado del mapa (huecos mínimos de 0.48) y media manzana vacía.
+  it("reparte las células por el mapa, sin racimos en un lado", () => {
+    const map = loadMap("neon-block");
+    for (const seed of ["reparto-a", "reparto-b", "reparto-c"]) {
+      const s = new GameSession(seed, members, {
+        bounds: map.bounds,
+        turnSpeed: 3,
+        obstacles: map.obstacles,
+        heightmap: map.heightmap,
+        maxSlope: 1.5,
+        npcCount: 0,
+        npcSpeed: 0.36,
+        minPlayers: 2
+      });
+      const items = s.collectibleSnapshot();
+      expect(items).toHaveLength(GAME_RULES.collectibleCount);
+
+      let minGap = Infinity;
+      for (let a = 0; a < items.length; a += 1) {
+        for (let b = a + 1; b < items.length; b += 1) {
+          minGap = Math.min(minGap, Math.hypot(items[a].x - items[b].x, items[a].z - items[b].z));
+        }
+      }
+      // El mapa mide 5×4 y son 7 células: por debajo de esto ya se ven pegadas.
+      expect(minGap).toBeGreaterThan(0.9);
+
+      // Y no se amontonan todas en la misma mitad del mapa.
+      const left = items.filter((item) => item.x < 0).length;
+      expect(left).toBeGreaterThanOrEqual(2);
+      expect(left).toBeLessThanOrEqual(GAME_RULES.collectibleCount - 2);
+    }
   });
 
   it("queda vacío cuando se van todos", () => {
@@ -641,9 +734,11 @@ describe("GameSession", () => {
         }
         for (let i = 0; i < frame.length; i += 1) {
           for (let j = i + 1; j < frame.length; j += 1) {
+            // NPC_SEPARATION bajó de 0.28 a 0.18 a petición explícita: la multitud va
+            // más apretada.
             expect(
               Math.hypot(frame[i].x - frame[j].x, frame[i].z - frame[j].z)
-            ).toBeGreaterThanOrEqual(0.28);
+            ).toBeGreaterThanOrEqual(0.18);
           }
         }
       }
@@ -680,12 +775,10 @@ describe("GameSession", () => {
       expect(plantado / (curva + plantado)).toBeLessThan(1 / 3);
     });
 
-    it("cada uno anda a su ritmo y arranca por rampa, sin tirones", () => {
+    it("nadie va más rápido ni más lento que nadie", () => {
       const session = crowdSession("npc-crowd");
       let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
       const peakSpeed = new Map<string, number>();
-      const wasStopped = new Map<string, boolean>();
-      const firstSteps: number[] = [];
 
       for (let tick = 0; tick < 600; tick += 1) {
         session.tick(0.05);
@@ -693,26 +786,37 @@ describe("GameSession", () => {
         for (const npc of frame) {
           const before = previous.get(npc.entityId)!;
           const speed = Math.hypot(npc.x - before.x, npc.z - before.z) / 0.05;
-          // Primer tick tras estar parado: es donde se ve si arranca por rampa o de
-          // golpe. Medirlo en cualquier otro momento confundiría la rampa con el
-          // frenazo de rozar una pared, que sí es abrupto a propósito.
-          if (speed > 0 && wasStopped.get(npc.entityId)) firstSteps.push(speed);
-          wasStopped.set(npc.entityId, speed === 0);
           peakSpeed.set(npc.entityId, Math.max(peakSpeed.get(npc.entityId) ?? 0, speed));
         }
         previous = new Map(frame.map((npc) => [npc.entityId, npc]));
       }
 
-      // Velocidades punta distintas entre sí: si fueran todas iguales, la multitud se
-      // movería en bloque.
+      // Misma velocidad punta para todos. Antes se exigía justo lo contrario (que
+      // difirieran ≥1.15×, para que la multitud no fuera en bloque), pero ese ritmo
+      // por individuo se lo llevaba también el humano: le tocaba en el sorteo y se lo
+      // quedaba la partida entera, con diferencias de hasta el 49% entre una partida y
+      // otra. La regla es que nadie va más rápido ni más lento que nadie.
       const peaks = [...peakSpeed.values()].filter((v) => v > 0);
-      expect(Math.max(...peaks) / Math.min(...peaks)).toBeGreaterThan(1.15);
+      expect(Math.max(...peaks) - Math.min(...peaks)).toBeLessThan(1e-9);
 
-      // Sin rampa, el primer tick ya iba a velocidad de crucero (0.36). Con ella
-      // arranca en torno al 9% de esa velocidad.
-      expect(firstSteps.length).toBeGreaterThan(20);
-      const worstStart = Math.max(...firstSteps);
-      expect(worstStart).toBeLessThan(0.36 * 0.5);
+      // Y el humano va a esa misma velocidad, ni más ni menos.
+      const humano = crowdSession("npc-crowd");
+      humano.markPresent("u1");
+      humano.setInput("u1", 1, 0);
+      for (let i = 0; i < 120; i += 1) humano.tick(0.05);
+      const antes = find(humano, "u1");
+      humano.tick(0.05);
+      const ahora = find(humano, "u1");
+      const suyo = Math.hypot(ahora.x - antes.x, ahora.z - antes.z) / 0.05;
+      expect(suyo).toBeCloseTo(Math.max(...peaks), 6);
+
+      // Aquí NO se comprueba la rampa de arranque. Se intentó como "primer tick tras
+      // desplazamiento 0", y eso no medía la rampa: un NPC bloqueado contra un muro
+      // tampoco se desplaza, pero conserva su velocidad (NPC_BUMP_KEEP), así que al
+      // soltarse daba un paso grande que se leía como un tirón de arranque. Pasaba o
+      // fallaba según la semilla sin que la rampa tuviera nada que ver. La rampa la
+      // cubre "arranca por rampa, no de golpe", que la mide desde parado de verdad y
+      // vale para los dos: humano y NPC comparten fórmula y constantes a propósito.
     });
 
     it("no se quedan empotrados contra muros ni contra otros", () => {

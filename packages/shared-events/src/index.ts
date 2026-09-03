@@ -34,6 +34,9 @@ export const GameSubjects = {
   leave: "game.leave",
   aim: "game.aim",
   shoot: "game.shoot",
+  // MODO DEBUG. El subject sigue el patron del resto: segmentos en minusculas
+  // separados por puntos, como "game.player.moved" o "game.state.snapshot".
+  switchRole: "game.practice.role",
   playerMoved: "game.player.moved",
   stateSnapshot: "game.state.snapshot",
   health: "game.health"
@@ -77,6 +80,7 @@ export const ClientSocketEvents = {
   gameLeave: "game:leave",
   gameAim: "game:aim",
   gameShoot: "game:shoot",
+  gamePracticeSwitchRole: "game:practice-switch-role",
   playerInput: "game:player-input",
   presenceList: "presence:list",
   chatSend: "chat:send",

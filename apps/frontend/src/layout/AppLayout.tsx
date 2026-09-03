@@ -16,6 +16,8 @@ import { initPresence } from "../shared/presence";
 import { usePresenceStore } from "../shared/presenceStore";
 import SettingsMenu from "../shared/SettingsMenu";
 import { AUTH_UNAUTHORIZED_EVENT } from "../shared/api/httpClient";
+import BootOverlay from "../shared/BootOverlay";
+import { useBootReady } from "../shared/useBootReady";
 
 // El fondo 3D va en un chunk aparte: arrastra three.js, el postprocesado y los GLB de la
 // plaza. AppLayout envuelve TODAS las rutas, asi que importarlo aqui de forma estatica metia
@@ -141,6 +143,7 @@ function AppLayout() {
   const showBackground = ROUTES_WITH_BACKGROUND.has(pathname) || isNotFound || isHome;
   const showHud = !HUDLESS_ROUTES.has(pathname);
   const showFooter = showHud && pathname !== "/about" && pathname !== "/manual";
+  const bootReady = useBootReady(showBackground, authRestored);
 
   async function handleLogout() {
     setLogoutOpen(false);
@@ -150,6 +153,7 @@ function AppLayout() {
 
   return (
     <div>
+      <BootOverlay ready={bootReady} />
       {showBackground && (
         <Suspense fallback={null}>
           <WorldScene />
@@ -169,7 +173,18 @@ function AppLayout() {
         />
       )}
 
-      <div className="relative z-10 flex min-h-screen flex-col">
+      {/* Mientras carga no basta con opacity-0: el contenido seguiria montado y
+          navegable con el tabulador y por un lector de pantalla, o sea que se podria
+          usar a ciegas por debajo de la pantalla de carga. visibility lo saca tambien
+          del orden de foco (el fundido sigue funcionando: visibility salta a visible y
+          la opacidad es la que se anima). */}
+      <div
+        aria-hidden={!bootReady}
+        style={{ visibility: bootReady ? "visible" : "hidden" }}
+        className={`relative z-10 flex min-h-screen flex-col transition-opacity duration-700 ${
+          bootReady ? "opacity-100" : "opacity-0"
+        }`}
+      >
         {showHud && (
           <header className="animate-hud-in sticky top-0 z-50 flex h-16 items-center justify-between gap-2 border-b border-neon-cyan/30 bg-bg/40 px-3 backdrop-blur-md sm:gap-4 sm:px-6">
             {/* Linea de escaneo tipo radar que cruza la barra. */}

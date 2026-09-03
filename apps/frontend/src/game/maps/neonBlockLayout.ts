@@ -263,70 +263,11 @@ export const mapPieces: MapPiece[] = [
       maxZ: -1.31,
       height: 1
     }
-  },
-  {
-    model: "cell-pad.glb",
-    x: -0.22,
-    z: 0.68,
-    rotationY: 5.73,
-    scale: 0.0722,
-    groundOffset: 0.0085,
-    collider: null
-  },
-  {
-    model: "cell-pad.glb",
-    x: 2.28,
-    z: -1.82,
-    rotationY: 0.428,
-    scale: 0.0722,
-    groundOffset: 0.0085,
-    collider: null
-  },
-  {
-    model: "cell-pad.glb",
-    x: -2.32,
-    z: -1.82,
-    rotationY: 5.6,
-    scale: 0.0722,
-    groundOffset: 0.0085,
-    collider: null
-  },
-  {
-    model: "cell-pad.glb",
-    x: 2.28,
-    z: 1.78,
-    rotationY: 1.616,
-    scale: 0.0722,
-    groundOffset: 0.0085,
-    collider: null
-  },
-  {
-    model: "cell-pad.glb",
-    x: -2.32,
-    z: 1.78,
-    rotationY: 1.061,
-    scale: 0.0722,
-    groundOffset: 0.0085,
-    collider: null
-  },
-  {
-    model: "cell-pad.glb",
-    x: -0.02,
-    z: -1.62,
-    rotationY: 3.061,
-    scale: 0.0722,
-    groundOffset: 0.0085,
-    collider: null
-  },
-  {
-    model: "cell-pad.glb",
-    x: 1.58,
-    z: -0.02,
-    rotationY: 5.295,
-    scale: 0.0722,
-    groundOffset: 0.0085,
-    collider: null
   }
+  // Los 7 "cell-pad.glb" que había aquí marcaban las posiciones fijas de las
+  // antiguas collectibleSpawns (ver game-session.ts). Ahora las células nacen en
+  // cualquier punto transitable del mapa, así que un pad clavado en el suelo ya
+  // no señala nada real: se quita en vez de dejarlo mintiendo.
 ];
 
 export const MAP_MODEL_URLS = [...new Set(mapPieces.map((p) => p.model))].map(
