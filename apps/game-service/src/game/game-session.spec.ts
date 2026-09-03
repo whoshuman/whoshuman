@@ -19,10 +19,30 @@ const makeHM = (
 };
 const flatHM = makeHM(-10, -5, 10, 5, 5, () => 0);
 
+// Pads del mapa de pruebas. Van pegados al origen porque varias pruebas encogen el mapa
+// a 0.1×0.1 alrededor del jugador, y las células nacen SOLO en pads: fuera de esa caja
+// no se podrían ni recoger.
+const pads = [
+  { x: 0, z: 0 },
+  { x: 0.02, z: 0.01 },
+  { x: -0.02, z: 0.01 },
+  { x: 0.01, z: -0.02 },
+  { x: -0.01, z: -0.02 },
+  { x: 0.03, z: -0.01 },
+  { x: -0.03, z: -0.01 },
+  { x: 0.015, z: 0.025 },
+  { x: -0.015, z: 0.025 }
+];
+
+// Copia del PAD_CAMP_CLEARANCE del código: es el radio que la sesión deja libre alrededor
+// de cada infiltrado al repartir. Aquí se usa como listón de la prueba anticamping.
+const PAD_CAMP_CLEARANCE_TEST = 0.9;
+
 const config = {
   bounds: { minX: -10, minZ: -5, maxX: 10, maxZ: 5 },
   turnSpeed: 2,
   obstacles: [],
+  pads,
   heightmap: flatHM,
   maxSlope: 1,
   npcCount: 0,
@@ -39,6 +59,7 @@ const crowdSession = (gameId: string) => {
     bounds: map.bounds,
     turnSpeed: 3,
     obstacles: map.obstacles,
+    pads: map.pads,
     heightmap: map.heightmap,
     maxSlope: 1.5,
     npcCount: 32,
@@ -199,19 +220,27 @@ describe("GameSession", () => {
       const start = find(s, "u1");
 
       let medias = 0;
+      // Camino ANDADO, no distancia entre el principio y el final: el gesto traza un
+      // círculo, así que el desplazamiento neto depende de dónde acabe la vuelta y de con
+      // quién se cruce por el camino (medido: 0.38–0.54 según la semilla, con el mismo
+      // comportamiento). Lo que la prueba quiere decir es "sigue andando en vez de girar
+      // sobre sí mismo", y eso es el camino: con el fallo eran 1/18 de esto.
+      let camino = 0;
+      let previa = start;
       let anterior = start.rotationY;
       for (let tick = 0; tick < 200; tick += 1) {
         // Gesto de girar en el que el pulgar roza el borde de abajo cada 12 ticks.
         s.setInput("u1", tick % 12 === 0 ? -0.13 : 0.6, 0.3);
         s.tick(0.05);
-        const ahora = find(s, "u1").rotationY;
-        if (Math.abs(ahora - anterior) > 1) medias += 1;
-        anterior = ahora;
+        const actual = find(s, "u1");
+        camino += Math.hypot(actual.x - previa.x, actual.z - previa.z);
+        previa = actual;
+        if (Math.abs(actual.rotationY - anterior) > 1) medias += 1;
+        anterior = actual.rotationY;
       }
 
       expect(medias).toBe(0);
-      const after = find(s, "u1");
-      expect(Math.hypot(after.x - start.x, after.z - start.z)).toBeGreaterThan(0.5);
+      expect(camino).toBeGreaterThan(1.5);
     });
 
     it("no anda más rápido que un NPC", () => {
@@ -549,6 +578,7 @@ describe("GameSession", () => {
         bounds: map.bounds,
         turnSpeed: 3,
         obstacles: map.obstacles,
+        pads: map.pads,
         heightmap: map.heightmap,
         maxSlope: 1.5,
         npcCount: 0,
@@ -574,6 +604,105 @@ describe("GameSession", () => {
     }
   });
 
+  // Las células nacen solo en los pads del mapa: son los sitios dibujados en el suelo, y
+  // que estén marcados es lo que permite saber dónde mirar sin saber dónde saldrá.
+  describe("pads", () => {
+    const mapaReal = loadMap("neon-block");
+    const sesionEnMapa = (gameId: string, jugadores = members) =>
+      new GameSession(gameId, jugadores, {
+        bounds: mapaReal.bounds,
+        turnSpeed: 3,
+        obstacles: mapaReal.obstacles,
+        pads: mapaReal.pads,
+        heightmap: mapaReal.heightmap,
+        maxSlope: 1.5,
+        npcCount: 0,
+        npcSpeed: 0.36,
+        minPlayers: 2
+      });
+    const enUnPad = (x: number, z: number) =>
+      mapaReal.pads.some((pad) => Math.hypot(pad.x - x, pad.z - z) < 0.001);
+
+    it("toda célula nace clavada en un pad, ronda tras ronda", () => {
+      for (const semilla of ["pads-a", "pads-b", "pads-c"]) {
+        const s = sesionEnMapa(semilla);
+        s.markPresent("u1");
+        expect(s.collectibleSnapshot()).toHaveLength(GAME_RULES.collectibleCount);
+        for (const item of s.collectibleSnapshot()) {
+          expect(enUnPad(item.x, item.z)).toBe(true);
+        }
+        // Y las de la ronda siguiente tampoco: el reparto se rehace entero al empezarla.
+        s.tick(GAME_RULES.roundSeconds);
+        s.tick(GAME_RULES.intermissionSeconds + 0.05);
+        expect(s.collectibleSnapshot()).toHaveLength(GAME_RULES.collectibleCount);
+        for (const item of s.collectibleSnapshot()) {
+          expect(enUnPad(item.x, item.z)).toBe(true);
+        }
+      }
+    });
+
+    // La regla anticamping: plantarse en un pad y esperar no da puntos, porque mientras
+    // se esté encima ahí no nace nada. Con pocos pads esto no se podría garantizar —el
+    // reparto se quedaría sin sitio—; por eso el mapa trae decenas.
+    //
+    // El mapa es de mentira a propósito: así se sabe dónde nace el jugador (centro + 30 %
+    // del lado, sin obstáculos que lo aparten) y se le puede poner un pad justo debajo.
+    it("no deja nacer una célula encima de quien se queda plantado", () => {
+      const suelo = makeHM(-10, -5, 10, 5, 5, () => 0);
+      const otros = [
+        { x: 0, z: 0 },
+        { x: 2, z: 2 },
+        { x: -4, z: -3 },
+        { x: 4, z: 3 },
+        { x: -2, z: 2 },
+        { x: 0, z: -4 },
+        { x: 3, z: -3 },
+        { x: -6, z: 3 },
+        { x: -8, z: -2 }
+      ];
+      // Dónde nace el infiltrado en este mapa, preguntándoselo a la propia sesión en vez
+      // de repetir aquí su fórmula de reparto en corro.
+      const sonda = new GameSession("sonda", members, { ...config, heightmap: suelo, pads: otros });
+      sonda.markPresent("u1");
+      const nace = find(sonda, "u1");
+      const padDelJugador = { x: nace.x, z: nace.z };
+
+      for (const semilla of ["camping-a", "camping-b", "camping-c"]) {
+        const s = new GameSession(semilla, members, {
+          ...config,
+          heightmap: suelo,
+          pads: [padDelJugador, ...otros]
+        });
+        s.markPresent("u1");
+        // El jugador nace justo en su pad y no se le manda ninguna orden: se queda ahí.
+        const jugador = find(s, "u1");
+        expect(Math.hypot(jugador.x - padDelJugador.x, jugador.z - padDelJugador.z)).toBeLessThan(
+          0.01
+        );
+
+        // Ninguna célula nace al alcance de un infiltrado quieto. Se mira contra TODOS los
+        // infiltrados vivos y no contra un usuario fijo: al empezar cada ronda el papel de
+        // cazador rota, y encima del cazador sí puede nacer una —no las recoge, así que no
+        // hay nada que camperear.
+        let nacidasEncima = 0;
+        for (let ronda = 0; ronda < 3; ronda += 1) {
+          const infiltrados = s.playerSnapshot().filter((p) => p.role === "hider" && p.alive);
+          for (const item of s.collectibleSnapshot()) {
+            for (const infiltrado of infiltrados) {
+              const distancia = Math.hypot(item.x - infiltrado.x, item.z - infiltrado.z);
+              if (distancia < PAD_CAMP_CLEARANCE_TEST) nacidasEncima += 1;
+            }
+          }
+          s.tick(GAME_RULES.roundSeconds);
+          s.tick(GAME_RULES.intermissionSeconds + 0.05);
+        }
+        expect(nacidasEncima).toBe(0);
+        // Y por tanto quien nació sobre un pad y no se movió no ha sumado ni un punto.
+        expect(find(s, "u1").score).toBe(0);
+      }
+    });
+  });
+
   it("queda vacío cuando se van todos", () => {
     const s = new GameSession("g1", members, config);
     s.removePlayer("u1");
@@ -586,6 +715,7 @@ describe("GameSession", () => {
       bounds: { minX: -10, minZ: -5, maxX: 10, maxZ: 5 },
       turnSpeed: 2,
       obstacles,
+      pads,
       heightmap: flatHM,
       maxSlope: 1,
       npcCount: 0,
@@ -653,6 +783,7 @@ describe("GameSession", () => {
       bounds: { minX: -4, minZ: -4, maxX: 4, maxZ: 4 },
       turnSpeed: 2,
       obstacles: [],
+      pads,
       heightmap: makeHM(-4, -4, 4, 4, 1, f),
       maxSlope,
       npcCount: 0,
@@ -696,6 +827,7 @@ describe("GameSession", () => {
         bounds: map.bounds,
         turnSpeed: 3,
         obstacles: map.obstacles,
+        pads: map.pads,
         heightmap: map.heightmap,
         maxSlope: 1.5,
         npcCount: 8,
@@ -799,16 +931,22 @@ describe("GameSession", () => {
       const peaks = [...peakSpeed.values()].filter((v) => v > 0);
       expect(Math.max(...peaks) - Math.min(...peaks)).toBeLessThan(1e-9);
 
-      // Y el humano va a esa misma velocidad, ni más ni menos.
+      // Y el humano va a esa misma velocidad, ni más ni menos. Se compara su PUNTA con la
+      // de la multitud, no su paso en un tick suelto: andando entre gente, el tick que
+      // toque puede caer justo en un roce (frena a NPC_BUMP_KEEP y se escurre de lado), y
+      // entonces la medida no dice a qué velocidad va, dice con quién se ha cruzado.
       const humano = crowdSession("npc-crowd");
       humano.markPresent("u1");
       humano.setInput("u1", 1, 0);
-      for (let i = 0; i < 120; i += 1) humano.tick(0.05);
-      const antes = find(humano, "u1");
-      humano.tick(0.05);
-      const ahora = find(humano, "u1");
-      const suyo = Math.hypot(ahora.x - antes.x, ahora.z - antes.z) / 0.05;
-      expect(suyo).toBeCloseTo(Math.max(...peaks), 6);
+      let suPunta = 0;
+      let anterior = find(humano, "u1");
+      for (let i = 0; i < 240; i += 1) {
+        humano.tick(0.05);
+        const ahora = find(humano, "u1");
+        suPunta = Math.max(suPunta, Math.hypot(ahora.x - anterior.x, ahora.z - anterior.z) / 0.05);
+        anterior = ahora;
+      }
+      expect(suPunta).toBeCloseTo(Math.max(...peaks), 6);
 
       // Aquí NO se comprueba la rampa de arranque. Se intentó como "primer tick tras
       // desplazamiento 0", y eso no medía la rampa: un NPC bloqueado contra un muro

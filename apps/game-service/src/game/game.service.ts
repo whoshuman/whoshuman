@@ -59,7 +59,7 @@ export class GameService {
       bounds: map.bounds,
       turnSpeed: envs.gameTurnSpeed,
       obstacles: map.obstacles,
-      collectibleSpawns: map.collectibleSpawns,
+      pads: map.pads,
       heightmap: map.heightmap,
       maxSlope: envs.gameMaxSlope,
       npcCount: envs.gameNpcCount,

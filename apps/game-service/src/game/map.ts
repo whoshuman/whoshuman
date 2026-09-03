@@ -33,7 +33,13 @@ export interface Heightmap {
 export interface MapDescriptor {
   bounds: Bounds;
   obstacles: Obstacle[];
-  collectibleSpawns: MapPoint[];
+  /**
+   * Plataformas repartidas por la calle. Son las ÚNICAS posiciones donde nace una célula,
+   * y también los destinos a los que la multitud se dirige (ver game-session.ts). Tienen
+   * que ser muchas: si fueran cuatro, plantarse en una y esperar sería una forma de sumar
+   * puntos sin jugar.
+   */
+  pads: MapPoint[];
   heightmap: Heightmap;
 }
 
@@ -107,8 +113,9 @@ export function loadMap(name: string): MapDescriptor {
   if (
     !validRect(m.bounds) ||
     !Array.isArray(m.obstacles) ||
-    !Array.isArray(m.collectibleSpawns) ||
-    !m.collectibleSpawns.every(validMapPoint) ||
+    !Array.isArray(m.pads) ||
+    m.pads.length === 0 ||
+    !m.pads.every(validMapPoint) ||
     !validHeightmap(m.heightmap)
   ) {
     throw new Error(`Invalid map descriptor: ${file}`);

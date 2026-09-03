@@ -31,7 +31,9 @@ export interface GameSessionConfig {
   bounds: Bounds; // área jugable: el jugador no sale de aquí
   turnSpeed: number; // radianes/seg (tope de giro)
   obstacles: Obstacle[]; // AABB bloqueantes en XZ
-  collectibleSpawns?: MapPoint[]; // cruces del mapa donde pueden aparecer células
+  // Plataformas de la calle: las células nacen SOLO aquí y son también los destinos de
+  // la multitud (ver spawnOneCollectible y chooseNpcHeading).
+  pads: MapPoint[];
   heightmap: Heightmap; // altura del suelo por celda
   // Pendiente máxima transitable (altura/distancia). En beta-city el terreno andable
   // llega a 0.12 y las paredes arrancan en 1.72, así que cualquier valor intermedio
@@ -105,13 +107,17 @@ interface SessionNpc extends MovableState {
   blockedTime: number; // segundos seguidos sin poder avanzar
   speedScale: number; // su ritmo propio: una multitud a la misma velocidad parece un banco de peces
   velocity: number; // u/s actual; sube y baja por rampa en vez de saltar
-  // Célula hacia la que sesga el rumbo mientras dure, o null si va a su aire (ver
-  // chooseNpcHeading). `collectibleId` es para el cupo por célula (que no vayan
-  // varios al mismo sitio a la vez); `x,z` NO son la célula exacta sino su propio
-  // punto de mira, con un desvío al azar: si dos apuntan al mismo centro, sus rutas
-  // se pisan y eso es justo el "van de la mano" que se quiere evitar.
-  waypoint: { collectibleId: string; x: number; z: number } | null;
+  // Pad hacia el que sesga el rumbo mientras dure, o null si va a su aire (ver
+  // chooseNpcHeading). `padIndex` es para el cupo por pad (que no vayan varios al mismo
+  // sitio a la vez); `x,z` NO son el pad exacto sino su propio punto de mira, con un
+  // desvío al azar: si dos apuntan al mismo centro, sus rutas se pisan y eso es justo el
+  // "van de la mano" que se quiere evitar.
+  waypoint: { padIndex: number; x: number; z: number } | null;
   waypointExpire: number; // segundos que le quedan antes de soltarlo y volver al azar
+  // Lado y fuerza del rodeo hacia el destino, en -1..1, sorteado al coger el waypoint:
+  // es lo que convierte la ruta en un arco propio en vez de en la recta que sigue todo
+  // el mundo (ver NPC_WAYPOINT_ARC).
+  waypointBias: number;
 }
 
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v);
@@ -233,30 +239,44 @@ const NPC_TURN_RADIUS = 0.22;
 // Amplitud del cambio de rumbo al elegir paseo (±63°). Cuanto más abierto, más
 // largo es el arco y más difícil que quepa libre en un mapa de 4×5.
 const NPC_HEADING_SPREAD = Math.PI * 0.7;
-// Con qué probabilidad, al agotar el tramo, un NPC sin waypoint se engancha a una
-// célula visible en vez de tirar rumbo al azar. Baja a propósito: si todos fueran
-// detrás de las células a la vez, la multitud entera convergería en fila, que es lo
-// contrario de "parecer gente". Cada NPC tira su propio dado, así que no hay reloj
+// Con qué probabilidad, al agotar el tramo, un NPC sin waypoint se pone en camino a un
+// pad en vez de tirar rumbo al azar. Cada NPC tira su propio dado, así que no hay reloj
 // compartido que los sincronice.
-const NPC_WAYPOINT_CHANCE = 0.2;
+//
+// Antes los destinos eran las 7 células, y con tan pocos sitios adonde ir la multitud se
+// juntaba en pelotones camino del mismo puñado de puntos; por eso la probabilidad tenía
+// que ser baja (0.2). Ahora los destinos son los pads —decenas repartidos por toda la
+// calle—, así que caminar con intención ya no amontona: se puede subir.
+const NPC_WAYPOINT_CHANCE = 0.32;
 // Cono al caminar HACIA el waypoint: bastante más cerrado que el paseo libre, para
 // que la curva se note dirigida en vez de errática, pero sin ser una línea recta
 // (un beeline exacto se ve tan artificial como el azar puro).
 const NPC_WAYPOINT_SPREAD = Math.PI * 0.32;
-// Tiempo máximo enganchado a una célula antes de soltarla y volver al azar: si queda
-// detrás de un muro que no rodea a tiempo, no se queda mirándola para siempre.
+// Tiempo máximo enganchado a un pad antes de soltarlo y volver al azar: si queda
+// detrás de un muro que no rodea a tiempo, no se queda mirándolo para siempre.
 const NPC_WAYPOINT_BUDGET_S = 8;
 // A esta distancia se da por "llegado" y suelta el waypoint (algo mayor que el radio
-// real de recogida: no hace falta pisarla, solo pasar cerca, como haría cualquiera).
+// real de recogida: no hace falta pisarlo, solo pasar cerca, como haría cualquiera).
 const NPC_WAYPOINT_ARRIVE = 0.4;
-// Cuántos NPC pueden llevar la MISMA célula de waypoint a la vez. Con 1 nunca hay dos
+// Cuántos NPC pueden llevar el MISMO pad de waypoint a la vez. Con 1 nunca hay dos
 // convergiendo al mismo punto exacto: es justo el "van de la mano" que se nota.
 const NPC_WAYPOINT_MAX_CLAIMS = 1;
-// Cada NPC apunta a un punto propio alrededor de la célula, no a su centro exacto: con
+// Cada NPC apunta a un punto propio alrededor del pad, no a su centro exacto: con
 // el mismo centro, dos rutas que pasen cerca se pisan y parecen una sola fila. El
 // desvío se sortea una vez por waypoint, no por tick, así que la ruta sigue siendo
 // una curva firme, no un temblor.
 const NPC_WAYPOINT_OFFSET = 0.35;
+// Cuánto se aparta de la línea recta el que va a un destino, en unidades de mundo, estando
+// lejos. Sin esto la ruta era el segmento recto entre el NPC y su pad, y varios saliendo de
+// zonas parecidas hacia lados parecidos dibujaban líneas paralelas: un pelotón. El signo y
+// la fuerza se sortean UNA vez por waypoint (npc.waypointBias), así que cada uno describe
+// su propio arco y ninguno serpentea por el camino. 0.8 en un mapa de 5×4 es medio ancho
+// de calle: se ve el rodeo sin que parezca que va a otro sitio.
+const NPC_WAYPOINT_ARC = 0.8;
+// Distancia a partir de la cual el arco va a plena anchura. Más cerca se cierra solo,
+// proporcionalmente: rodear tiene sentido de lejos, pero a dos pasos del destino hay
+// que encararlo o se pasaría de largo dando vueltas.
+const NPC_WAYPOINT_ARC_FADE = 1.6;
 // Radio (bastante mayor que NPC_SEPARATION) en el que se cuenta cuánta gente hay ya
 // para preferir zonas menos concurridas en el paseo libre. Ni una manzana entera ni
 // un cuerpo: lo bastante ancho para notar "aquí hay aglomeración" antes de meterse.
@@ -308,10 +328,22 @@ const CHARACTER_SKIN_COUNT = 4;
 // es el "ya está bastante lejos" que corta la búsqueda de mejor candidato. En el mapa
 // real (5×4 con manzanas) 7 células no pueden estar mucho más repartidas que esto.
 const COLLECTIBLE_SEPARATION = 1;
-// Cuántos puntos se sortean antes de quedarse con el más despejado. Más candidatos =
+// Cuántos pads se sortean antes de quedarse con el más despejado. Más candidatos =
 // reparto más regular; 24 ya deja el mapa cubierto sin que se note el coste (solo se
 // paga al empezar la ronda y en cada respawn suelto).
 const COLLECTIBLE_SPAWN_CANDIDATES = 24;
+// Un pad cuenta como ocupado si ya hay una célula a menos de esto. Las células nacen
+// clavadas en el centro del pad, así que basta con un margen de coma flotante.
+const PAD_TAKEN_RADIUS = 0.1;
+// Nadie recibe una célula en las narices: al reponer, se descartan los pads con algún
+// infiltrado vivo a menos de esta distancia. Es la regla anticamping — plantarse encima
+// de un pad y esperar no da puntos, porque justamente ahí no va a nacer nada.
+//
+// Menor que la separación entre pads (1.1 en neon-block), así que cada uno tapa el suyo y
+// nada más. Con eso sale la cuenta del peor caso: 8 jugadores como mucho → 7 infiltrados
+// tapando 7 pads, más las 7 células ya puestas, son 14 pads ocupados de los 16 del mapa;
+// siempre queda sitio libre donde reponer. Por eso el mapa no puede traer menos.
+const PAD_CAMP_CLEARANCE = 0.9;
 
 interface PendingCollectible {
   respawnAt: number;
@@ -458,17 +490,19 @@ export class GameSession {
         speedScale: 1 + (this.random() * 2 - 1) * NPC_SPEED_VARIATION,
         velocity: 0,
         waypoint: null,
-        waypointExpire: 0
+        waypointExpire: 0,
+        waypointBias: 0
       };
       this.npcs.push(npc);
       this.crowd.add(npc);
     }
   }
 
-  // Antes, si el mapa traia `collectibleSpawns`, las celulas nacian siempre en esos
-  // mismos puntos fijos ("cruces" del mapa); en neon-block, 4 de los 7 caian justo en
-  // las esquinas. Ahora siempre se sortean por el area jugable, como el resto de
-  // puntos aleatorios del mapa.
+  // Las celulas nacen SOLO en los pads del mapa. Hubo dos intentos antes: puntos fijos
+  // (7 "cruces", 4 de ellos en las esquinas, siempre los mismos) y sorteo libre por toda
+  // el area jugable (repartido, pero nacian en mitad de la nada y no habia forma de saber
+  // donde mirar). Los pads son muchos y estan dibujados en el suelo: se ve de antemano
+  // donde puede salir algo, y aun asi no se puede predecir en cual.
   private spawnCollectibles(): void {
     for (let i = 0; i < GAME_RULES.collectibleCount; i += 1) {
       this.collectibles.push(this.spawnOneCollectible());
@@ -476,35 +510,64 @@ export class GameSession {
   }
 
   /**
-   * Punto aleatorio para una célula, repartido por "mejor candidato": se sortean varios
-   * puntos y se elige el que MÁS lejos cae de la célula más cercana, en vez de quedarse
-   * con el primero que respete una distancia mínima.
+   * Pad para una célula, elegido por "mejor candidato": se sortean varios pads libres y
+   * se elige el que MÁS lejos cae de la célula más cercana, en vez de quedarse con el
+   * primero que respete una distancia mínima.
    *
    * El azar uniforme agrupa: con solo un mínimo corto salían racimos en un lado del mapa
-   * y media manzana vacía, porque en cuanto el primer punto valía se dejaba de buscar.
-   * Así el reparto tiende a rejilla sin dejar de ser aleatorio, y encima nunca falla: si
-   * el mapa no da para COLLECTIBLE_SEPARATION, se queda con lo mejor que haya encontrado
-   * en vez de rendirse y soltarla encima de otra.
+   * y media manzana vacía, porque en cuanto el primero valía se dejaba de buscar. Así el
+   * reparto tiende a rejilla sin dejar de ser aleatorio, y encima nunca falla: si el mapa
+   * no da para COLLECTIBLE_SEPARATION, se queda con lo mejor que haya encontrado en vez
+   * de rendirse y soltarla encima de otra.
    *
    * La usan tanto el reparto inicial como cada respawn, así que una recién repuesta
    * también busca el hueco más despejado que quede.
    */
   private spawnOneCollectible(): GameCollectibleState {
-    let best = this.randomWalkablePoint();
+    const free = this.freePads();
+    let best = free[Math.floor(this.random() * free.length)];
     let bestGap = this.nearestCollectibleDistance(best.x, best.z);
     for (
       let attempt = 1;
       attempt < COLLECTIBLE_SPAWN_CANDIDATES && bestGap < COLLECTIBLE_SEPARATION;
       attempt += 1
     ) {
-      const candidate = this.randomWalkablePoint();
+      const candidate = free[Math.floor(this.random() * free.length)];
       const gap = this.nearestCollectibleDistance(candidate.x, candidate.z);
       if (gap > bestGap) {
         best = candidate;
         bestGap = gap;
       }
     }
-    return { collectibleId: randomUUID(), x: best.x, y: best.h + 0.14, z: best.z };
+    const height = sampleHeight(this.config.heightmap, best.x, best.z) ?? 0;
+    return { collectibleId: randomUUID(), x: best.x, y: height + 0.14, z: best.z };
+  }
+
+  /**
+   * Pads donde puede nacer una célula: ni los que ya tienen una, ni aquellos sobre los
+   * que hay alguien esperando (ver PAD_CAMP_CLEARANCE). Esto último es lo que hace que
+   * quedarse plantado en un pad no dé puntos: mientras se esté encima, ahí no sale nada.
+   *
+   * Los descartes se van soltando en orden si dejan la lista vacía —primero el de la
+   * gente, después el de las células—, porque el reparto no puede quedarse sin sitio en
+   * un mapa con pocos pads. Vaciarse del todo es imposible: el mapa no carga sin pads.
+   */
+  private freePads(): MapPoint[] {
+    const taken = (pad: MapPoint) =>
+      this.collectibles.some(
+        (item) => Math.hypot(item.x - pad.x, item.z - pad.z) < PAD_TAKEN_RADIUS
+      );
+    const camped = (pad: MapPoint) => {
+      for (const player of this.players.values()) {
+        if (!player.alive || player.role === "seeker") continue;
+        if (Math.hypot(player.x - pad.x, player.z - pad.z) < PAD_CAMP_CLEARANCE) return true;
+      }
+      return false;
+    };
+    const free = this.config.pads.filter((pad) => !taken(pad) && !camped(pad));
+    if (free.length > 0) return free;
+    const sinCelula = this.config.pads.filter((pad) => !taken(pad));
+    return sinCelula.length > 0 ? sinCelula : this.config.pads;
   }
 
   /** Distancia a la célula ya colocada más cercana. Infinito si aún no hay ninguna. */
@@ -1092,85 +1155,91 @@ export class GameSession {
     return this.freeHeading(npc, step, true) ?? npc.heading + Math.PI; // cercado: media vuelta
   }
 
-  /** Cuántos NPC llevan ya cada célula como waypoint, para no pasar de NPC_WAYPOINT_MAX_CLAIMS. */
-  private waypointClaims(): Map<string, number> {
-    const claims = new Map<string, number>();
+  /** Cuántos NPC llevan ya cada pad como waypoint, para no pasar de NPC_WAYPOINT_MAX_CLAIMS. */
+  private waypointClaims(): Map<number, number> {
+    const claims = new Map<number, number>();
     for (const other of this.npcs) {
       if (!other.waypoint) continue;
-      claims.set(other.waypoint.collectibleId, (claims.get(other.waypoint.collectibleId) ?? 0) + 1);
+      claims.set(other.waypoint.padIndex, (claims.get(other.waypoint.padIndex) ?? 0) + 1);
     }
     return claims;
   }
 
   private chooseNpcHeading(npc: SessionNpc): void {
-    // Sin waypoint en curso, a veces se engancha a una célula visible: así el paseo
-    // parece que va a algún sitio en vez de ser puro azar local. Ver NPC_WAYPOINT_CHANCE.
-    if (!npc.waypoint && this.collectibles.length > 0 && this.random() < NPC_WAYPOINT_CHANCE) {
+    // Sin waypoint en curso, a veces se pone en camino a un pad: así el paseo parece que
+    // va a algún sitio en vez de ser puro azar local. Ver NPC_WAYPOINT_CHANCE.
+    //
+    // Los destinos son los pads y no las células a propósito. Las células son 7 y además
+    // van cambiando de sitio al recogerse; los pads son 16 y están fijos y repartidos por
+    // toda la calle, así que hay más sitios adonde ir y ninguno se mueve bajo los pies de
+    // quien iba hacia él. De paso, caminar hacia donde nacen las células es lo que haría
+    // cualquier vecino, así que el cazador tampoco puede distinguir a nadie por adónde va.
+    if (!npc.waypoint && this.random() < NPC_WAYPOINT_CHANCE) {
       const claims = this.waypointClaims();
-      const eligible = this.collectibles.filter(
-        (item) => (claims.get(item.collectibleId) ?? 0) < NPC_WAYPOINT_MAX_CLAIMS
-      );
+      const eligible: number[] = [];
+      for (let index = 0; index < this.config.pads.length; index += 1) {
+        if ((claims.get(index) ?? 0) < NPC_WAYPOINT_MAX_CLAIMS) eligible.push(index);
+      }
       if (eligible.length > 0) {
-        const target = eligible[Math.floor(this.random() * eligible.length)];
-        // Punto de mira propio alrededor de la célula, no su centro: si el desvío
+        const padIndex = eligible[Math.floor(this.random() * eligible.length)];
+        const target = this.config.pads[padIndex];
+        // Punto de mira propio alrededor del pad, no su centro: si el desvío
         // fuera 0, dos NPC que se cruzaran de camino al mismo sitio pisarían la misma
         // línea y eso es exactamente lo que se veía como "ir de la mano".
         const angle = this.random() * Math.PI * 2;
         const offset = this.random() * NPC_WAYPOINT_OFFSET;
         npc.waypoint = {
-          collectibleId: target.collectibleId,
+          padIndex,
           x: target.x + Math.sin(angle) * offset,
           z: target.z + Math.cos(angle) * offset
         };
         npc.waypointExpire = NPC_WAYPOINT_BUDGET_S;
+        // El lado del rodeo se sortea aquí y no en cada tramo: el arco tiene que ser el
+        // mismo durante todo el viaje, o la ruta serpentea en vez de curvarse.
+        npc.waypointBias = this.random() * 2 - 1;
       }
     }
 
     const heldWaypoint = npc.waypoint;
     // sin(heading)/cos(heading) son dx/dz en moveForward: atan2(dx,dz) es la fórmula
     // inversa, el rumbo que apunta exactamente al waypoint.
-    const center = heldWaypoint
-      ? Math.atan2(heldWaypoint.x - npc.x, heldWaypoint.z - npc.z)
-      : npc.heading;
+    const aim = heldWaypoint ? this.waypointAim(npc) : null;
+    const center = aim ? Math.atan2(aim.x - npc.x, aim.z - npc.z) : npc.heading;
     const spread = heldWaypoint ? NPC_WAYPOINT_SPREAD : NPC_HEADING_SPREAD;
 
-    if (heldWaypoint) {
-      // Yendo a una célula el rumbo ya es dirigido a propósito: el primero que quepa
-      // vale, no hace falta preferir zona.
-      for (let i = 0; i < 12; i += 1) {
-        const heading = center + (this.random() - 0.5) * spread;
-        const distance = 0.3 + this.random() * 0.6;
-        if (this.pathIsClear(npc, heading, distance)) {
-          this.startNpcWalk(npc, heading, distance);
-          if (Math.hypot(heldWaypoint.x - npc.x, heldWaypoint.z - npc.z) <= NPC_WAYPOINT_ARRIVE) {
-            npc.waypoint = null;
-          }
-          return;
-        }
+    // Entre los rumbos que caben no se queda con el primero: prueba varios y prefiere el
+    // que lleva a una zona menos concurrida (NPC_SPREAD_RADIUS, bastante más ancho que la
+    // separación de cuerpo). Sin esto el azar puro amontona la multitud en la parte más
+    // abierta del mapa, porque ahí caben más rumbos válidos y nunca hay presión para
+    // repartirse.
+    //
+    // Vale igual con destino que sin él. Antes el que iba a un sitio cogía el PRIMER rumbo
+    // que cupiera, y ahí estaba el pelotón: dos que fueran a pads vecinos elegían el mismo
+    // hueco entre edificios y acababan andando pegados en fila. Ahora el destino manda la
+    // dirección general (el cono es más cerrado, NPC_WAYPOINT_SPREAD) pero el carril lo
+    // elige cada uno por donde hay menos gente.
+    let best: { heading: number; distance: number; density: number } | null = null;
+    let tried = 0;
+    for (let i = 0; i < 12; i += 1) {
+      const heading = center + (this.random() - 0.5) * spread;
+      const distance = 0.3 + this.random() * 0.6;
+      if (!this.pathIsClear(npc, heading, distance)) continue;
+      tried += 1;
+      const nx = npc.x + Math.sin(heading) * distance;
+      const nz = npc.z + Math.cos(heading) * distance;
+      const density = this.crowd.countNearby(nx, nz, NPC_SPREAD_RADIUS, npc);
+      if (!best || density < best.density) best = { heading, distance, density };
+      if (density === 0 && tried >= NPC_SPREAD_MIN_SAMPLES) break;
+    }
+    if (best) {
+      this.startNpcWalk(npc, best.heading, best.distance);
+      if (
+        heldWaypoint &&
+        Math.hypot(heldWaypoint.x - npc.x, heldWaypoint.z - npc.z) <= NPC_WAYPOINT_ARRIVE
+      ) {
+        npc.waypoint = null;
       }
-    } else {
-      // Paseo libre: entre los rumbos que caben, no se queda con el primero — prueba
-      // varios y prefiere el que lleva a una zona menos concurrida (NPC_SPREAD_RADIUS,
-      // bastante más ancho que la separación de cuerpo). Sin esto el azar puro tiende
-      // a amontonar la multitud en la parte más abierta del mapa, porque ahí caben más
-      // rumbos válidos y nunca hay presión para repartirse.
-      let best: { heading: number; distance: number; density: number } | null = null;
-      let tried = 0;
-      for (let i = 0; i < 12; i += 1) {
-        const heading = center + (this.random() - 0.5) * spread;
-        const distance = 0.3 + this.random() * 0.6;
-        if (!this.pathIsClear(npc, heading, distance)) continue;
-        tried += 1;
-        const nx = npc.x + Math.sin(heading) * distance;
-        const nz = npc.z + Math.cos(heading) * distance;
-        const density = this.crowd.countNearby(nx, nz, NPC_SPREAD_RADIUS, npc);
-        if (!best || density < best.density) best = { heading, distance, density };
-        if (density === 0 && tried >= NPC_SPREAD_MIN_SAMPLES) break;
-      }
-      if (best) {
-        this.startNpcWalk(npc, best.heading, best.distance);
-        return;
-      }
+      return;
     }
     // Encajonado: ningún trayecto sale limpio. Se arranca igualmente, porque el
     // avance ya va con colisiones y al rozar una pared se desliza, que es como
@@ -1179,6 +1248,29 @@ export class GameSession {
     // libre, insistir en él solo lo dejaría encajonado otra vez a la próxima.
     npc.waypoint = null;
     this.startNpcWalk(npc, npc.heading + (this.random() - 0.5) * Math.PI * 2, 0.3);
+  }
+
+  /**
+   * Adónde mira de verdad el que va a un pad: NO al pad, sino a un punto apartado en
+   * perpendicular que se va cerrando conforme se acerca. Eso convierte el trayecto en un
+   * arco —se sale por un lado y entra girando— en vez de en el segmento recto entre los
+   * dos puntos, que es lo que dibujaba carriles paralelos cuando varios salían de zonas
+   * parecidas hacia el mismo lado del mapa.
+   *
+   * Se corrige el PUNTO y no el ángulo: el rumbo de cada tramo se sortea dentro de un cono
+   * y luego se elige por gente, así que un sesgo angular se lo comía el propio sorteo. El
+   * punto, en cambio, manda sobre todo el mecanismo.
+   */
+  private waypointAim(npc: SessionNpc): MapPoint {
+    const waypoint = npc.waypoint as { padIndex: number; x: number; z: number };
+    const dx = waypoint.x - npc.x;
+    const dz = waypoint.z - npc.z;
+    const remaining = Math.hypot(dx, dz);
+    if (remaining < 1e-6) return waypoint;
+    const closing = Math.min(1, remaining / NPC_WAYPOINT_ARC_FADE);
+    const side = npc.waypointBias * NPC_WAYPOINT_ARC * closing;
+    // Perpendicular unitaria a la línea que lo une con el pad.
+    return { x: waypoint.x + (dz / remaining) * side, z: waypoint.z - (dx / remaining) * side };
   }
 
   private startNpcWalk(npc: SessionNpc, heading: number, distance: number): void {
