@@ -280,9 +280,15 @@ const NPC_ESCAPE_OFFSETS = [0.4, 0.8, 1.2, 1.6, 2.0, 2.4, Math.PI];
 const NPC_BUMP_KEEP = 0.85;
 // Cuánto de ese paso se aprovecha para escurrirse de lado al topar de frente.
 const NPC_SLIDE_FACTOR = 0.7;
-// Cada NPC anda a su propio ritmo dentro de ±25% del configurado. Sin esto los 32 se
-// mueven en bloque, que es lo que delata que son autómatas.
-const NPC_SPEED_VARIATION = 0.25;
+// Variación de ritmo por individuo, como fracción de la velocidad configurada. A CERO
+// a propósito: la regla es que nadie va más rápido ni más lento que nadie, ni NPC ni
+// humano. Estuvo en 0.25 para que la multitud no pareciera un banco de peces, pero ese
+// dado se lo llevaba también el jugador: le tocaba su ritmo al empezar la partida y se
+// lo quedaba las tres rondas, así que había partidas a 0.29 y partidas a 0.43 (49% de
+// diferencia) rodeado siempre de algún NPC cerca del tope. Se notaba como "hoy voy
+// lento" y era exactamente eso. La multitud parece viva por su forma de andar —
+// rumbos, esperas, rodeos—, no por ir cada uno a una velocidad distinta.
+const NPC_SPEED_VARIATION = 0;
 // Rampas de arranque y frenada, como múltiplo de la velocidad de crucero por segundo:
 // arrancar de 0 a tope cuesta ~0.55s y frenar ~0.36s. Antes pasaban de parado a
 // velocidad máxima en un tick, y el tirón se notaba.

@@ -775,7 +775,7 @@ describe("GameSession", () => {
       expect(plantado / (curva + plantado)).toBeLessThan(1 / 3);
     });
 
-    it("cada uno anda a su ritmo, no en bloque", () => {
+    it("nadie va más rápido ni más lento que nadie", () => {
       const session = crowdSession("npc-crowd");
       let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
       const peakSpeed = new Map<string, number>();
@@ -791,10 +791,24 @@ describe("GameSession", () => {
         previous = new Map(frame.map((npc) => [npc.entityId, npc]));
       }
 
-      // Velocidades punta distintas entre sí: si fueran todas iguales, la multitud se
-      // movería en bloque.
+      // Misma velocidad punta para todos. Antes se exigía justo lo contrario (que
+      // difirieran ≥1.15×, para que la multitud no fuera en bloque), pero ese ritmo
+      // por individuo se lo llevaba también el humano: le tocaba en el sorteo y se lo
+      // quedaba la partida entera, con diferencias de hasta el 49% entre una partida y
+      // otra. La regla es que nadie va más rápido ni más lento que nadie.
       const peaks = [...peakSpeed.values()].filter((v) => v > 0);
-      expect(Math.max(...peaks) / Math.min(...peaks)).toBeGreaterThan(1.15);
+      expect(Math.max(...peaks) - Math.min(...peaks)).toBeLessThan(1e-9);
+
+      // Y el humano va a esa misma velocidad, ni más ni menos.
+      const humano = crowdSession("npc-crowd");
+      humano.markPresent("u1");
+      humano.setInput("u1", 1, 0);
+      for (let i = 0; i < 120; i += 1) humano.tick(0.05);
+      const antes = find(humano, "u1");
+      humano.tick(0.05);
+      const ahora = find(humano, "u1");
+      const suyo = Math.hypot(ahora.x - antes.x, ahora.z - antes.z) / 0.05;
+      expect(suyo).toBeCloseTo(Math.max(...peaks), 6);
 
       // Aquí NO se comprueba la rampa de arranque. Se intentó como "primer tick tras
       // desplazamiento 0", y eso no medía la rampa: un NPC bloqueado contra un muro
