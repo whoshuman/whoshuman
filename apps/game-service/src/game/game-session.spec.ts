@@ -162,7 +162,7 @@ describe("GameSession", () => {
   // El juego consiste en no saber quién es humano. Cualquier diferencia mecánica entre
   // un jugador y un NPC sería un atajo para cazarlos sin observarles la conducta.
   describe("el humano se mueve como la multitud", () => {
-    it("no anda más rápido que un NPC", () => {
+    it("anda más rápido que un NPC (PLAYER_SPEED_MULTIPLIER, a propósito)", () => {
       const s = crowdSession("mimetismo");
       s.markPresent("u1");
       s.setInput("u1", 1, 0);
@@ -189,7 +189,10 @@ describe("GameSession", () => {
       }
 
       expect(fastestPlayer).toBeGreaterThan(0);
-      expect(fastestPlayer).toBeLessThanOrEqual(fastestNpc + 1e-9);
+      // A petición explícita el jugador corre más que la multitud (PLAYER_SPEED_MULTIPLIER
+      // en tickPlayer). Con margen amplio: lo que importa es que sea claramente más rápido,
+      // no el factor exacto.
+      expect(fastestPlayer).toBeGreaterThan(fastestNpc * 1.1);
     });
 
     it("no atraviesa a los NPC: respeta su espacio como uno más", () => {
@@ -207,7 +210,9 @@ describe("GameSession", () => {
       }
 
       // Antes el jugador los atravesaba de lado a lado y la distancia bajaba a ~0.
-      expect(closest).toBeGreaterThan(0.2);
+      // Umbral por debajo de NPC_SEPARATION (0.18): se pidió que pudieran rozarse, así
+      // que el margen es pequeño a propósito, solo para pillar el "atravesar" real.
+      expect(closest).toBeGreaterThan(0.12);
     });
   });
 
@@ -459,7 +464,7 @@ describe("GameSession", () => {
     });
   });
 
-  it("los hiders recogen objetos cercanos y reaparecen a los cinco segundos", () => {
+  it("los hiders recogen objetos cercanos y reaparecen tras el delay en un punto nuevo", () => {
     const tinyHeightmap = makeHM(-0.05, -0.05, 0.05, 0.05, 0.05, () => 0);
     const s = new GameSession("collectibles", [{ userId: "u1", username: "Uno", role: "hider" }], {
       ...config,
@@ -470,6 +475,7 @@ describe("GameSession", () => {
 
     const initial = s.collectibleSnapshot();
     expect(initial).toHaveLength(GAME_RULES.collectibleCount);
+    const initialIds = new Set(initial.map((item) => item.collectibleId));
     s.tick(0.05);
     expect(s.collectibleSnapshot()).toHaveLength(0);
     expect(find(s, "u1").score).toBe(GAME_RULES.collectibleCount * GAME_RULES.collectiblePoints);
@@ -477,7 +483,11 @@ describe("GameSession", () => {
     s.tick(GAME_RULES.collectibleRespawnSeconds - 0.1);
     expect(s.collectibleSnapshot()).toHaveLength(0);
     s.tick(0.11);
-    expect(s.collectibleSnapshot()).toEqual(expect.arrayContaining(initial));
+    // Repone el mismo número, pero como objetos nuevos: nunca vuelve el id recogido, así
+    // que quien se quedara plantado encima no la recuperaría sola al cumplirse el delay.
+    const respawned = s.collectibleSnapshot();
+    expect(respawned).toHaveLength(GAME_RULES.collectibleCount);
+    expect(respawned.every((item) => !initialIds.has(item.collectibleId))).toBe(true);
     expect(find(s, "u1").score).toBe(GAME_RULES.collectibleCount * GAME_RULES.collectiblePoints);
   });
 
@@ -641,9 +651,11 @@ describe("GameSession", () => {
         }
         for (let i = 0; i < frame.length; i += 1) {
           for (let j = i + 1; j < frame.length; j += 1) {
+            // NPC_SEPARATION bajó de 0.28 a 0.18 a petición explícita: la multitud va
+            // más apretada.
             expect(
               Math.hypot(frame[i].x - frame[j].x, frame[i].z - frame[j].z)
-            ).toBeGreaterThanOrEqual(0.28);
+            ).toBeGreaterThanOrEqual(0.18);
           }
         }
       }

@@ -38,8 +38,8 @@ export interface GameSessionConfig {
   // las separa con holgura.
   maxSlope: number;
   npcCount: number;
-  // Velocidad de TODA la multitud, humanos incluidos. Ya no existe una velocidad de
-  // jugador aparte: tenerla era regalarle al cazador un modo de distinguirlos.
+  // Velocidad de crucero base de la multitud. El jugador parte de la misma y le
+  // aplica PLAYER_SPEED_MULTIPLIER encima (ver tickPlayer): a propósito, va más rápido.
   npcSpeed: number;
   // Por debajo de esto la partida se abandona. Llega en match.found, para que sea el
   // mismo umbral con el que el matchmaking decidió que había gente suficiente.
@@ -98,7 +98,11 @@ interface SessionNpc extends MovableState {
 }
 
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v);
-const NPC_SEPARATION = 0.28;
+// Distancia mínima entre centros para CUALQUIER par (NPC-NPC, jugador-NPC,
+// jugador-jugador): por debajo de esto uno se atravesaría al otro. Bajada de 0.28 a
+// petición explícita, para que la multitud vaya más apretada y se pueda llegar a
+// rozar sin que eso cuente como colisión.
+const NPC_SEPARATION = 0.18;
 // Columnas de la rejilla de separación. Codifica (fila, columna) en un solo entero y
 // admite coordenadas negativas con el desplazamiento de la mitad.
 const CROWD_GRID_STRIDE = 4096;
@@ -213,12 +217,15 @@ const NPC_SPEED_VARIATION = 0.25;
 // velocidad máxima en un tick, y el tirón se notaba.
 const NPC_ACCELERATION = 1.8;
 const NPC_BRAKING = 2.8;
+// El jugador va más rápido que la multitud a propósito, a petición explícita: se pidió
+// tras probarlo, no es un descuido del reparto original (que buscaba justo lo contrario,
+// ver el comentario de tickPlayer). Solo el humano lo lleva; los NPC siguen a npcSpeed.
+const PLAYER_SPEED_MULTIPLIER = 1.35;
 // Nº de modelos en apps/frontend/public/models/personajes: el cliente indexa por skinId.
 const CHARACTER_SKIN_COUNT = 4;
 const COLLECTIBLE_SEPARATION = 0.4;
 
 interface PendingCollectible {
-  item: GameCollectibleState;
   respawnAt: number;
 }
 
@@ -227,7 +234,7 @@ export const GAME_RULES = {
   roundSeconds: 90,
   intermissionSeconds: 5,
   collectibleCount: 7,
-  collectibleRespawnSeconds: 5,
+  collectibleRespawnSeconds: 3,
   collectibleRadius: 0.24,
   hiderHitPoints: 100,
   npcHitPoints: -25,
@@ -368,21 +375,24 @@ export class GameSession {
   // puntos aleatorios del mapa.
   private spawnCollectibles(): void {
     for (let i = 0; i < GAME_RULES.collectibleCount; i += 1) {
-      let spawn = this.randomWalkablePoint();
-      for (let attempt = 0; attempt < 20; attempt += 1) {
-        const separated = this.collectibles.every(
-          (item) => Math.hypot(item.x - spawn.x, item.z - spawn.z) >= COLLECTIBLE_SEPARATION
-        );
-        if (separated) break;
-        spawn = this.randomWalkablePoint();
-      }
-      this.collectibles.push({
-        collectibleId: randomUUID(),
-        x: spawn.x,
-        y: spawn.h + 0.14,
-        z: spawn.z
-      });
+      this.collectibles.push(this.spawnOneCollectible());
     }
+  }
+
+  // Punto aleatorio separado de las demás células ya en juego (20 intentos, igual que
+  // el resto de sorteos del mapa): evita que dos caigan juntas o casi encimadas. La usan
+  // tanto el reparto inicial como cada respawn, así que una recién repuesta tampoco
+  // puede aterrizar pegada a otra que ya estuviera ahí.
+  private spawnOneCollectible(): GameCollectibleState {
+    let spawn = this.randomWalkablePoint();
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const separated = this.collectibles.every(
+        (item) => Math.hypot(item.x - spawn.x, item.z - spawn.z) >= COLLECTIBLE_SEPARATION
+      );
+      if (separated) break;
+      spawn = this.randomWalkablePoint();
+    }
+    return { collectibleId: randomUUID(), x: spawn.x, y: spawn.h + 0.14, z: spawn.z };
   }
 
   private seed(value: string): number {
@@ -643,9 +653,8 @@ export class GameSession {
         if (Math.hypot(player.x - item.x, player.z - item.z) > GAME_RULES.collectibleRadius) {
           continue;
         }
-        const [collected] = this.collectibles.splice(i, 1);
+        this.collectibles.splice(i, 1);
         this.pendingCollectibles.push({
-          item: collected,
           respawnAt: this.elapsedSeconds + GAME_RULES.collectibleRespawnSeconds
         });
         player.score += GAME_RULES.collectiblePoints;
@@ -653,12 +662,14 @@ export class GameSession {
     }
   }
 
+  // Repone en un punto NUEVO, no en el que se cogió: si volviera al mismo sitio, un
+  // hider parado encima la recogería sola nada más cumplirse el delay.
   private respawnCollectibles(): void {
     for (let i = this.pendingCollectibles.length - 1; i >= 0; i -= 1) {
       const pending = this.pendingCollectibles[i];
       if (pending.respawnAt > this.elapsedSeconds) continue;
       this.pendingCollectibles.splice(i, 1);
-      this.collectibles.push(pending.item);
+      this.collectibles.push(this.spawnOneCollectible());
     }
   }
 
@@ -730,14 +741,13 @@ export class GameSession {
   }
 
   /**
-   * El humano se mueve con el mismo modelo que la multitud: su propia velocidad de
-   * crucero, la misma rampa de arranque y frenada, el mismo radio de giro y la misma
-   * separación con los demás. Todo lo que aquí difiriese sería un modo gratis de
-   * distinguir a los jugadores sin necesidad de observarles la conducta, que es
-   * justo de lo que va la partida.
+   * El humano comparte con la multitud la rampa de arranque/frenada, el radio de giro
+   * y la separación: por ahí sigue sin poder distinguirse a un vistazo. La velocidad
+   * de crucero es la excepción, y es explícita: PLAYER_SPEED_MULTIPLIER lo hace correr
+   * más que los NPC porque así se pidió, no un despiste del reparto original.
    */
   private tickPlayer(player: SessionPlayer, dtSeconds: number): void {
-    const cruise = this.cruiseSpeed(player.speedScale);
+    const cruise = this.cruiseSpeed(player.speedScale) * PLAYER_SPEED_MULTIPLIER;
     // Con signo: así andar hacia atrás y soltar la tecla frenan por la misma rampa,
     // sin que al llegar a cero se dé la vuelta.
     const target = cruise * clamp(player.forward, -1, 1);
