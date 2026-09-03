@@ -6,6 +6,10 @@ import { useTranslation } from "react-i18next";
 // no responde) no queremos dejar al usuario mirando esta pantalla para siempre.
 const MAX_WAIT_MS = 6000;
 
+// Minimo antes de poder quitarla: si todo carga casi al instante, un parpadeo de negro
+// se ve peor que un segundo de pantalla de carga.
+const MIN_WAIT_MS = 1000;
+
 // Bloquea el primer pintado hasta que fuentes, escena 3D (si la ruta la usa) y sesion
 // esten listas, para que la pantalla no aparezca "por fases" al recargar.
 export function useBootReady(waitForScene: boolean, authReady: boolean) {
@@ -13,6 +17,7 @@ export function useBootReady(waitForScene: boolean, authReady: boolean) {
   const [everActive, setEverActive] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
   const [forced, setForced] = useState(false);
+  const [minWaited, setMinWaited] = useState(false);
 
   useEffect(() => {
     if (active) setEverActive(true);
@@ -27,8 +32,13 @@ export function useBootReady(waitForScene: boolean, authReady: boolean) {
     return () => window.clearTimeout(id);
   }, []);
 
+  useEffect(() => {
+    const id = window.setTimeout(() => setMinWaited(true), MIN_WAIT_MS);
+    return () => window.clearTimeout(id);
+  }, []);
+
   const sceneReady = !waitForScene || (everActive && !active) || progress >= 100;
-  return forced || (authReady && fontsReady && sceneReady);
+  return forced || (minWaited && authReady && fontsReady && sceneReady);
 }
 
 function BootOverlay({ ready }: { ready: boolean }) {
