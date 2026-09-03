@@ -162,15 +162,16 @@ describe("GameSession", () => {
   // El juego consiste en no saber quién es humano. Cualquier diferencia mecánica entre
   // un jugador y un NPC sería un atajo para cazarlos sin observarles la conducta.
   describe("el humano se mueve como la multitud", () => {
-    it('pedir "atrás" da la vuelta de golpe y anda de frente, no hace marcha atrás', () => {
+    it('pedir "atrás" da la vuelta de un tirón (giro corto) y anda de frente, no hace marcha atrás', () => {
       const s = crowdSession("media-vuelta");
       s.markPresent("u1");
       const start = find(s, "u1");
       expect(start.rotationY).toBe(0);
 
-      // La vuelta es una ACCIÓN, no una rotación en curso: un solo tick basta.
+      // La vuelta es una ACCIÓN disparada de una vez, no una rotación que se sostiene
+      // mientras se aguanta la tecla: se completa sola en un giro corto (REVERSE_FLIP_SECONDS).
       s.setInput("u1", -1, 0);
-      s.tick(0.05);
+      for (let i = 0; i < 10; i += 1) s.tick(0.05);
       expect(find(s, "u1").rotationY).toBeCloseTo(Math.PI, 5);
 
       for (let i = 0; i < 40; i += 1) s.tick(0.05);

@@ -87,6 +87,10 @@ interface SessionPlayer extends MovableState {
   // true mientras se está pidiendo "atrás", para dar la vuelta una sola vez al
   // empezar a pedirlo y no en cada tick (ver tickPlayer).
   reversedFacing: boolean;
+  // Giro de 180° en curso al pedir "atrás" (ver REVERSE_FLIP_SECONDS en tickPlayer).
+  flipping: boolean;
+  flipFrom: number;
+  flipElapsed: number;
 }
 
 interface SessionNpc extends MovableState {
@@ -281,6 +285,10 @@ const NPC_SPEED_VARIATION = 0.25;
 // velocidad máxima en un tick, y el tirón se notaba.
 const NPC_ACCELERATION = 1.8;
 const NPC_BRAKING = 2.8;
+// Duración del giro de 180° al pedir "atrás" (tickPlayer). Antes era un salto en un
+// solo tick y se veía como un corte brusco; con esto sigue siendo una acción, no una
+// rotación sostenida, pero se ve como un giro rápido en vez de un chasquido.
+const REVERSE_FLIP_SECONDS = 0.18;
 // Nº de modelos en apps/frontend/public/models/personajes: el cliente indexa por skinId.
 const CHARACTER_SKIN_COUNT = 4;
 const COLLECTIBLE_SEPARATION = 0.4;
@@ -352,7 +360,10 @@ export class GameSession {
         aiming: false,
         pose: null,
         present: false,
-        reversedFacing: false
+        reversedFacing: false,
+        flipping: false,
+        flipFrom: 0,
+        flipElapsed: 0
       });
     });
 
@@ -399,6 +410,7 @@ export class GameSession {
       player.velocity = 0;
       player.aiming = false;
       player.reversedFacing = false;
+      player.flipping = false;
     });
 
     this.spawnNpcs();
@@ -648,6 +660,7 @@ export class GameSession {
     player.velocity = 0;
     player.aiming = false;
     player.reversedFacing = false;
+    player.flipping = false;
     return true;
   }
 
@@ -815,22 +828,34 @@ export class GameSession {
   private tickPlayer(player: SessionPlayer, dtSeconds: number): void {
     const cruise = this.cruiseSpeed(player.speedScale);
 
-    // "Atrás" no es marcha atrás: es la ACCIÓN de darse la vuelta, de golpe (no una
-    // rotación en curso), y a partir de ahí se anda de frente en la nueva dirección
-    // — nadie en este juego camina de espaldas. reversedFacing marca que el giro YA
-    // se hizo: sin él, cada tick que se mantenga pulsado sumaría otro medio giro y
-    // acabaría dando vueltas sobre sí mismo en vez de quedarse mirando para atrás.
-    if (player.forward < 0) {
-      if (!player.reversedFacing) {
-        player.heading += Math.PI;
-        player.reversedFacing = true;
-      }
-    } else {
+    // "Atrás" no es marcha atrás: es la ACCIÓN de darse la vuelta, de un solo tirón
+    // (no una rotación que se sostiene mientras se aguanta la tecla), y a partir de ahí
+    // se anda de frente en la nueva dirección — nadie en este juego camina de espaldas.
+    // El giro en sí dura REVERSE_FLIP_SECONDS para no verse como un salto en seco.
+    // reversedFacing marca que el giro YA se disparó: sin él, cada tick que se
+    // mantenga pulsado dispararía otro medio giro y acabaría dando vueltas sobre sí
+    // mismo en vez de quedarse mirando para atrás.
+    if (player.forward < 0 && !player.reversedFacing && !player.flipping) {
+      player.flipping = true;
+      player.flipFrom = player.heading;
+      player.flipElapsed = 0;
+      player.reversedFacing = true;
+    } else if (player.forward >= 0 && !player.flipping) {
       player.reversedFacing = false;
     }
 
-    // De aquí en adelante solo cuenta la magnitud: el giro de arriba ya puso el rumbo
-    // en la dirección pedida, así que "atrás" ya no invierte el sentido del avance.
+    if (player.flipping) {
+      player.flipElapsed += dtSeconds;
+      const t = Math.min(1, player.flipElapsed / REVERSE_FLIP_SECONDS);
+      // ease-out: arranca rápido y se asienta, no lineal ni instantáneo.
+      const eased = 1 - (1 - t) * (1 - t);
+      player.heading = player.flipFrom + Math.PI * eased;
+      if (t >= 1) player.flipping = false;
+    }
+
+    // De aquí en adelante solo cuenta la magnitud: el giro de arriba ya puso (o está
+    // poniendo) el rumbo en la dirección pedida, así que "atrás" ya no invierte el
+    // sentido del avance.
     const target = cruise * clamp(Math.abs(player.forward), 0, 1);
     const braking = target < player.velocity;
     const rate = (braking ? NPC_BRAKING : NPC_ACCELERATION) * cruise * dtSeconds;
