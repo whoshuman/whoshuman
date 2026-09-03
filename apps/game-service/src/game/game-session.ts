@@ -84,6 +84,10 @@ interface SessionPlayer extends MovableState {
   // la simula, solo retransmite la última pose recibida para que el resto la vea.
   pose: SeekerPose | null;
   present: boolean; // ha hecho game:join
+  // Rumbo al que gira mientras se pide "atrás": null = no está en ese giro. Se fija
+  // una vez (heading + 180°) al empezar, no se recalcula cada tick, o el objetivo
+  // huiría según gira (ver tickPlayer).
+  reverseTargetHeading: number | null;
 }
 
 interface SessionNpc extends MovableState {
@@ -180,6 +184,29 @@ class CrowdGrid {
     }
     return true;
   }
+
+  /** Cuántos miembros (salvo `ignore`) hay dentro de `radius` de (x,z). Radio libre,
+   *  no atado a la celda: para medir aglomeración, no colisión. */
+  countNearby(x: number, z: number, radius: number, ignore?: MovableState): number {
+    const cellRadius = Math.ceil(radius / NPC_SEPARATION);
+    const col = Math.floor(x / NPC_SEPARATION) + CROWD_GRID_ORIGIN;
+    const row = Math.floor(z / NPC_SEPARATION) + CROWD_GRID_ORIGIN;
+    const radiusSq = radius * radius;
+    let count = 0;
+    for (let dRow = -cellRadius; dRow <= cellRadius; dRow += 1) {
+      for (let dCol = -cellRadius; dCol <= cellRadius; dCol += 1) {
+        const bucket = this.buckets.get((row + dRow) * CROWD_GRID_STRIDE + col + dCol);
+        if (!bucket) continue;
+        for (const other of bucket) {
+          if (other === ignore) continue;
+          const dx = other.x - x;
+          const dz = other.z - z;
+          if (dx * dx + dz * dz <= radiusSq) count += 1;
+        }
+      }
+    }
+    return count;
+  }
 }
 // Radio de la curva que traza el NPC al cambiar de rumbo, en unidades de mundo
 // (~3 anchos de personaje). El giro se deriva de él: ω = v/r. Fijar el radio y no
@@ -224,6 +251,13 @@ const NPC_WAYPOINT_MAX_CLAIMS = 1;
 // desvío se sortea una vez por waypoint, no por tick, así que la ruta sigue siendo
 // una curva firme, no un temblor.
 const NPC_WAYPOINT_OFFSET = 0.35;
+// Radio (bastante mayor que NPC_SEPARATION) en el que se cuenta cuánta gente hay ya
+// para preferir zonas menos concurridas en el paseo libre. Ni una manzana entera ni
+// un cuerpo: lo bastante ancho para notar "aquí hay aglomeración" antes de meterse.
+const NPC_SPREAD_RADIUS = 1.2;
+// Mínimo de rumbos válidos que prueba antes de conformarse, aunque el primero ya
+// saliera con densidad 0: con 1 solo intento no hay entre qué elegir de verdad.
+const NPC_SPREAD_MIN_SAMPLES = 3;
 // Tiempo encajonado tras el cual el NPC busca otra salida en vez de insistir.
 const NPC_UNBLOCK_SECONDS = 0.6;
 // Cuánto mira hacia delante, en radios de giro. Con 2 ve el obstáculo con el margen
@@ -318,7 +352,8 @@ export class GameSession {
         velocity: 0,
         aiming: false,
         pose: null,
-        present: false
+        present: false,
+        reverseTargetHeading: null
       });
     });
 
@@ -364,6 +399,7 @@ export class GameSession {
       player.turn = 0;
       player.velocity = 0;
       player.aiming = false;
+      player.reverseTargetHeading = null;
     });
 
     this.spawnNpcs();
@@ -612,6 +648,7 @@ export class GameSession {
     player.turn = 0;
     player.velocity = 0;
     player.aiming = false;
+    player.reverseTargetHeading = null;
     return true;
   }
 
@@ -778,10 +815,30 @@ export class GameSession {
    */
   private tickPlayer(player: SessionPlayer, dtSeconds: number): void {
     const cruise = this.cruiseSpeed(player.speedScale);
-    // Con signo: así andar hacia atrás y soltar la tecla frenan por la misma rampa,
-    // sin que al llegar a cero se dé la vuelta.
-    const target = cruise * clamp(player.forward, -1, 1);
-    const braking = Math.abs(target) < Math.abs(player.velocity);
+
+    // "Atrás" no es marcha atrás: se da la vuelta (con el mismo giro en curva que un
+    // NPC cambiando de rumbo) y anda de frente en la nueva dirección, como cualquiera
+    // — nadie en este juego camina de espaldas. El objetivo se fija UNA vez al empezar
+    // a pedir atrás (heading + 180°) y no se recalcula cada tick: si se recalculara,
+    // seguiría girando siempre a 180° de sí mismo y jamás llegaría.
+    if (player.forward < 0) {
+      if (player.reverseTargetHeading === null) {
+        player.reverseTargetHeading = player.heading + Math.PI;
+      }
+      const difference = this.shortestAngle(player.reverseTargetHeading - player.heading);
+      const turn = this.turnRate() * dtSeconds;
+      player.heading =
+        Math.abs(difference) <= turn
+          ? player.reverseTargetHeading
+          : player.heading + Math.sign(difference) * turn;
+    } else {
+      player.reverseTargetHeading = null;
+    }
+
+    // De aquí en adelante solo cuenta la magnitud: el giro de arriba ya puso el rumbo
+    // en la dirección pedida, así que "atrás" ya no invierte el sentido del avance.
+    const target = cruise * clamp(Math.abs(player.forward), 0, 1);
+    const braking = target < player.velocity;
     const rate = (braking ? NPC_BRAKING : NPC_ACCELERATION) * cruise * dtSeconds;
     player.velocity =
       target > player.velocity
@@ -990,17 +1047,41 @@ export class GameSession {
       : npc.heading;
     const spread = heldWaypoint ? NPC_WAYPOINT_SPREAD : NPC_HEADING_SPREAD;
 
-    for (let i = 0; i < 12; i += 1) {
-      const heading = center + (this.random() - 0.5) * spread;
-      const distance = 0.3 + this.random() * 0.6;
-      if (this.pathIsClear(npc, heading, distance)) {
-        this.startNpcWalk(npc, heading, distance);
-        if (
-          heldWaypoint &&
-          Math.hypot(heldWaypoint.x - npc.x, heldWaypoint.z - npc.z) <= NPC_WAYPOINT_ARRIVE
-        ) {
-          npc.waypoint = null;
+    if (heldWaypoint) {
+      // Yendo a una célula el rumbo ya es dirigido a propósito: el primero que quepa
+      // vale, no hace falta preferir zona.
+      for (let i = 0; i < 12; i += 1) {
+        const heading = center + (this.random() - 0.5) * spread;
+        const distance = 0.3 + this.random() * 0.6;
+        if (this.pathIsClear(npc, heading, distance)) {
+          this.startNpcWalk(npc, heading, distance);
+          if (Math.hypot(heldWaypoint.x - npc.x, heldWaypoint.z - npc.z) <= NPC_WAYPOINT_ARRIVE) {
+            npc.waypoint = null;
+          }
+          return;
         }
+      }
+    } else {
+      // Paseo libre: entre los rumbos que caben, no se queda con el primero — prueba
+      // varios y prefiere el que lleva a una zona menos concurrida (NPC_SPREAD_RADIUS,
+      // bastante más ancho que la separación de cuerpo). Sin esto el azar puro tiende
+      // a amontonar la multitud en la parte más abierta del mapa, porque ahí caben más
+      // rumbos válidos y nunca hay presión para repartirse.
+      let best: { heading: number; distance: number; density: number } | null = null;
+      let tried = 0;
+      for (let i = 0; i < 12; i += 1) {
+        const heading = center + (this.random() - 0.5) * spread;
+        const distance = 0.3 + this.random() * 0.6;
+        if (!this.pathIsClear(npc, heading, distance)) continue;
+        tried += 1;
+        const nx = npc.x + Math.sin(heading) * distance;
+        const nz = npc.z + Math.cos(heading) * distance;
+        const density = this.crowd.countNearby(nx, nz, NPC_SPREAD_RADIUS, npc);
+        if (!best || density < best.density) best = { heading, distance, density };
+        if (density === 0 && tried >= NPC_SPREAD_MIN_SAMPLES) break;
+      }
+      if (best) {
+        this.startNpcWalk(npc, best.heading, best.distance);
         return;
       }
     }

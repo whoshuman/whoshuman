@@ -162,6 +162,23 @@ describe("GameSession", () => {
   // El juego consiste en no saber quién es humano. Cualquier diferencia mecánica entre
   // un jugador y un NPC sería un atajo para cazarlos sin observarles la conducta.
   describe("el humano se mueve como la multitud", () => {
+    it('pedir "atrás" da la vuelta y anda de frente, no hace marcha atrás', () => {
+      const s = crowdSession("media-vuelta");
+      s.markPresent("u1");
+      const start = find(s, "u1");
+      expect(start.rotationY).toBe(0);
+
+      s.setInput("u1", -1, 0);
+      for (let i = 0; i < 80; i += 1) s.tick(0.05); // tiempo de sobra para completar el giro
+
+      const after = find(s, "u1");
+      // Se ha dado la vuelta (heading 0 -> π), no se ha quedado mirando al frente
+      // mientras se alejaba de espaldas.
+      expect(Math.abs(after.rotationY - Math.PI)).toBeLessThan(0.01);
+      // Con heading π camina hacia -z (cos π = -1): se ha alejado, no clavado en su sitio.
+      expect(after.z - start.z).toBeLessThan(-0.1);
+    });
+
     it("no anda más rápido que un NPC", () => {
       const s = crowdSession("mimetismo");
       s.markPresent("u1");
