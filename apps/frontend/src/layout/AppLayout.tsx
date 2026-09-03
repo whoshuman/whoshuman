@@ -172,7 +172,11 @@ function AppLayout() {
         />
       )}
 
-      <div className="relative z-10 flex min-h-screen flex-col">
+      <div
+        className={`relative z-10 flex min-h-screen flex-col transition-opacity duration-700 ${
+          bootReady ? "opacity-100" : "opacity-0"
+        }`}
+      >
         {showHud && (
           <header className="animate-hud-in sticky top-0 z-50 flex h-16 items-center justify-between gap-2 border-b border-neon-cyan/30 bg-bg/40 px-3 backdrop-blur-md sm:gap-4 sm:px-6">
             {/* Linea de escaneo tipo radar que cruza la barra. */}
