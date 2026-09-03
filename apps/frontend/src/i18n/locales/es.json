@@ -431,8 +431,6 @@
     "units": "Unidades",
     "leave": "ABANDONAR",
     "connecting": "ENLAZANDO CON LA OPERACIÓN...",
-    "controls": "W/S avanzar · A/D girar",
-    "controlsSeeker": "A/D o flechas para orbitar · mantén clic derecho o pulsa F para apuntar · clic izquierdo para disparar",
     "move": "Movimiento",
     "camera": "Cámara",
     "aim": "Apuntar",
@@ -471,7 +469,14 @@
     "leaveTitle": "¿ABANDONAR LA PARTIDA?",
     "leaveWarning": "Si te vas ahora dejas al resto del escuadron en inferioridad durante lo que queda de ronda. Abandonar partidas de forma reiterada puede acarrear restricciones sobre tu cuenta.",
     "leaveConfirm": "CONFIRMAR ABANDONO",
-    "leaveKeepPlaying": "SEGUIR JUGANDO"
+    "leaveKeepPlaying": "SEGUIR JUGANDO",
+    "hintOrbit": "orbitar",
+    "hintAim": "apuntar",
+    "hintLook": "mirar",
+    "hintShoot": "disparar",
+    "hintMove": "avanzar",
+    "hintTurn": "girar",
+    "hintRelease": "soltar"
   },
   "notFound": {
     "protocol": "ERROR DE SISTEMA — UNIDAD NO LOCALIZADA",

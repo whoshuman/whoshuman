@@ -237,6 +237,10 @@ const SEEKER_OVERVIEW_DISTANCE = Math.max(MAP_W, MAP_D) * 0.95;
 // tejados. Bajarla acerca la cámara al suelo y mete la nave y el horizonte en cuadro.
 const SEEKER_OVERVIEW_PITCH = 0.38; // ~22°
 const SEEKER_AIM_SENSITIVITY = 0.002;
+// Desplazamiento maximo que se acepta de un solo evento de raton, en pixeles. A la
+// sensibilidad de arriba son ~14 grados de golpe: de sobra para cualquier gesto real, y
+// corta los saltos que mete el navegador al recolocar el cursor.
+const AIM_MAX_STEP_PX = 120;
 // Lo que tarda la cámara en entrar y salir de la mira. Muy corto a propósito: es un
 // golpe de zoom, no un viaje. Debe ir acorde con la animación scope-flash del CSS.
 const AIM_TRANSITION_SECONDS = 0.16;
@@ -1690,6 +1694,11 @@ function SeekerCamera() {
   // La orientación libre no se entrega hasta que el zoom termina; si no, el ratón
   // pelearía con la transición.
   const aimReady = useRef(false);
+  // Al enganchar la captura del puntero, el primer evento trae de golpe la distancia
+  // entre donde estaba el cursor y el centro de la pantalla. Ese salto giraba la mirilla
+  // de un tiron (y como el cabeceo tiene tope abajo, se iba al suelo). Se tira ese
+  // primer movimiento.
+  const skipAimMove = useRef(false);
   const target = useMemo(() => new THREE.Vector3(CENTER_X, 0.4, CENTER_Z), []);
   // Al soltar la mira la cámara mira adonde la dejó el jugador: se guarda esa
   // orientación para volver a la de órbita interpolando y no de un tirón.
@@ -1738,9 +1747,21 @@ function SeekerCamera() {
     const cancelAiming = () => setAiming(false);
     const preventMenu = (event: MouseEvent) => event.preventDefault();
     const lockChanged = () => {
-      if (document.pointerLockElement !== gl.domElement && useGameStore.getState().aiming) {
-        setAiming(false);
+      if (document.pointerLockElement === gl.domElement) {
+        // La captura se pide al apuntar, pero se concede cuando el navegador quiere. Si para
+        // cuando llega ya se ha bajado la mira —soltar el derecho, o F—, no la suelta nadie:
+        // `stopAiming` miro el pointerLockElement cuando todavia no estaba enganchada y no
+        // tenia nada que soltar. El raton se quedaba secuestrado con la mira apagada y solo
+        // se salia con Esc. Llegar tarde a una mira que ya no esta es soltarla en el acto.
+        if (!useGameStore.getState().aiming) {
+          document.exitPointerLock();
+          return;
+        }
+        // Acaba de engancharse: el proximo movimiento trae el salto de recolocacion.
+        skipAimMove.current = true;
+        return;
       }
+      if (useGameStore.getState().aiming) setAiming(false);
     };
     gl.domElement.addEventListener("pointerdown", startAiming);
     gl.domElement.addEventListener("pointermove", startAiming);
@@ -1787,13 +1808,46 @@ function SeekerCamera() {
       );
       camera.rotation.set(aimPitch.current, aimYaw.current, 0, "YXZ");
     };
-    const moveAim = (event: MouseEvent) => {
+    // OJO: va sobre pointermove, NO sobre mousemove. Apuntar con el boton derecho cancela
+    // su pointerdown (preventDefault, para que no salga el menu contextual), y cancelar un
+    // pointerdown hace que el navegador SUPRIMA los eventos de raton de compatibilidad de
+    // esa interaccion —mousemove incluido— hasta que se suelta el boton. Por eso la mirilla
+    // se quedaba clavada mientras se mantenia el derecho, y con F no: ahi no se cancela
+    // ningun pointerdown. Los eventos de puntero no se suprimen, y PointerEvent hereda
+    // movementX/Y de MouseEvent, asi que sirve igual.
+    const moveAim = (event: PointerEvent) => {
+      if (!aiming || event.pointerType !== "mouse") return;
+      // Pulsar o soltar un boton NO gira la camara. Con otro boton ya apretado, el cambio
+      // de boton no llega como pointerdown sino como pointermove (`button` dice cual
+      // cambio; los movimientos de verdad traen -1), y ese evento es justo el que arrastra
+      // el salto de recolocacion del cursor: por eso la camara se iba hacia abajo AL
+      // DISPARAR, que es cuando el navegador concede la captura por fin.
+      if (event.button !== -1) return;
+      // La captura del puntero se pide en el pointerdown del boton derecho, o sea con el
+      // boton YA apretado, y ahi el navegador puede no engancharla. Sin captura, el raton
+      // llega al borde de la ventana y movementX pasa a valer 0: la vista deja de girar
+      // aunque sigas moviendo. Se reintenta mientras se apunta; si ya esta enganchada, no
+      // cuesta nada.
+      if (document.pointerLockElement !== gl.domElement) {
+        void gl.domElement.requestPointerLock();
+      }
+      if (skipAimMove.current) {
+        skipAimMove.current = false;
+        return;
+      }
       // aimReady: hasta que el zoom no acaba, la cámara la manda la transición.
-      if (aiming && aimReady.current) applyAimMovement(event.movementX, event.movementY);
+      if (!aimReady.current) return;
+      // Tope por evento: un salto asi no lo hace una mano, lo hace una recolocacion del
+      // cursor (cambio de captura, volver a la ventana). Girar media vuelta de golpe es
+      // peor que perder algo de recorrido en un manotazo.
+      applyAimMovement(
+        THREE.MathUtils.clamp(event.movementX, -AIM_MAX_STEP_PX, AIM_MAX_STEP_PX),
+        THREE.MathUtils.clamp(event.movementY, -AIM_MAX_STEP_PX, AIM_MAX_STEP_PX)
+      );
     };
-    document.addEventListener("mousemove", moveAim);
-    return () => document.removeEventListener("mousemove", moveAim);
-  }, [aiming, camera, selfRole]);
+    document.addEventListener("pointermove", moveAim);
+    return () => document.removeEventListener("pointermove", moveAim);
+  }, [aiming, camera, gl, selfRole]);
 
   useEffect(() => {
     const updateCamera = (event: Event) => {

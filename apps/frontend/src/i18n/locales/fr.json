@@ -431,8 +431,6 @@
     "units": "Unités",
     "leave": "ABANDONNER",
     "connecting": "LIAISON À L'OPÉRATION...",
-    "controls": "W/S avancer · A/D tourner",
-    "controlsSeeker": "A/D ou flèches pour orbiter · maintenir clic droit ou appuyer sur F pour viser · clic gauche pour tirer",
     "move": "Déplacement",
     "camera": "Caméra",
     "aim": "Viser",
@@ -471,7 +469,14 @@
     "leaveTitle": "ABANDONNER LA PARTIE ?",
     "leaveWarning": "Si tu pars maintenant, tu laisses le reste de ton escouade en infériorité jusqu’à la fin de la manche. Abandonner des parties de manière répétée peut entraîner des restrictions sur ton compte.",
     "leaveConfirm": "CONFIRMER L’ABANDON",
-    "leaveKeepPlaying": "CONTINUER À JOUER"
+    "leaveKeepPlaying": "CONTINUER À JOUER",
+    "hintOrbit": "orbiter",
+    "hintAim": "viser",
+    "hintLook": "regarder",
+    "hintShoot": "tirer",
+    "hintMove": "avancer",
+    "hintTurn": "tourner",
+    "hintRelease": "relâcher"
   },
   "notFound": {
     "protocol": "ERREUR SYSTÈME — UNITÉ NON LOCALISÉE",
