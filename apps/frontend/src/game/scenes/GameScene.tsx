@@ -292,6 +292,11 @@ const CHASER_DOWN_OFFSET = 0.3;
 // La nave mide 0.55 de eslora: a menos de media, la cámara ya la tiene encima y hay que
 // dejar de dibujarla.
 const CHASER_HIDE_DISTANCE = 0.3;
+// Solo para quien la ve desde el suelo (no el propio cazador): la órbita vuela alta
+// para dar vista general del mapa, y desde abajo, con edificios de por medio, cuesta
+// verla. Se dibuja más baja de lo que realmente está para que quien se hace pasar
+// por NPC pueda localizarla sin que eso mueva la cámara del cazador ni el rayo.
+const CHASER_VISIBLE_DROP = 1.4;
 // Aleteo. El modelo es una malla rígida de una pieza (sin huesos, sin animaciones y
 // sin las alas como objetos aparte), así que las góndolas se doblan en el vertex
 // shader. Miden |x| 0.29-0.48 y las separa del fuselaje un estrechamiento en
@@ -1346,7 +1351,7 @@ function ChaserShip() {
       const closeness = 1 - Math.min(1, distance / SHIP_AUDIBLE_RANGE);
       setSfxLoopProximity("shipMove", closeness * closeness);
 
-      ship.position.set(seeker.x, seeker.y, seeker.z);
+      ship.position.set(seeker.x, seeker.y - CHASER_VISIBLE_DROP, seeker.z);
       direction.set(seeker.dirX, seeker.dirY, seeker.dirZ).normalize();
       ship.rotation.set(
         THREE.MathUtils.clamp(
