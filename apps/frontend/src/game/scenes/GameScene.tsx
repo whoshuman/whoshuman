@@ -1787,22 +1787,28 @@ function SeekerCamera() {
       );
       camera.rotation.set(aimPitch.current, aimYaw.current, 0, "YXZ");
     };
-    const moveAim = (event: MouseEvent) => {
-      if (!aiming) return;
+    // OJO: va sobre pointermove, NO sobre mousemove. Apuntar con el boton derecho cancela
+    // su pointerdown (preventDefault, para que no salga el menu contextual), y cancelar un
+    // pointerdown hace que el navegador SUPRIMA los eventos de raton de compatibilidad de
+    // esa interaccion —mousemove incluido— hasta que se suelta el boton. Por eso la mirilla
+    // se quedaba clavada mientras se mantenia el derecho, y con F no: ahi no se cancela
+    // ningun pointerdown. Los eventos de puntero no se suprimen, y PointerEvent hereda
+    // movementX/Y de MouseEvent, asi que sirve igual.
+    const moveAim = (event: PointerEvent) => {
+      if (!aiming || event.pointerType !== "mouse") return;
       // La captura del puntero se pide en el pointerdown del boton derecho, o sea con el
-      // boton YA apretado, y ahi el navegador puede no engancharla (rompe la captura
-      // implicita del boton). Sin captura, el raton llega al borde de la ventana y
-      // movementX pasa a valer 0: la vista se queda clavada mirando a un lado aunque
-      // sigas moviendo. Se reintenta mientras se apunta; si ya esta enganchada, no
-      // cuesta nada. Con F no se notaba porque ahi no hay ningun boton pulsado.
+      // boton YA apretado, y ahi el navegador puede no engancharla. Sin captura, el raton
+      // llega al borde de la ventana y movementX pasa a valer 0: la vista deja de girar
+      // aunque sigas moviendo. Se reintenta mientras se apunta; si ya esta enganchada, no
+      // cuesta nada.
       if (document.pointerLockElement !== gl.domElement) {
         void gl.domElement.requestPointerLock();
       }
       // aimReady: hasta que el zoom no acaba, la cámara la manda la transición.
       if (aimReady.current) applyAimMovement(event.movementX, event.movementY);
     };
-    document.addEventListener("mousemove", moveAim);
-    return () => document.removeEventListener("mousemove", moveAim);
+    document.addEventListener("pointermove", moveAim);
+    return () => document.removeEventListener("pointermove", moveAim);
   }, [aiming, camera, gl, selfRole]);
 
   useEffect(() => {
