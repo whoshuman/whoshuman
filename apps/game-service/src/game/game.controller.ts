@@ -28,6 +28,11 @@ export class GameController {
     this.game.shoot(payload);
   }
 
+  @EventPattern(GameSubjects.switchRole)
+  handleSwitchRole(@Payload() payload: unknown) {
+    this.game.switchRole(payload);
+  }
+
   @EventPattern(GameSubjects.aim)
   handleAim(@Payload() payload: unknown) {
     this.game.aim(payload);

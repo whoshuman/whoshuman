@@ -5,6 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { preloadGameModels } from "../game/gameAssets";
+import { PracticeEntry } from "../game/practice/PracticeMode"; // MODO DEBUG: quitar al retirarlo
 import { useLobbyStore } from "../game/store/lobbyStore";
 import { useAuthStore } from "../shared/authStore";
 import ConfirmDialog from "../shared/ConfirmDialog";
@@ -681,6 +682,7 @@ function Lobby({ embedded = false, onClose, onEditProfile }: LobbyProps) {
                 delay={0.3}
               />
             </div>
+            <PracticeEntry />
           </div>
         ) : (
           <RoomModal mode={mode} onBack={() => setMode("menu")} />

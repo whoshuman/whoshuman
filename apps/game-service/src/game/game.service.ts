@@ -67,7 +67,9 @@ export class GameService {
       minPlayers:
         typeof payload.minPlayers === "number" && payload.minPlayers > 0
           ? payload.minPlayers
-          : FALLBACK_MIN_PLAYERS
+          : FALLBACK_MIN_PLAYERS,
+      // Solo la cola "practice" (modo debug en solitario) llega con este lobbyId.
+      practice: payload.lobbyId === "practice"
     });
     const dt = envs.gameTickMs / 1000;
     let tick = 0;
@@ -139,6 +141,11 @@ export class GameService {
     return (
       this.games.get(payload.gameId)?.session.shoot(payload.userId, payload.targetEntityId) ?? false
     );
+  }
+
+  switchRole(payload: unknown): boolean {
+    if (!this.isPlayerRef(payload)) return false;
+    return this.games.get(payload.gameId)?.session.practiceSwitchRole(payload.userId) ?? false;
   }
 
   leave(payload: unknown): void {

@@ -29,6 +29,7 @@ import type {
   GameJoinPayload,
   GameJoinResponse,
   GameLeavePayload,
+  GamePracticeSwitchRolePayload,
   GameShootPayload,
   LobbyJoinPayload,
   LobbyLeavePayload,
@@ -359,6 +360,30 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       userId: user.sub,
       gameId,
       targetEntityId,
+      socketId: socket.id
+    });
+  }
+
+  // MODO DEBUG: retirar junto con GameSubjects.switchRole, ClientSocketEvents.gamePracticeSwitchRole
+  // y GameSession.practiceSwitchRole. El game-service ignora el evento si la partida no es "practice".
+  @SubscribeMessage(ClientSocketEvents.gamePracticeSwitchRole)
+  async handleGamePracticeSwitchRole(
+    @ConnectedSocket() socket: RealtimeSocket,
+    @MessageBody() payload: GamePracticeSwitchRolePayload
+  ) {
+    const user = this.requireUser(socket);
+    const gameId = this.requireId(socket, payload?.gameId, "gameId");
+
+    if (socket.data.gameId !== gameId) {
+      socket.emit(ServerSocketEvents.gatewayError, {
+        message: "Socket is not joined to this game"
+      });
+      return;
+    }
+
+    await this.publishToNats(GameSubjects.switchRole, {
+      userId: user.sub,
+      gameId,
       socketId: socket.id
     });
   }

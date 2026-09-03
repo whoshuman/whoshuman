@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import MobileGameControls from "../game/components/MobileGameControls";
 import { useKeyboardInput } from "../game/hooks/useKeyboardInput";
+import { isPracticeMatch, PracticeSwitchRoleButton } from "../game/practice/PracticeMode"; // MODO DEBUG: quitar al retirarlo
 import GameScene from "../game/scenes/GameScene";
 import { useGameStore } from "../game/store/gameStore";
 import { useLobbyStore } from "../game/store/lobbyStore";
@@ -333,6 +334,8 @@ function Game() {
       <MobileGameControls enabled={playing && selfAlive} />
       <MobileGameGate enabled={playing} />
       {gameId && <GroupChatDock scope="game" channelId={gameId} game />}
+      {/* MODO DEBUG: quitar junto con game/practice/PracticeMode.tsx */}
+      {targetGameId && isPracticeMatch(match) && <PracticeSwitchRoleButton gameId={targetGameId} />}
 
       {/* Controles. */}
       {round?.phase === "playing" && selfAlive && (

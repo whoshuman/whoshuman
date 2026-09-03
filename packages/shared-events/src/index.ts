@@ -34,6 +34,7 @@ export const GameSubjects = {
   leave: "game.leave",
   aim: "game.aim",
   shoot: "game.shoot",
+  switchRole: "game.switchRole",
   playerMoved: "game.player.moved",
   stateSnapshot: "game.state.snapshot",
   health: "game.health"
@@ -77,6 +78,7 @@ export const ClientSocketEvents = {
   gameLeave: "game:leave",
   gameAim: "game:aim",
   gameShoot: "game:shoot",
+  gamePracticeSwitchRole: "game:practice-switch-role",
   playerInput: "game:player-input",
   presenceList: "presence:list",
   chatSend: "chat:send",

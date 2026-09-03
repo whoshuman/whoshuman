@@ -44,6 +44,13 @@ export interface GameSessionConfig {
   // Por debajo de esto la partida se abandona. Llega en match.found, para que sea el
   // mismo umbral con el que el matchmaking decidió que había gente suficiente.
   minPlayers: number;
+  // ── MODO DEBUG: retirar borrando este campo, GameSession.practiceSwitchRole y los
+  // dos "if (this.config.practice)" de tick()/endRound() más abajo. Nada más en el
+  // codebase depende de él. Ver también matchmaking.service.ts (lobby "practice") y
+  // game.service.ts (donde se pone a partir del lobbyId). ──
+  // Partida en solitario contra la multitud, sin cronómetro, para poder alternar el
+  // propio rol (cazador ⇄ infiltrado) y ver el juego desde los dos lados.
+  practice?: boolean;
 }
 
 export interface GameRoundRecord {
@@ -541,6 +548,34 @@ export class GameSession {
     return true;
   }
 
+  // MODO DEBUG: retirar junto con el campo `practice` de arriba.
+  // Alterna al jugador entre cazador e infiltrado sin pasar por intermision. Como
+  // infiltrado nace en un punto libre nuevo; como cazador no necesita posicion en
+  // el suelo, la nave la lleva el propio cliente.
+  practiceSwitchRole(userId: string): boolean {
+    if (!this.config.practice) return false;
+    const player = this.players.get(userId);
+    if (!player) return false;
+
+    if (player.role === "seeker") {
+      const spawn = this.randomWalkablePoint(true);
+      player.role = "hider";
+      player.x = spawn.x;
+      player.z = spawn.z;
+      player.h = spawn.h;
+      player.alive = true;
+      this.seekerUserId = "";
+    } else {
+      player.role = "seeker";
+      this.seekerUserId = userId;
+    }
+    player.forward = 0;
+    player.turn = 0;
+    player.velocity = 0;
+    player.aiming = false;
+    return true;
+  }
+
   removePlayer(userId: string): GameScoreState | null {
     const player = this.players.get(userId);
     if (!player) return null;
@@ -575,7 +610,11 @@ export class GameSession {
   tick(dtSeconds: number): void {
     if (this.roundPhase === "finished") return;
     this.elapsedSeconds += dtSeconds;
-    this.remainingSeconds = Math.max(0, this.remainingSeconds - dtSeconds);
+    // MODO DEBUG: en practice el reloj no corre, así que ni "time" ni la intermisión
+    // lo acaban por el cronómetro.
+    if (!this.config.practice) {
+      this.remainingSeconds = Math.max(0, this.remainingSeconds - dtSeconds);
+    }
     if (this.roundPhase === "intermission") {
       if (this.remainingSeconds === 0) this.startNextRound();
       return;
