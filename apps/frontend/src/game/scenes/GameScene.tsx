@@ -283,6 +283,9 @@ const CHASER_SCALE = 0.55;
 // justo dentro de los 30° que llegan al borde de la pantalla. Acercarla más la
 // recortaría por abajo.
 const CHASER_SCREEN_FORWARD = 1.25;
+// Cuánto vuela por debajo de la cámara. A diferencia del avance, esto es una caída fija
+// en vertical del mundo y no se encoge al apuntar: es la única forma de que la nave
+// ocupe SIEMPRE el mismo punto del mundo, que es lo que ven los demás jugadores.
 const CHASER_SCREEN_DOWN = 0.36;
 // De dónde sale el haz para el propio cazador: por detrás y por debajo de la cámara, o
 // saldría del punto de vista y no se vería converger en la retícula. Es un apaño de primera
@@ -292,11 +295,6 @@ const CHASER_DOWN_OFFSET = 0.3;
 // La nave mide 0.55 de eslora: a menos de media, la cámara ya la tiene encima y hay que
 // dejar de dibujarla.
 const CHASER_HIDE_DISTANCE = 0.3;
-// Solo para quien la ve desde el suelo (no el propio cazador): la órbita vuela alta
-// para dar vista general del mapa, y desde abajo, con edificios de por medio, cuesta
-// verla. Se dibuja más baja de lo que realmente está para que quien se hace pasar
-// por NPC pueda localizarla sin que eso mueva la cámara del cazador ni el rayo.
-const CHASER_VISIBLE_DROP = 1.4;
 // Aleteo. El modelo es una malla rígida de una pieza (sin huesos, sin animaciones y
 // sin las alas como objetos aparte), así que las góndolas se doblan en el vertex
 // shader. Miden |x| 0.29-0.48 y las separa del fuselaje un estrechamiento en
@@ -1351,7 +1349,7 @@ function ChaserShip() {
       const closeness = 1 - Math.min(1, distance / SHIP_AUDIBLE_RANGE);
       setSfxLoopProximity("shipMove", closeness * closeness);
 
-      ship.position.set(seeker.x, seeker.y - CHASER_VISIBLE_DROP, seeker.z);
+      ship.position.set(seeker.x, seeker.y, seeker.z);
       direction.set(seeker.dirX, seeker.dirY, seeker.dirZ).normalize();
       ship.rotation.set(
         THREE.MathUtils.clamp(
@@ -1381,9 +1379,18 @@ function ChaserShip() {
     // La cámara la mueve otro useFrame, así que su matriz puede ir un fotograma
     // por detrás; sin esto la nave arrastraría al girar.
     camera.updateMatrixWorld();
+    // Solo el AVANCE se encoge con el zoom, y lo hace exactamente al ritmo al que la
+    // cámara se acerca (4.75 -> 3.5 son los mismos 1.25 que vuela por delante), así que
+    // la nave se queda clavada en el mundo. La caída vertical NO puede encogerse: la
+    // cámara no baja para compensarla, así que si se anulaba al apuntar la nave subía
+    // ~0.33 en el mundo — y esa es la posición que se publica, o sea que los escondidos
+    // veían la nave levantarse cada vez que el cazador ponía la mira. Se aplica aparte y
+    // en vertical de MUNDO, no de cámara: apuntando la orientación es libre y en ejes de
+    // cámara el desvío giraría con ella.
     ship.position
-      .set(0, -CHASER_SCREEN_DOWN * (1 - aimBlend), -CHASER_SCREEN_FORWARD * (1 - aimBlend))
+      .set(0, 0, -CHASER_SCREEN_FORWARD * (1 - aimBlend))
       .applyMatrix4(camera.matrixWorld);
+    ship.position.y -= CHASER_SCREEN_DOWN;
     // Con la mira puesta la cámara está DENTRO de la nave: se oculta, o se vería el modelo
     // por dentro tapando la pantalla. El umbral es media eslora, que es cuando empieza a
     // comerse el encuadre.
@@ -1591,10 +1598,8 @@ function AimLaser() {
       const seeker = sampleSeeker();
       container.visible = !!seeker?.aiming;
       if (!seeker?.aiming) return;
-      // El cañón sale de donde se DIBUJA la nave (más baja, ver CHASER_VISIBLE_DROP),
-      // no de la altitud real del cazador: si no, el rayo nacería por encima del
-      // modelo y parecería que la nave sube de golpe al apuntar.
-      origin.set(seeker.x, seeker.y - CHASER_VISIBLE_DROP, seeker.z);
+      // El haz sale de la nave, en la posición real que ocupa: la misma que se dibuja.
+      origin.set(seeker.x, seeker.y, seeker.z);
       target.set(seeker.aimX, seeker.aimY, seeker.aimZ);
     }
 
