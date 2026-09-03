@@ -799,7 +799,14 @@ export class GameSession {
     // los NPC conservaban NPC_BUMP_KEEP, asi que bastaba con mirar como reacciona alguien al
     // rozar una pared para saber si era humano. En un juego que va de no distinguirlos, eso
     // era un delator: humanos y multitud comparten ahora la misma fisica de choque.
-    if (!moved) player.velocity *= NPC_BUMP_KEEP;
+    if (!moved) {
+      player.velocity *= NPC_BUMP_KEEP;
+      // A los NPC esto ya les tocaba (ver tickNpc): sin ella, rozar una esquina en las
+      // calles estrechas del mapa real dejaba al jugador perdiendo velocidad en cada
+      // roce mientras el NPC se escurría y seguía — la causa real de que "el jugador
+      // vaya más lento" pese a compartir fórmula de velocidad.
+      this.slideAside(player, player.velocity * dtSeconds);
+    }
   }
 
   private tickNpc(npc: SessionNpc, dtSeconds: number): void {
@@ -882,15 +889,16 @@ export class GameSession {
   /**
    * Al topar de frente, prueba a desplazarse en perpendicular (a un lado y a otro).
    * Es lo que hace cualquiera al cruzarse con alguien: apartarse un poco sin dejar de
-   * andar. Sin esto el NPC se quedaba clavado hasta completar el giro.
+   * andar. Sin esto se queda clavado hasta completar el giro — genérico (jugador o
+   * NPC) porque solo toca `.heading`, que comparten los dos.
    */
-  private slideAside(npc: SessionNpc, distance: number): void {
+  private slideAside(entity: MovableState, distance: number): void {
     if (distance <= 0) return;
-    const original = npc.heading;
+    const original = entity.heading;
     for (const sign of [1, -1]) {
-      npc.heading = original + (Math.PI / 2) * sign;
-      const moved = this.moveForward(npc, distance * NPC_SLIDE_FACTOR, npc);
-      npc.heading = original;
+      entity.heading = original + (Math.PI / 2) * sign;
+      const moved = this.moveForward(entity, distance * NPC_SLIDE_FACTOR, entity);
+      entity.heading = original;
       if (moved) return;
     }
   }
