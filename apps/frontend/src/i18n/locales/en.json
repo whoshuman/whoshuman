@@ -431,8 +431,6 @@
     "units": "Units",
     "leave": "ABANDON",
     "connecting": "LINKING TO OPERATION...",
-    "controls": "W/S move · A/D turn",
-    "controlsSeeker": "A/D or arrows to orbit · hold right click (or F) to aim · mouse to look · left click to shoot",
     "move": "Movement",
     "camera": "Camera",
     "aim": "Aim",
@@ -471,7 +469,13 @@
     "leaveTitle": "ABANDON THE MATCH?",
     "leaveWarning": "Leaving now leaves the rest of your squad outnumbered for the remainder of the round. Abandoning matches repeatedly may lead to restrictions on your account.",
     "leaveConfirm": "CONFIRM ABANDON",
-    "leaveKeepPlaying": "KEEP PLAYING"
+    "leaveKeepPlaying": "KEEP PLAYING",
+    "hintOrbit": "orbit",
+    "hintAim": "aim",
+    "hintLook": "look",
+    "hintShoot": "shoot",
+    "hintMove": "move",
+    "hintTurn": "turn"
   },
   "notFound": {
     "protocol": "SYSTEM ERROR — UNIT NOT LOCATED",

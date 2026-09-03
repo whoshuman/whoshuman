@@ -2,6 +2,7 @@ import { Navigate, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import ControlHints from "../game/components/ControlHints";
 import MobileGameControls from "../game/components/MobileGameControls";
 import { useKeyboardInput } from "../game/hooks/useKeyboardInput";
 import { isTouchPrimary } from "../game/input/touchInput";
@@ -338,13 +339,7 @@ function Game() {
       {targetGameId && isPracticeMatch(match) && <PracticeSwitchRoleButton gameId={targetGameId} />}
 
       {/* Controles. */}
-      {round?.phase === "playing" && selfAlive && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 [@media(pointer:coarse)]:hidden">
-          <p className="border border-neon-cyan/25 bg-bg/70 px-4 py-1.5 font-display text-[0.65rem] font-bold uppercase tracking-[0.2em] text-text-muted backdrop-blur-sm">
-            {t(selfRole === "seeker" ? "game.controlsSeeker" : "game.controls")}
-          </p>
-        </div>
-      )}
+      {round?.phase === "playing" && selfAlive && selfRole && <ControlHints role={selfRole} />}
     </div>
   );
 }
