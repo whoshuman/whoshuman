@@ -291,7 +291,14 @@ const NPC_BRAKING = 2.8;
 const REVERSE_FLIP_SECONDS = 0.18;
 // Nº de modelos en apps/frontend/public/models/personajes: el cliente indexa por skinId.
 const CHARACTER_SKIN_COUNT = 4;
-const COLLECTIBLE_SEPARATION = 0.4;
+// Separación a la que se deja de buscar sitio para una célula: no es un mínimo duro,
+// es el "ya está bastante lejos" que corta la búsqueda de mejor candidato. En el mapa
+// real (5×4 con manzanas) 7 células no pueden estar mucho más repartidas que esto.
+const COLLECTIBLE_SEPARATION = 1;
+// Cuántos puntos se sortean antes de quedarse con el más despejado. Más candidatos =
+// reparto más regular; 24 ya deja el mapa cubierto sin que se note el coste (solo se
+// paga al empezar la ronda y en cada respawn suelto).
+const COLLECTIBLE_SPAWN_CANDIDATES = 24;
 
 interface PendingCollectible {
   respawnAt: number;
@@ -455,20 +462,45 @@ export class GameSession {
     }
   }
 
-  // Punto aleatorio separado de las demás células ya en juego (20 intentos, igual que
-  // el resto de sorteos del mapa): evita que dos caigan juntas o casi encimadas. La usan
-  // tanto el reparto inicial como cada respawn, así que una recién repuesta tampoco
-  // puede aterrizar pegada a otra que ya estuviera ahí.
+  /**
+   * Punto aleatorio para una célula, repartido por "mejor candidato": se sortean varios
+   * puntos y se elige el que MÁS lejos cae de la célula más cercana, en vez de quedarse
+   * con el primero que respete una distancia mínima.
+   *
+   * El azar uniforme agrupa: con solo un mínimo corto salían racimos en un lado del mapa
+   * y media manzana vacía, porque en cuanto el primer punto valía se dejaba de buscar.
+   * Así el reparto tiende a rejilla sin dejar de ser aleatorio, y encima nunca falla: si
+   * el mapa no da para COLLECTIBLE_SEPARATION, se queda con lo mejor que haya encontrado
+   * en vez de rendirse y soltarla encima de otra.
+   *
+   * La usan tanto el reparto inicial como cada respawn, así que una recién repuesta
+   * también busca el hueco más despejado que quede.
+   */
   private spawnOneCollectible(): GameCollectibleState {
-    let spawn = this.randomWalkablePoint();
-    for (let attempt = 0; attempt < 20; attempt += 1) {
-      const separated = this.collectibles.every(
-        (item) => Math.hypot(item.x - spawn.x, item.z - spawn.z) >= COLLECTIBLE_SEPARATION
-      );
-      if (separated) break;
-      spawn = this.randomWalkablePoint();
+    let best = this.randomWalkablePoint();
+    let bestGap = this.nearestCollectibleDistance(best.x, best.z);
+    for (
+      let attempt = 1;
+      attempt < COLLECTIBLE_SPAWN_CANDIDATES && bestGap < COLLECTIBLE_SEPARATION;
+      attempt += 1
+    ) {
+      const candidate = this.randomWalkablePoint();
+      const gap = this.nearestCollectibleDistance(candidate.x, candidate.z);
+      if (gap > bestGap) {
+        best = candidate;
+        bestGap = gap;
+      }
     }
-    return { collectibleId: randomUUID(), x: spawn.x, y: spawn.h + 0.14, z: spawn.z };
+    return { collectibleId: randomUUID(), x: best.x, y: best.h + 0.14, z: best.z };
+  }
+
+  /** Distancia a la célula ya colocada más cercana. Infinito si aún no hay ninguna. */
+  private nearestCollectibleDistance(x: number, z: number): number {
+    let nearest = Infinity;
+    for (const item of this.collectibles) {
+      nearest = Math.min(nearest, Math.hypot(item.x - x, item.z - z));
+    }
+    return nearest;
   }
 
   private seed(value: string): number {

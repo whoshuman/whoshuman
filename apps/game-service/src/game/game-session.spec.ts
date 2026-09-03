@@ -515,6 +515,40 @@ describe("GameSession", () => {
     expect(find(s, "u1").score).toBe(GAME_RULES.collectibleCount * GAME_RULES.collectiblePoints);
   });
 
+  // El azar uniforme agrupa: antes del reparto por mejor candidato salían racimos de
+  // células en un lado del mapa (huecos mínimos de 0.48) y media manzana vacía.
+  it("reparte las células por el mapa, sin racimos en un lado", () => {
+    const map = loadMap("neon-block");
+    for (const seed of ["reparto-a", "reparto-b", "reparto-c"]) {
+      const s = new GameSession(seed, members, {
+        bounds: map.bounds,
+        turnSpeed: 3,
+        obstacles: map.obstacles,
+        heightmap: map.heightmap,
+        maxSlope: 1.5,
+        npcCount: 0,
+        npcSpeed: 0.36,
+        minPlayers: 2
+      });
+      const items = s.collectibleSnapshot();
+      expect(items).toHaveLength(GAME_RULES.collectibleCount);
+
+      let minGap = Infinity;
+      for (let a = 0; a < items.length; a += 1) {
+        for (let b = a + 1; b < items.length; b += 1) {
+          minGap = Math.min(minGap, Math.hypot(items[a].x - items[b].x, items[a].z - items[b].z));
+        }
+      }
+      // El mapa mide 5×4 y son 7 células: por debajo de esto ya se ven pegadas.
+      expect(minGap).toBeGreaterThan(0.9);
+
+      // Y no se amontonan todas en la misma mitad del mapa.
+      const left = items.filter((item) => item.x < 0).length;
+      expect(left).toBeGreaterThanOrEqual(2);
+      expect(left).toBeLessThanOrEqual(GAME_RULES.collectibleCount - 2);
+    }
+  });
+
   it("queda vacío cuando se van todos", () => {
     const s = new GameSession("g1", members, config);
     s.removePlayer("u1");
@@ -716,12 +750,10 @@ describe("GameSession", () => {
       expect(plantado / (curva + plantado)).toBeLessThan(1 / 3);
     });
 
-    it("cada uno anda a su ritmo y arranca por rampa, sin tirones", () => {
+    it("cada uno anda a su ritmo, no en bloque", () => {
       const session = crowdSession("npc-crowd");
       let previous = new Map(session.npcSnapshot().map((npc) => [npc.entityId, npc]));
       const peakSpeed = new Map<string, number>();
-      const wasStopped = new Map<string, boolean>();
-      const firstSteps: number[] = [];
 
       for (let tick = 0; tick < 600; tick += 1) {
         session.tick(0.05);
@@ -729,11 +761,6 @@ describe("GameSession", () => {
         for (const npc of frame) {
           const before = previous.get(npc.entityId)!;
           const speed = Math.hypot(npc.x - before.x, npc.z - before.z) / 0.05;
-          // Primer tick tras estar parado: es donde se ve si arranca por rampa o de
-          // golpe. Medirlo en cualquier otro momento confundiría la rampa con el
-          // frenazo de rozar una pared, que sí es abrupto a propósito.
-          if (speed > 0 && wasStopped.get(npc.entityId)) firstSteps.push(speed);
-          wasStopped.set(npc.entityId, speed === 0);
           peakSpeed.set(npc.entityId, Math.max(peakSpeed.get(npc.entityId) ?? 0, speed));
         }
         previous = new Map(frame.map((npc) => [npc.entityId, npc]));
@@ -744,11 +771,13 @@ describe("GameSession", () => {
       const peaks = [...peakSpeed.values()].filter((v) => v > 0);
       expect(Math.max(...peaks) / Math.min(...peaks)).toBeGreaterThan(1.15);
 
-      // Sin rampa, el primer tick ya iba a velocidad de crucero (0.36). Con ella
-      // arranca en torno al 9% de esa velocidad.
-      expect(firstSteps.length).toBeGreaterThan(20);
-      const worstStart = Math.max(...firstSteps);
-      expect(worstStart).toBeLessThan(0.36 * 0.5);
+      // Aquí NO se comprueba la rampa de arranque. Se intentó como "primer tick tras
+      // desplazamiento 0", y eso no medía la rampa: un NPC bloqueado contra un muro
+      // tampoco se desplaza, pero conserva su velocidad (NPC_BUMP_KEEP), así que al
+      // soltarse daba un paso grande que se leía como un tirón de arranque. Pasaba o
+      // fallaba según la semilla sin que la rampa tuviera nada que ver. La rampa la
+      // cubre "arranca por rampa, no de golpe", que la mide desde parado de verdad y
+      // vale para los dos: humano y NPC comparten fórmula y constantes a propósito.
     });
 
     it("no se quedan empotrados contra muros ni contra otros", () => {
