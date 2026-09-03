@@ -475,7 +475,8 @@
     "hintLook": "mirar",
     "hintShoot": "disparar",
     "hintMove": "avanzar",
-    "hintTurn": "girar"
+    "hintTurn": "girar",
+    "hintRelease": "soltar"
   },
   "notFound": {
     "protocol": "ERROR DE SISTEMA — UNIDAD NO LOCALIZADA",

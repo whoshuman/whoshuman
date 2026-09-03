@@ -475,7 +475,8 @@
     "hintLook": "regarder",
     "hintShoot": "tirer",
     "hintMove": "avancer",
-    "hintTurn": "tourner"
+    "hintTurn": "tourner",
+    "hintRelease": "relâcher"
   },
   "notFound": {
     "protocol": "ERREUR SYSTÈME — UNITÉ NON LOCALISÉE",

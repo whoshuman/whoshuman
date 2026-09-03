@@ -475,7 +475,8 @@
     "hintLook": "look",
     "hintShoot": "shoot",
     "hintMove": "move",
-    "hintTurn": "turn"
+    "hintTurn": "turn",
+    "hintRelease": "release"
   },
   "notFound": {
     "protocol": "SYSTEM ERROR — UNIT NOT LOCATED",

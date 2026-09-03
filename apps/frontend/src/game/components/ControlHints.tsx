@@ -2,10 +2,16 @@ import { useTranslation } from "react-i18next";
 
 import type { PlayerRole } from "@whoshuman/shared-types";
 
+import { useGameStore } from "../store/gameStore";
+
 // Aviso de controles del pie de la partida. Antes era una frase larga ("A/D o flechas
 // para orbitar · manten clic derecho..."): se leia como un parrafo de manual y con el
 // ojo en la partida no se leia en absoluto. Ahora es lo que se espera en un juego: la
 // tecla dibujada y al lado el verbo, para reconocerlo de un vistazo sin leerlo.
+//
+// El cazador ve lo que puede hacer AHORA, no la lista entera. El raton solo gira la
+// vista con la mira puesta (ver moveAim en GameScene), asi que anunciar "mirar" en la
+// vista general prometia algo que no funciona: sin apuntar solo se orbita con A/D.
 
 /** Boton del raton, con el que toca encendido. `move` es el raton entero moviendose. */
 function MouseGlyph({ side }: { side: "left" | "right" | "move" }) {
@@ -75,39 +81,57 @@ function Divider() {
 
 export default function ControlHints({ role }: { role: PlayerRole }) {
   const { t } = useTranslation();
+  const aiming = useGameStore((state) => state.aiming);
+
+  const vistaGeneral = [
+    { caps: <Cap>A/D</Cap>, label: t("game.hintOrbit") },
+    {
+      caps: (
+        <>
+          <Cap>
+            <MouseGlyph side="right" />
+          </Cap>
+          <Cap>F</Cap>
+        </>
+      ),
+      label: t("game.hintAim")
+    }
+  ];
+
+  const conLaMira = [
+    {
+      caps: (
+        <Cap>
+          <MouseGlyph side="move" />
+        </Cap>
+      ),
+      label: t("game.hintLook")
+    },
+    {
+      caps: (
+        <Cap>
+          <MouseGlyph side="left" />
+        </Cap>
+      ),
+      label: t("game.hintShoot")
+    },
+    {
+      // Se sale SOLTANDO el derecho, no pulsandolo otra vez. F tambien la baja, pero es
+      // la via secundaria y aqui manda lo que el jugador tiene en la mano.
+      caps: (
+        <Cap>
+          <MouseGlyph side="right" />
+        </Cap>
+      ),
+      label: t("game.hintRelease")
+    }
+  ];
 
   const hints =
     role === "seeker"
-      ? [
-          { caps: <Cap>A/D</Cap>, label: t("game.hintOrbit") },
-          {
-            caps: (
-              <>
-                <Cap>
-                  <MouseGlyph side="right" />
-                </Cap>
-                <Cap>F</Cap>
-              </>
-            ),
-            label: t("game.hintAim")
-          },
-          {
-            caps: (
-              <Cap>
-                <MouseGlyph side="move" />
-              </Cap>
-            ),
-            label: t("game.hintLook")
-          },
-          {
-            caps: (
-              <Cap>
-                <MouseGlyph side="left" />
-              </Cap>
-            ),
-            label: t("game.hintShoot")
-          }
-        ]
+      ? aiming
+        ? conLaMira
+        : vistaGeneral
       : [
           { caps: <Cap>W/S</Cap>, label: t("game.hintMove") },
           { caps: <Cap>A/D</Cap>, label: t("game.hintTurn") }
