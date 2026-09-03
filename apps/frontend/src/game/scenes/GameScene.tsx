@@ -237,6 +237,10 @@ const SEEKER_OVERVIEW_DISTANCE = Math.max(MAP_W, MAP_D) * 0.95;
 // tejados. Bajarla acerca la cámara al suelo y mete la nave y el horizonte en cuadro.
 const SEEKER_OVERVIEW_PITCH = 0.38; // ~22°
 const SEEKER_AIM_SENSITIVITY = 0.002;
+// Desplazamiento maximo que se acepta de un solo evento de raton, en pixeles. A la
+// sensibilidad de arriba son ~14 grados de golpe: de sobra para cualquier gesto real, y
+// corta los saltos que mete el navegador al recolocar el cursor.
+const AIM_MAX_STEP_PX = 120;
 // Lo que tarda la cámara en entrar y salir de la mira. Muy corto a propósito: es un
 // golpe de zoom, no un viaje. Debe ir acorde con la animación scope-flash del CSS.
 const AIM_TRANSITION_SECONDS = 0.16;
@@ -1690,6 +1694,11 @@ function SeekerCamera() {
   // La orientación libre no se entrega hasta que el zoom termina; si no, el ratón
   // pelearía con la transición.
   const aimReady = useRef(false);
+  // Al enganchar la captura del puntero, el primer evento trae de golpe la distancia
+  // entre donde estaba el cursor y el centro de la pantalla. Ese salto giraba la mirilla
+  // de un tiron (y como el cabeceo tiene tope abajo, se iba al suelo). Se tira ese
+  // primer movimiento.
+  const skipAimMove = useRef(false);
   const target = useMemo(() => new THREE.Vector3(CENTER_X, 0.4, CENTER_Z), []);
   // Al soltar la mira la cámara mira adonde la dejó el jugador: se guarda esa
   // orientación para volver a la de órbita interpolando y no de un tirón.
@@ -1738,9 +1747,12 @@ function SeekerCamera() {
     const cancelAiming = () => setAiming(false);
     const preventMenu = (event: MouseEvent) => event.preventDefault();
     const lockChanged = () => {
-      if (document.pointerLockElement !== gl.domElement && useGameStore.getState().aiming) {
-        setAiming(false);
+      if (document.pointerLockElement === gl.domElement) {
+        // Acaba de engancharse: el proximo movimiento trae el salto de recolocacion.
+        skipAimMove.current = true;
+        return;
       }
+      if (useGameStore.getState().aiming) setAiming(false);
     };
     gl.domElement.addEventListener("pointerdown", startAiming);
     gl.domElement.addEventListener("pointermove", startAiming);
@@ -1804,8 +1816,19 @@ function SeekerCamera() {
       if (document.pointerLockElement !== gl.domElement) {
         void gl.domElement.requestPointerLock();
       }
+      if (skipAimMove.current) {
+        skipAimMove.current = false;
+        return;
+      }
       // aimReady: hasta que el zoom no acaba, la cámara la manda la transición.
-      if (aimReady.current) applyAimMovement(event.movementX, event.movementY);
+      if (!aimReady.current) return;
+      // Tope por evento: un salto asi no lo hace una mano, lo hace una recolocacion del
+      // cursor (cambio de captura, volver a la ventana). Girar media vuelta de golpe es
+      // peor que perder algo de recorrido en un manotazo.
+      applyAimMovement(
+        THREE.MathUtils.clamp(event.movementX, -AIM_MAX_STEP_PX, AIM_MAX_STEP_PX),
+        THREE.MathUtils.clamp(event.movementY, -AIM_MAX_STEP_PX, AIM_MAX_STEP_PX)
+      );
     };
     document.addEventListener("pointermove", moveAim);
     return () => document.removeEventListener("pointermove", moveAim);
