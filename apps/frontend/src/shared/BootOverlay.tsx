@@ -37,7 +37,7 @@ function BootOverlay({ ready }: { ready: boolean }) {
 
   useEffect(() => {
     if (!ready) return;
-    const id = window.setTimeout(() => setMounted(false), 700);
+    const id = window.setTimeout(() => setMounted(false), 500);
     return () => window.clearTimeout(id);
   }, [ready]);
 
@@ -45,7 +45,7 @@ function BootOverlay({ ready }: { ready: boolean }) {
 
   return (
     <div
-      className={`fixed inset-0 z-100 flex items-center justify-center bg-bg transition-opacity duration-700 ease-out ${
+      className={`fixed inset-0 z-100 flex items-center justify-center bg-bg transition-opacity duration-500 ${
         ready ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
