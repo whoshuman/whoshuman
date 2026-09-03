@@ -432,7 +432,7 @@
     "leave": "ABANDONAR",
     "connecting": "ENLAZANDO CON LA OPERACIÓN...",
     "controls": "W/S avanzar · A/D girar",
-    "controlsSeeker": "A/D o flechas para orbitar · mantén clic derecho o pulsa F para apuntar · clic izquierdo para disparar",
+    "controlsSeeker": "A/D o flechas para orbitar · mantén clic derecho (o F) para apuntar · ratón para mirar · clic izquierdo para disparar",
     "move": "Movimiento",
     "camera": "Cámara",
     "aim": "Apuntar",

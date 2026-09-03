@@ -432,7 +432,7 @@
     "leave": "ABANDONNER",
     "connecting": "LIAISON À L'OPÉRATION...",
     "controls": "W/S avancer · A/D tourner",
-    "controlsSeeker": "A/D ou flèches pour orbiter · maintenir clic droit ou appuyer sur F pour viser · clic gauche pour tirer",
+    "controlsSeeker": "A/D ou flèches pour orbiter · maintenir clic droit (ou F) pour viser · souris pour regarder · clic gauche pour tirer",
     "move": "Déplacement",
     "camera": "Caméra",
     "aim": "Viser",

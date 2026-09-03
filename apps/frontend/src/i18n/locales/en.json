@@ -432,7 +432,7 @@
     "leave": "ABANDON",
     "connecting": "LINKING TO OPERATION...",
     "controls": "W/S move · A/D turn",
-    "controlsSeeker": "A/D or arrows to orbit · hold right click or press F to aim · left click to shoot",
+    "controlsSeeker": "A/D or arrows to orbit · hold right click (or F) to aim · mouse to look · left click to shoot",
     "move": "Movement",
     "camera": "Camera",
     "aim": "Aim",
