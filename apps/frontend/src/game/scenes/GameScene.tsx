@@ -537,6 +537,57 @@ interface VanishingCollectible extends GameCollectibleState {
   start: number;
 }
 
+// Célula activa. El haz solo se enciende cuando hace falta para ubicarla: si ya se ve
+// la célula en sí (nada de un edificio por medio) sobra, así que se apaga. El cazador
+// es la excepción — los ve todos siempre, le sirve para leer por dónde ha andado la
+// multitud sin tener que rastrear cada célula una a una.
+function CollectibleMarker({
+  item,
+  geometry,
+  material,
+  beamGeometry,
+  beamMaterial
+}: {
+  item: GameCollectibleState;
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material;
+  beamGeometry: THREE.BufferGeometry;
+  beamMaterial: THREE.Material;
+}) {
+  const selfRole = useGameStore((state) => state.selfRole);
+  const cell = useRef<THREE.Mesh>(null);
+  const beam = useRef<THREE.Mesh>(null);
+  const direction = useMemo(() => new THREE.Vector3(), []);
+  const target = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame(({ camera }, delta) => {
+    if (cell.current) {
+      cell.current.rotation.y += delta * 1.4;
+      cell.current.rotation.x += delta * 0.7;
+    }
+    if (!beam.current) return;
+    if (selfRole === "seeker") {
+      beam.current.visible = true;
+      return;
+    }
+    target.set(item.x, item.y, item.z);
+    beam.current.visible = beamOccluded(camera.position, target, direction);
+  });
+
+  return (
+    <group position={[item.x, 0, item.z]}>
+      <mesh ref={cell} geometry={geometry} material={material} position={[0, item.y, 0]} />
+      <mesh
+        ref={beam}
+        geometry={beamGeometry}
+        material={beamMaterial}
+        position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
+        renderOrder={2}
+      />
+    </group>
+  );
+}
+
 // Célula ya recogida. El servidor deja de mandarla y hasta ahora se esfumaba en un
 // fotograma; aquí se queda el tiempo justo para rematar el gesto: sube girando cada vez
 // más rápido, se agranda y se apaga, mientras su haz se cierra con un último destello.
@@ -610,7 +661,6 @@ function VanishingCell({
 function Collectibles() {
   const collectibles = useGameStore((state) => state.collectibles);
   const phase = useGameStore((state) => state.round?.phase);
-  const group = useRef<THREE.Group>(null);
   const [vanishing, setVanishing] = useState<VanishingCollectible[]>([]);
   const previous = useRef<GameCollectibleState[]>([]);
   const { scene } = useGLTF(CELL_MODEL_URL);
@@ -685,15 +735,6 @@ function Collectibles() {
     return () => clearTimeout(timer);
   }, [vanishing]);
 
-  useFrame((_, delta) => {
-    for (const marker of group.current?.children ?? []) {
-      const cell = marker.children[0];
-      if (!cell) continue;
-      cell.rotation.y += delta * 1.4;
-      cell.rotation.x += delta * 0.7;
-    }
-  });
-
   // El material de la célula lo gestiona useGLTF; el haz sí pertenece a este componente.
   useEffect(
     () => () => {
@@ -706,21 +747,16 @@ function Collectibles() {
 
   return (
     <>
-      {/* Las recogidas van fuera de este grupo: el giro de arriba recorre sus hijos y
-          cada una lleva ya el suyo propio, acelerado. */}
-      <group ref={group}>
-        {collectibles.map((item) => (
-          <group key={item.collectibleId} position={[item.x, 0, item.z]}>
-            <mesh geometry={geometry} material={material} position={[0, item.y, 0]} />
-            <mesh
-              geometry={beamGeometry}
-              material={beamMaterial}
-              position={[0, COLLECTIBLE_BEAM_HEIGHT / 2, 0]}
-              renderOrder={2}
-            />
-          </group>
-        ))}
-      </group>
+      {collectibles.map((item) => (
+        <CollectibleMarker
+          key={item.collectibleId}
+          item={item}
+          geometry={geometry}
+          material={material}
+          beamGeometry={beamGeometry}
+          beamMaterial={beamMaterial}
+        />
+      ))}
       {vanishing.map((item) => (
         <VanishingCell
           key={`${item.collectibleId}:${item.start}`}
@@ -1405,6 +1441,34 @@ const AIM_EPSILON = 1e-6;
 
 // Slab test: distancia al primer corte del rayo con una caja alineada a los ejes.
 // null si no la corta.
+/**
+ * ¿Un edificio tapa la línea directa de `origin` a `target`? Mismos AABB que ya usan
+ * la cámara y el láser (rayBoxDistance): si el primer edificio que corta el rayo
+ * queda más cerca que el propio objetivo, no se ve a simple vista. `direction` es un
+ * Vector3 del llamador, reescrito aquí — evita reservar uno nuevo cada fotograma por
+ * cada célula.
+ */
+function beamOccluded(
+  origin: THREE.Vector3,
+  target: THREE.Vector3,
+  direction: THREE.Vector3
+): boolean {
+  direction.subVectors(target, origin);
+  const distance = direction.length();
+  if (distance < 0.001) return false;
+  direction.divideScalar(distance);
+  for (const rect of obstacles) {
+    const t = rayBoxDistance(
+      origin,
+      direction,
+      [rect.minX, 0, rect.minZ],
+      [rect.maxX, BUILDING_HEIGHT, rect.maxZ]
+    );
+    if (t !== null && t > 0.05 && t < distance - 0.05) return true;
+  }
+  return false;
+}
+
 function rayBoxDistance(
   origin: THREE.Vector3,
   direction: THREE.Vector3,
