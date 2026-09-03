@@ -1748,6 +1748,15 @@ function SeekerCamera() {
     const preventMenu = (event: MouseEvent) => event.preventDefault();
     const lockChanged = () => {
       if (document.pointerLockElement === gl.domElement) {
+        // La captura se pide al apuntar, pero se concede cuando el navegador quiere. Si para
+        // cuando llega ya se ha bajado la mira —soltar el derecho, o F—, no la suelta nadie:
+        // `stopAiming` miro el pointerLockElement cuando todavia no estaba enganchada y no
+        // tenia nada que soltar. El raton se quedaba secuestrado con la mira apagada y solo
+        // se salia con Esc. Llegar tarde a una mira que ya no esta es soltarla en el acto.
+        if (!useGameStore.getState().aiming) {
+          document.exitPointerLock();
+          return;
+        }
         // Acaba de engancharse: el proximo movimiento trae el salto de recolocacion.
         skipAimMove.current = true;
         return;
