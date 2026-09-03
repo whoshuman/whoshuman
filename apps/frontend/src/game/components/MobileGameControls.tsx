@@ -59,10 +59,12 @@ function VirtualJoystick({ label, side, onChange }: VirtualJoystickProps) {
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (activePointer.current !== null) return;
-    // Solo dedos. En un aparato hibrido (tactil + raton) el joystick no debe responder
-    // al raton: pillaria el clic derecho de apuntar y capturaria el puntero, dejando la
-    // vista clavada.
-    if (event.pointerType !== "touch") return;
+    // Se descarta el raton y nada mas. En un aparato hibrido (tactil + raton) el joystick
+    // no debe responder al raton: pillaria el clic derecho de apuntar y capturaria el
+    // puntero, dejando la vista clavada. Pedir `=== "touch"` era pasarse: dejaba fuera el
+    // lapiz y cualquier navegador que etiquete el dedo de otra forma, y ahi el joystick se
+    // ve pero no responde.
+    if (event.pointerType === "mouse") return;
     event.preventDefault();
     const rect = zoneRef.current?.getBoundingClientRect();
     if (!rect) return;

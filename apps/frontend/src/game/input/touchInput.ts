@@ -10,9 +10,15 @@ export const TOUCH_SEEKER_SHOOT_EVENT = "game:touch-seeker-shoot";
  * encima del canvas (dos zonas de medio ancho que se comen el clic, por eso el clic
  * derecho sacaba el joystick en vez de apuntar) y el aviso de pantalla completa tapaba
  * la partida entera. Lo usan los dos sitios, para que no vuelvan a divergir.
+ *
+ * La segunda condicion es la red de seguridad: hay moviles que declaran el puntero
+ * principal `fine` (el modo "sitio de escritorio" del navegador, algunos WebView). Ahi
+ * el primer test falla y el jugador se queda sin mandos, sin nada con que jugar. Si el
+ * aparato tiene tactil y NINGUN puntero fino, es un movil, diga lo que diga.
  */
 export function isTouchPrimary(): boolean {
-  return window.matchMedia("(pointer: coarse)").matches;
+  if (window.matchMedia("(pointer: coarse)").matches) return true;
+  return navigator.maxTouchPoints > 0 && !window.matchMedia("(any-pointer: fine)").matches;
 }
 
 export interface TouchCameraDetail {

@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { PlayerRole } from "@whoshuman/shared-types";
 
+import { isTouchPrimary } from "../input/touchInput";
 import { useGameStore } from "../store/gameStore";
 
 // Aviso de controles del pie de la partida. Antes era una frase larga ("A/D o flechas
@@ -82,6 +84,11 @@ function Divider() {
 export default function ControlHints({ role }: { role: PlayerRole }) {
   const { t } = useTranslation();
   const aiming = useGameStore((state) => state.aiming);
+  // Teclas y botones de raton: en un movil no hay ninguno que enseñar. Se decide con la
+  // misma prueba que los mandos tactiles, no con un media query aparte, o un aparato que
+  // mienta sobre su puntero acaba con las dos cosas a la vez o con ninguna.
+  const [touchPrimary] = useState(isTouchPrimary);
+  if (touchPrimary) return null;
 
   const vistaGeneral = [
     { caps: <Cap>A/D</Cap>, label: t("game.hintOrbit") },
@@ -138,7 +145,7 @@ export default function ControlHints({ role }: { role: PlayerRole }) {
         ];
 
   return (
-    <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2.5 border border-neon-cyan/25 bg-bg/70 px-3 py-1.5 backdrop-blur-sm [@media(pointer:coarse)]:hidden">
+    <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2.5 border border-neon-cyan/25 bg-bg/70 px-3 py-1.5 backdrop-blur-sm">
       {hints.map((hint, index) => (
         <span key={hint.label} className="flex items-center gap-2.5">
           {index > 0 && <Divider />}
