@@ -1591,7 +1591,10 @@ function AimLaser() {
       const seeker = sampleSeeker();
       container.visible = !!seeker?.aiming;
       if (!seeker?.aiming) return;
-      origin.set(seeker.x, seeker.y, seeker.z);
+      // El cañón sale de donde se DIBUJA la nave (más baja, ver CHASER_VISIBLE_DROP),
+      // no de la altitud real del cazador: si no, el rayo nacería por encima del
+      // modelo y parecería que la nave sube de golpe al apuntar.
+      origin.set(seeker.x, seeker.y - CHASER_VISIBLE_DROP, seeker.z);
       target.set(seeker.aimX, seeker.aimY, seeker.aimZ);
     }
 
