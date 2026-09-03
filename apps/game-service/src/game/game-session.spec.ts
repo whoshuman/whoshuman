@@ -162,7 +162,7 @@ describe("GameSession", () => {
   // El juego consiste en no saber quién es humano. Cualquier diferencia mecánica entre
   // un jugador y un NPC sería un atajo para cazarlos sin observarles la conducta.
   describe("el humano se mueve como la multitud", () => {
-    it("anda más rápido que un NPC (PLAYER_SPEED_MULTIPLIER, a propósito)", () => {
+    it("no anda más rápido que un NPC", () => {
       const s = crowdSession("mimetismo");
       s.markPresent("u1");
       s.setInput("u1", 1, 0);
@@ -189,10 +189,7 @@ describe("GameSession", () => {
       }
 
       expect(fastestPlayer).toBeGreaterThan(0);
-      // A petición explícita el jugador corre más que la multitud (PLAYER_SPEED_MULTIPLIER
-      // en tickPlayer). Con margen amplio: lo que importa es que sea claramente más rápido,
-      // no el factor exacto.
-      expect(fastestPlayer).toBeGreaterThan(fastestNpc * 1.1);
+      expect(fastestPlayer).toBeLessThanOrEqual(fastestNpc + 1e-9);
     });
 
     it("no atraviesa a los NPC: respeta su espacio como uno más", () => {

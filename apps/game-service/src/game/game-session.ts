@@ -38,8 +38,8 @@ export interface GameSessionConfig {
   // las separa con holgura.
   maxSlope: number;
   npcCount: number;
-  // Velocidad de crucero base de la multitud. El jugador parte de la misma y le
-  // aplica PLAYER_SPEED_MULTIPLIER encima (ver tickPlayer): a propósito, va más rápido.
+  // Velocidad de TODA la multitud, humanos incluidos. Ya no existe una velocidad de
+  // jugador aparte: tenerla era regalarle al cazador un modo de distinguirlos.
   npcSpeed: number;
   // Por debajo de esto la partida se abandona. Llega en match.found, para que sea el
   // mismo umbral con el que el matchmaking decidió que había gente suficiente.
@@ -217,10 +217,6 @@ const NPC_SPEED_VARIATION = 0.25;
 // velocidad máxima en un tick, y el tirón se notaba.
 const NPC_ACCELERATION = 1.8;
 const NPC_BRAKING = 2.8;
-// El jugador va más rápido que la multitud a propósito, a petición explícita: se pidió
-// tras probarlo, no es un descuido del reparto original (que buscaba justo lo contrario,
-// ver el comentario de tickPlayer). Solo el humano lo lleva; los NPC siguen a npcSpeed.
-const PLAYER_SPEED_MULTIPLIER = 1.35;
 // Nº de modelos en apps/frontend/public/models/personajes: el cliente indexa por skinId.
 const CHARACTER_SKIN_COUNT = 4;
 const COLLECTIBLE_SEPARATION = 0.4;
@@ -741,13 +737,14 @@ export class GameSession {
   }
 
   /**
-   * El humano comparte con la multitud la rampa de arranque/frenada, el radio de giro
-   * y la separación: por ahí sigue sin poder distinguirse a un vistazo. La velocidad
-   * de crucero es la excepción, y es explícita: PLAYER_SPEED_MULTIPLIER lo hace correr
-   * más que los NPC porque así se pidió, no un despiste del reparto original.
+   * El humano se mueve con el mismo modelo que la multitud: su propia velocidad de
+   * crucero, la misma rampa de arranque y frenada, el mismo radio de giro y la misma
+   * separación con los demás. Todo lo que aquí difiriese sería un modo gratis de
+   * distinguir a los jugadores sin necesidad de observarles la conducta, que es
+   * justo de lo que va la partida.
    */
   private tickPlayer(player: SessionPlayer, dtSeconds: number): void {
-    const cruise = this.cruiseSpeed(player.speedScale) * PLAYER_SPEED_MULTIPLIER;
+    const cruise = this.cruiseSpeed(player.speedScale);
     // Con signo: así andar hacia atrás y soltar la tecla frenan por la misma rampa,
     // sin que al llegar a cero se dé la vuelta.
     const target = cruise * clamp(player.forward, -1, 1);
