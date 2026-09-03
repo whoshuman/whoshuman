@@ -1808,6 +1808,12 @@ function SeekerCamera() {
     // movementX/Y de MouseEvent, asi que sirve igual.
     const moveAim = (event: PointerEvent) => {
       if (!aiming || event.pointerType !== "mouse") return;
+      // Pulsar o soltar un boton NO gira la camara. Con otro boton ya apretado, el cambio
+      // de boton no llega como pointerdown sino como pointermove (`button` dice cual
+      // cambio; los movimientos de verdad traen -1), y ese evento es justo el que arrastra
+      // el salto de recolocacion del cursor: por eso la camara se iba hacia abajo AL
+      // DISPARAR, que es cuando el navegador concede la captura por fin.
+      if (event.button !== -1) return;
       // La captura del puntero se pide en el pointerdown del boton derecho, o sea con el
       // boton YA apretado, y ahi el navegador puede no engancharla. Sin captura, el raton
       // llega al borde de la ventana y movementX pasa a valer 0: la vista deja de girar
