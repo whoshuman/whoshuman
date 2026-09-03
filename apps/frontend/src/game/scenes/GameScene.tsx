@@ -1788,12 +1788,22 @@ function SeekerCamera() {
       camera.rotation.set(aimPitch.current, aimYaw.current, 0, "YXZ");
     };
     const moveAim = (event: MouseEvent) => {
+      if (!aiming) return;
+      // La captura del puntero se pide en el pointerdown del boton derecho, o sea con el
+      // boton YA apretado, y ahi el navegador puede no engancharla (rompe la captura
+      // implicita del boton). Sin captura, el raton llega al borde de la ventana y
+      // movementX pasa a valer 0: la vista se queda clavada mirando a un lado aunque
+      // sigas moviendo. Se reintenta mientras se apunta; si ya esta enganchada, no
+      // cuesta nada. Con F no se notaba porque ahi no hay ningun boton pulsado.
+      if (document.pointerLockElement !== gl.domElement) {
+        void gl.domElement.requestPointerLock();
+      }
       // aimReady: hasta que el zoom no acaba, la cámara la manda la transición.
-      if (aiming && aimReady.current) applyAimMovement(event.movementX, event.movementY);
+      if (aimReady.current) applyAimMovement(event.movementX, event.movementY);
     };
     document.addEventListener("mousemove", moveAim);
     return () => document.removeEventListener("mousemove", moveAim);
-  }, [aiming, camera, selfRole]);
+  }, [aiming, camera, gl, selfRole]);
 
   useEffect(() => {
     const updateCamera = (event: Event) => {
