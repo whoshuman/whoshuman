@@ -95,6 +95,11 @@ interface SessionNpc extends MovableState {
   blockedTime: number; // segundos seguidos sin poder avanzar
   speedScale: number; // su ritmo propio: una multitud a la misma velocidad parece un banco de peces
   velocity: number; // u/s actual; sube y baja por rampa en vez de saltar
+  // Célula hacia la que sesga el rumbo mientras dure, o null si va a su aire (ver
+  // chooseNpcHeading). Sin esto el paseo es puro azar local y nunca parece que
+  // alguien va a algún sitio.
+  waypoint: { x: number; z: number } | null;
+  waypointExpire: number; // segundos que le quedan antes de soltarlo y volver al azar
 }
 
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v);
@@ -193,6 +198,22 @@ const NPC_TURN_RADIUS = 0.22;
 // Amplitud del cambio de rumbo al elegir paseo (±63°). Cuanto más abierto, más
 // largo es el arco y más difícil que quepa libre en un mapa de 4×5.
 const NPC_HEADING_SPREAD = Math.PI * 0.7;
+// Con qué probabilidad, al agotar el tramo, un NPC sin waypoint se engancha a una
+// célula visible en vez de tirar rumbo al azar. Baja a propósito: si todos fueran
+// detrás de las células a la vez, la multitud entera convergería en fila, que es lo
+// contrario de "parecer gente". Cada NPC tira su propio dado, así que no hay reloj
+// compartido que los sincronice.
+const NPC_WAYPOINT_CHANCE = 0.2;
+// Cono al caminar HACIA el waypoint: bastante más cerrado que el paseo libre, para
+// que la curva se note dirigida en vez de errática, pero sin ser una línea recta
+// (un beeline exacto se ve tan artificial como el azar puro).
+const NPC_WAYPOINT_SPREAD = Math.PI * 0.32;
+// Tiempo máximo enganchado a una célula antes de soltarla y volver al azar: si queda
+// detrás de un muro que no rodea a tiempo, no se queda mirándola para siempre.
+const NPC_WAYPOINT_BUDGET_S = 8;
+// A esta distancia se da por "llegado" y suelta el waypoint (algo mayor que el radio
+// real de recogida: no hace falta pisarla, solo pasar cerca, como haría cualquiera).
+const NPC_WAYPOINT_ARRIVE = 0.4;
 // Tiempo encajonado tras el cual el NPC busca otra salida en vez de insistir.
 const NPC_UNBLOCK_SECONDS = 0.6;
 // Cuánto mira hacia delante, en radios de giro. Con 2 ve el obstáculo con el margen
@@ -358,7 +379,9 @@ export class GameSession {
         modeTime: 0.2 + this.random() * 1.8,
         blockedTime: 0,
         speedScale: 1 + (this.random() * 2 - 1) * NPC_SPEED_VARIATION,
-        velocity: 0
+        velocity: 0,
+        waypoint: null,
+        waypointExpire: 0
       };
       this.npcs.push(npc);
       this.crowd.add(npc);
@@ -770,6 +793,10 @@ export class GameSession {
   }
 
   private tickNpc(npc: SessionNpc, dtSeconds: number): void {
+    if (npc.waypoint) {
+      npc.waypointExpire -= dtSeconds;
+      if (npc.waypointExpire <= 0) npc.waypoint = null;
+    }
     // La velocidad persigue a la de crucero por rampa: ni arranca ni frena de golpe.
     const cruise = this.npcCruiseSpeed(npc);
     const target = npc.mode === "walking" ? cruise : 0;
@@ -904,18 +931,42 @@ export class GameSession {
   }
 
   private chooseNpcHeading(npc: SessionNpc): void {
+    // Sin waypoint en curso, a veces se engancha a una célula visible: así el paseo
+    // parece que va a algún sitio en vez de ser puro azar local. Ver NPC_WAYPOINT_CHANCE.
+    if (!npc.waypoint && this.collectibles.length > 0 && this.random() < NPC_WAYPOINT_CHANCE) {
+      const target = this.collectibles[Math.floor(this.random() * this.collectibles.length)];
+      npc.waypoint = { x: target.x, z: target.z };
+      npc.waypointExpire = NPC_WAYPOINT_BUDGET_S;
+    }
+
+    const heldWaypoint = npc.waypoint;
+    // sin(heading)/cos(heading) son dx/dz en moveForward: atan2(dx,dz) es la fórmula
+    // inversa, el rumbo que apunta exactamente al waypoint.
+    const center = heldWaypoint
+      ? Math.atan2(heldWaypoint.x - npc.x, heldWaypoint.z - npc.z)
+      : npc.heading;
+    const spread = heldWaypoint ? NPC_WAYPOINT_SPREAD : NPC_HEADING_SPREAD;
+
     for (let i = 0; i < 12; i += 1) {
-      const heading = npc.heading + (this.random() - 0.5) * NPC_HEADING_SPREAD;
+      const heading = center + (this.random() - 0.5) * spread;
       const distance = 0.3 + this.random() * 0.6;
       if (this.pathIsClear(npc, heading, distance)) {
         this.startNpcWalk(npc, heading, distance);
+        if (
+          heldWaypoint &&
+          Math.hypot(heldWaypoint.x - npc.x, heldWaypoint.z - npc.z) <= NPC_WAYPOINT_ARRIVE
+        ) {
+          npc.waypoint = null;
+        }
         return;
       }
     }
     // Encajonado: ningún trayecto sale limpio. Se arranca igualmente, porque el
     // avance ya va con colisiones y al rozar una pared se desliza, que es como
     // consigue salir. Sin esta válvula se quedaría mirando al muro para siempre,
-    // ya que parado no gira.
+    // ya que parado no gira. Suelta el waypoint: si el sitio no dejaba ni un hueco
+    // libre, insistir en él solo lo dejaría encajonado otra vez a la próxima.
+    npc.waypoint = null;
     this.startNpcWalk(npc, npc.heading + (this.random() - 0.5) * Math.PI * 2, 0.3);
   }
 
