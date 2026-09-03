@@ -355,21 +355,11 @@ export class GameSession {
     }
   }
 
+  // Antes, si el mapa traia `collectibleSpawns`, las celulas nacian siempre en esos
+  // mismos puntos fijos ("cruces" del mapa); en neon-block, 4 de los 7 caian justo en
+  // las esquinas. Ahora siempre se sortean por el area jugable, como el resto de
+  // puntos aleatorios del mapa.
   private spawnCollectibles(): void {
-    if (this.config.collectibleSpawns?.length) {
-      for (const spawn of this.config.collectibleSpawns.slice(0, GAME_RULES.collectibleCount)) {
-        const height = sampleHeight(this.config.heightmap, spawn.x, spawn.z);
-        if (height === null) continue;
-        this.collectibles.push({
-          collectibleId: randomUUID(),
-          x: spawn.x,
-          y: height + 0.14,
-          z: spawn.z
-        });
-      }
-      return;
-    }
-
     for (let i = 0; i < GAME_RULES.collectibleCount; i += 1) {
       let spawn = this.randomWalkablePoint();
       for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -776,10 +766,10 @@ export class GameSession {
 
     if (moved) {
       npc.blockedTime = 0;
-      if (npc.modeTime <= 0) {
-        npc.mode = "idle";
-        npc.modeTime = 0.4 + this.random() * 1.8;
-      }
+      // Antes de aqui pasaba por "idle" un rato al agotar el tramo: la multitud se
+      // paraba en seco cada pocos segundos. Encadenar el siguiente tramo sin soltar
+      // la marcha la mantiene fluida; el giro entre tramos ya se traza como curva.
+      if (npc.modeTime <= 0) this.chooseNpcHeading(npc);
       return;
     }
 
