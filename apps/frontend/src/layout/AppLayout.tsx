@@ -16,7 +16,8 @@ import { initPresence } from "../shared/presence";
 import { usePresenceStore } from "../shared/presenceStore";
 import SettingsMenu from "../shared/SettingsMenu";
 import { AUTH_UNAUTHORIZED_EVENT } from "../shared/api/httpClient";
-import BootOverlay, { useBootReady } from "../shared/BootOverlay";
+import BootOverlay from "../shared/BootOverlay";
+import { useBootReady } from "../shared/useBootReady";
 
 // El fondo 3D va en un chunk aparte: arrastra three.js, el postprocesado y los GLB de la
 // plaza. AppLayout envuelve TODAS las rutas, asi que importarlo aqui de forma estatica metia

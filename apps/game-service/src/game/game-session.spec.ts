@@ -189,6 +189,31 @@ describe("GameSession", () => {
       expect(after.z - start.z).toBeLessThan(-0.1);
     });
 
+    // El joystick del móvil manda un valor analógico, y el pulgar cruza el cero cada
+    // dos por tres al trazar el arco de un giro. Cuando cualquier negativo disparaba la
+    // media vuelta, rozar la zona muerta bastaba: el personaje giraba sobre sí mismo sin
+    // avanzar (medido: 34 medias vueltas y 1/18 del recorrido en 10 s).
+    it("un roce hacia atrás del joystick no dispara la media vuelta", () => {
+      const s = crowdSession("joystick");
+      s.markPresent("u1");
+      const start = find(s, "u1");
+
+      let medias = 0;
+      let anterior = start.rotationY;
+      for (let tick = 0; tick < 200; tick += 1) {
+        // Gesto de girar en el que el pulgar roza el borde de abajo cada 12 ticks.
+        s.setInput("u1", tick % 12 === 0 ? -0.13 : 0.6, 0.3);
+        s.tick(0.05);
+        const ahora = find(s, "u1").rotationY;
+        if (Math.abs(ahora - anterior) > 1) medias += 1;
+        anterior = ahora;
+      }
+
+      expect(medias).toBe(0);
+      const after = find(s, "u1");
+      expect(Math.hypot(after.x - start.x, after.z - start.z)).toBeGreaterThan(0.5);
+    });
+
     it("no anda más rápido que un NPC", () => {
       const s = crowdSession("mimetismo");
       s.markPresent("u1");

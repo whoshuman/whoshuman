@@ -1453,6 +1453,18 @@ const AIM_EPSILON = 1e-6;
 
 // Slab test: distancia al primer corte del rayo con una caja alineada a los ejes.
 // null si no la corta.
+// Lo que de verdad puede esconder una célula. Los AABB del mapa no traen altura, así
+// que el resto del código los trata a todos como columnas de BUILDING_HEIGHT — para la
+// cámara y para el láser eso vale (pecar de prudente no molesta), pero para encender el
+// haz no: de los 14 obstáculos del mapa real solo 3 son edificios; los otros 11 son
+// farolas (0.08), carteles (0.09) y árboles (0.2), y tomarlos por muros hacía parpadear
+// el haz cada vez que una farola cruzaba la línea de visión. Se filtra por planta: nada
+// tan estrecho tapa a nadie.
+const BEAM_BLOCKER_MIN_SIDE = 0.3;
+const beamBlockers = obstacles.filter(
+  (rect) => Math.min(rect.maxX - rect.minX, rect.maxZ - rect.minZ) >= BEAM_BLOCKER_MIN_SIDE
+);
+
 /**
  * ¿Un edificio tapa la línea directa de `origin` a `target`? Mismos AABB que ya usan
  * la cámara y el láser (rayBoxDistance): si el primer edificio que corta el rayo
@@ -1469,7 +1481,7 @@ function beamOccluded(
   const distance = direction.length();
   if (distance < 0.001) return false;
   direction.divideScalar(distance);
-  for (const rect of obstacles) {
+  for (const rect of beamBlockers) {
     const t = rayBoxDistance(
       origin,
       direction,

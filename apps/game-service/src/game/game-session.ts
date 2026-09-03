@@ -44,9 +44,9 @@ export interface GameSessionConfig {
   // Por debajo de esto la partida se abandona. Llega en match.found, para que sea el
   // mismo umbral con el que el matchmaking decidió que había gente suficiente.
   minPlayers: number;
-  // ── MODO DEBUG: retirar borrando este campo, GameSession.practiceSwitchRole y los
-  // dos "if (this.config.practice)" de tick()/endRound() más abajo. Nada más en el
-  // codebase depende de él. Ver también matchmaking.service.ts (lobby "practice") y
+  // ── MODO DEBUG: retirar borrando este campo, GameSession.practiceSwitchRole y el
+  // "if (this.config.practice ...)" del reloj en tick(). Nada más en este fichero
+  // depende de él. Ver también matchmaking.service.ts (lobby "practice") y
   // game.service.ts (donde se pone a partir del lobbyId). ──
   // Partida en solitario contra la multitud, sin cronómetro, para poder alternar el
   // propio rol (cazador ⇄ infiltrado) y ver el juego desde los dos lados.
@@ -89,8 +89,11 @@ interface SessionPlayer extends MovableState {
   reversedFacing: boolean;
   // Giro de 180° en curso al pedir "atrás" (ver REVERSE_FLIP_SECONDS en tickPlayer).
   flipping: boolean;
-  flipFrom: number;
   flipElapsed: number;
+  // Radianes del medio giro YA aplicados al heading. El giro se suma en trozos en vez
+  // de asignar el rumbo entero: así lo que gire el jugador con `turn` durante esos
+  // 0.18 s se conserva, en vez de que el siguiente tick lo pise.
+  flipTurned: number;
 }
 
 interface SessionNpc extends MovableState {
@@ -289,6 +292,10 @@ const NPC_BRAKING = 2.8;
 // solo tick y se veía como un corte brusco; con esto sigue siendo una acción, no una
 // rotación sostenida, pero se ve como un giro rápido en vez de un chasquido.
 const REVERSE_FLIP_SECONDS = 0.18;
+// Cuánto hay que pedir "atrás" para que cuente como querer darse la vuelta. El teclado
+// manda -1, así que le da igual; el umbral es para el joystick del móvil, donde el
+// valor es analógico y pasar la zona muerta (0.12) no es una intención, es el pulgar.
+const REVERSE_TRIGGER = 0.6;
 // Nº de modelos en apps/frontend/public/models/personajes: el cliente indexa por skinId.
 const CHARACTER_SKIN_COUNT = 4;
 // Separación a la que se deja de buscar sitio para una célula: no es un mínimo duro,
@@ -369,7 +376,7 @@ export class GameSession {
         present: false,
         reversedFacing: false,
         flipping: false,
-        flipFrom: 0,
+        flipTurned: 0,
         flipElapsed: 0
       });
     });
@@ -730,9 +737,11 @@ export class GameSession {
   tick(dtSeconds: number): void {
     if (this.roundPhase === "finished") return;
     this.elapsedSeconds += dtSeconds;
-    // MODO DEBUG: en practice el reloj no corre, así que ni "time" ni la intermisión
-    // lo acaban por el cronómetro.
-    if (!this.config.practice) {
+    // MODO DEBUG: en practice la ronda no se acaba por reloj. La INTERMISIÓN sí lo
+    // gasta igual: es lo único que la saca de ahí, y sin esto una ronda que terminase
+    // por otra vía (restartRound al irse el cazador, con más de uno en la cola) dejaba
+    // la sesión congelada para siempre en la pantalla de intermisión.
+    if (!this.config.practice || this.roundPhase === "intermission") {
       this.remainingSeconds = Math.max(0, this.remainingSeconds - dtSeconds);
     }
     if (this.roundPhase === "intermission") {
@@ -867,9 +876,16 @@ export class GameSession {
     // reversedFacing marca que el giro YA se disparó: sin él, cada tick que se
     // mantenga pulsado dispararía otro medio giro y acabaría dando vueltas sobre sí
     // mismo en vez de quedarse mirando para atrás.
-    if (player.forward < 0 && !player.reversedFacing && !player.flipping) {
+    //
+    // Hace falta pedirlo A PROPÓSITO (REVERSE_TRIGGER): en teclado `forward` es -1/0/1,
+    // pero con joystick es analógico y el pulgar cruza el cero constantemente al trazar
+    // el arco de un giro. Disparando con cualquier valor negativo, rozar la zona muerta
+    // (~5 px de stick) bastaba para media vuelta + parada en seco, y encadenadas dejaban
+    // al personaje girando sobre sí mismo sin avanzar: medido, 34 medias vueltas y 1/18
+    // del recorrido en 10 s. Entre 0 y -REVERSE_TRIGGER no se pide nada.
+    if (player.forward < -REVERSE_TRIGGER && !player.reversedFacing && !player.flipping) {
       player.flipping = true;
-      player.flipFrom = player.heading;
+      player.flipTurned = 0;
       player.flipElapsed = 0;
       player.reversedFacing = true;
       // Se para en seco al empezar a girar: si arrastrara la velocidad que ya llevaba
@@ -884,7 +900,11 @@ export class GameSession {
       const t = Math.min(1, player.flipElapsed / REVERSE_FLIP_SECONDS);
       // ease-out: arranca rápido y se asienta, no lineal ni instantáneo.
       const eased = 1 - (1 - t) * (1 - t);
-      player.heading = player.flipFrom + Math.PI * eased;
+      // Se suma lo que falta por girar, no se asigna el rumbo entero: asignándolo, el
+      // giro que el jugador metiera con `turn` se perdía al tick siguiente.
+      const turned = Math.PI * eased;
+      player.heading += turned - player.flipTurned;
+      player.flipTurned = turned;
       if (t >= 1) player.flipping = false;
     }
 
@@ -893,7 +913,12 @@ export class GameSession {
     // sentido del avance. Mientras gira no anda: es un giro sobre el sitio, no un
     // arco caminando — si no, con el heading todavía a medio girar el paso saldría
     // en diagonal en vez de hacia donde estaba mirando.
-    const target = player.flipping ? 0 : cruise * clamp(Math.abs(player.forward), 0, 1);
+    //
+    // Un "atrás" que no llega al umbral tampoco es un "adelante": se deja de pedir
+    // marcha y se frena por la rampa. Tomarlo como magnitud haría andar hacia delante
+    // a quien está tirando del stick justo al revés.
+    const requested = player.forward < 0 && !player.reversedFacing ? 0 : Math.abs(player.forward);
+    const target = player.flipping ? 0 : cruise * clamp(requested, 0, 1);
     const braking = target < player.velocity;
     const rate = (braking ? NPC_BRAKING : NPC_ACCELERATION) * cruise * dtSeconds;
     player.velocity =

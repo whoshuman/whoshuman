@@ -1,46 +1,8 @@
 import { useEffect, useState } from "react";
-import { useProgress } from "@react-three/drei";
 import { useTranslation } from "react-i18next";
 
-// Espera maxima antes de mostrar la app igual: si algo se atasca (red caida, un GLB que
-// no responde) no queremos dejar al usuario mirando esta pantalla para siempre.
-const MAX_WAIT_MS = 6000;
-
-// Minimo antes de poder quitarla: si todo carga casi al instante, un parpadeo de negro
-// se ve peor que un segundo de pantalla de carga.
-const MIN_WAIT_MS = 1000;
-
-// Bloquea el primer pintado hasta que fuentes, escena 3D (si la ruta la usa) y sesion
-// esten listas, para que la pantalla no aparezca "por fases" al recargar.
-export function useBootReady(waitForScene: boolean, authReady: boolean) {
-  const { active, progress } = useProgress();
-  const [everActive, setEverActive] = useState(false);
-  const [fontsReady, setFontsReady] = useState(false);
-  const [forced, setForced] = useState(false);
-  const [minWaited, setMinWaited] = useState(false);
-
-  useEffect(() => {
-    if (active) setEverActive(true);
-  }, [active]);
-
-  useEffect(() => {
-    document.fonts.ready.then(() => setFontsReady(true)).catch(() => setFontsReady(true));
-  }, []);
-
-  useEffect(() => {
-    const id = window.setTimeout(() => setForced(true), MAX_WAIT_MS);
-    return () => window.clearTimeout(id);
-  }, []);
-
-  useEffect(() => {
-    const id = window.setTimeout(() => setMinWaited(true), MIN_WAIT_MS);
-    return () => window.clearTimeout(id);
-  }, []);
-
-  const sceneReady = !waitForScene || (everActive && !active) || progress >= 100;
-  return forced || (minWaited && authReady && fontsReady && sceneReady);
-}
-
+// El hook que decide cuando se puede quitar vive aparte (useBootReady.ts): aqui solo
+// queda el componente, que es lo que quiere el fast refresh.
 function BootOverlay({ ready }: { ready: boolean }) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(true);
