@@ -10,9 +10,6 @@
   "footer": {
     "system": "SYSTÈME DE SURVEILLANCE WHO'S HUMAN // 42"
   },
-  "boot": {
-    "loading": "INITIALISATION DU SYSTÈME..."
-  },
   "common": {
     "back": "RETOUR À L'ACCUEIL",
     "backShort": "RETOUR",

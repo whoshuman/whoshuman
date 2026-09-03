@@ -16,7 +16,6 @@ import { initPresence } from "../shared/presence";
 import { usePresenceStore } from "../shared/presenceStore";
 import SettingsMenu from "../shared/SettingsMenu";
 import { AUTH_UNAUTHORIZED_EVENT } from "../shared/api/httpClient";
-import BootOverlay, { useBootReady } from "../shared/BootOverlay";
 
 // El fondo 3D va en un chunk aparte: arrastra three.js, el postprocesado y los GLB de la
 // plaza. AppLayout envuelve TODAS las rutas, asi que importarlo aqui de forma estatica metia
@@ -142,7 +141,6 @@ function AppLayout() {
   const showBackground = ROUTES_WITH_BACKGROUND.has(pathname) || isNotFound || isHome;
   const showHud = !HUDLESS_ROUTES.has(pathname);
   const showFooter = showHud && pathname !== "/about" && pathname !== "/manual";
-  const bootReady = useBootReady(showBackground, authRestored);
 
   async function handleLogout() {
     setLogoutOpen(false);
@@ -152,7 +150,6 @@ function AppLayout() {
 
   return (
     <div>
-      <BootOverlay ready={bootReady} />
       {showBackground && (
         <Suspense fallback={null}>
           <WorldScene />
