@@ -150,7 +150,7 @@ function Game() {
   }, [targetGameId, match]);
 
   // MODO DEBUG
-  const practicando = isPracticeMatch(match) || isRememberedPracticeGame(targetGameId);
+  const isPracticeGame = isPracticeMatch(match) || isRememberedPracticeGame(targetGameId);
 
   // Sin match nuevo ni partida recordada no hay nada que recuperar.
   if (!targetGameId) return <Navigate to="/lobby" />;
@@ -360,7 +360,7 @@ function Game() {
             Con la mira puesta no se enseña: la mira trae su propio rótulo centrado abajo y
             el botón se le montaba encima. Y de paso quita el cambio de rol a media
             puntería, que dejaba la cámara y la captura del ratón del rol viejo. */}
-        {targetGameId && practicando && !aiming && (
+        {targetGameId && isPracticeGame && !aiming && (
           <PracticeSwitchRoleButton gameId={targetGameId} />
         )}
         {round?.phase === "playing" && selfAlive && selfRole && <ControlHints role={selfRole} />}
