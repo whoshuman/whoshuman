@@ -31,6 +31,7 @@ import {
   CELL_MODEL_URL,
   CHARACTER_MODEL_URLS,
   CHASER_MODEL_URL,
+  PAD_MODEL_URL,
   preloadGameModels
 } from "../gameAssets";
 import { isTypingInField } from "../../shared/isTypingInField";
@@ -42,7 +43,7 @@ import { sampleSeeker, sampleWorld } from "../systems/interpolation";
 // COPIA del mapa lógico del servidor (game-service/src/game/maps/neon-block.json).
 // El server es la única verdad de colisiones: lo que se pinta aquí debe coincidir
 // con lo que él simula. Si backend cambia el mapa, re-copiar el JSON.
-const { bounds, obstacles } = neonBlock;
+const { bounds, obstacles, pads } = neonBlock;
 const MAP_W = bounds.maxX - bounds.minX;
 const MAP_D = bounds.maxZ - bounds.minZ;
 const CENTER_X = (bounds.minX + bounds.maxX) / 2;
@@ -393,6 +394,37 @@ function CityMap() {
     <group>
       {mapPieces.map((piece, index) => (
         <MapPieceModel key={index} piece={piece} />
+      ))}
+    </group>
+  );
+}
+
+// Las plataformas de la calle: los únicos sitios donde el servidor hace nacer una célula.
+// Van pintadas porque de eso se trata — se puede saber dónde mirar sin saber dónde saldrá
+// la próxima.
+//
+// Es la MISMA pieza que ya hubo en el mapa (cell-pad.glb, escala 0.0722 y 0.0085 sobre el
+// suelo, sin collider): se quitó cuando las células pasaron a nacer en cualquier punto,
+// porque entonces un pad clavado en el suelo señalaba algo que ya no era verdad. Ahora
+// vuelve a serlo. Las posiciones ya no están en el layout generado sino en el JSON del
+// mapa, que es el que obedece el servidor: así no pueden discrepar.
+const PAD_SCALE = 0.0722;
+const PAD_GROUND_OFFSET = 0.0085;
+
+function Pads() {
+  const { scene } = useGLTF(PAD_MODEL_URL);
+  return (
+    <group>
+      {pads.map((pad, index) => (
+        <Clone
+          key={`${pad.x}:${pad.z}`}
+          object={scene}
+          position={[pad.x, PAD_GROUND_OFFSET, pad.z]}
+          // Giro fijo por posición y no al azar: cada recarga tiene que dar el mismo mapa,
+          // y un pad girado distinto entre partidas se lee como si se hubiera movido.
+          rotation={[0, (index * Math.PI) / 3, 0]}
+          scale={PAD_SCALE}
+        />
       ))}
     </group>
   );
@@ -2227,6 +2259,7 @@ function GameScene() {
             <CityMap />
           </Suspense>
           <Obstacles />
+          <Pads />
           <Collectibles />
           <Units />
           <SeekerCamera />

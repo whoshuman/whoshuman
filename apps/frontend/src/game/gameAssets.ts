@@ -18,13 +18,17 @@ export const CHARACTER_MODEL_URLS: string[] = [
 
 export const CELL_MODEL_URL = "/models/energy-cell.glb";
 export const CHASER_MODEL_URL = "/models/chaser.glb";
+// La plataforma donde nacen las células. No va en MAP_MODEL_URLS porque no es una pieza del
+// layout generado: sus posiciones salen del JSON del mapa, que es lo que obedece el servidor.
+export const PAD_MODEL_URL = "/models/mapa/cell-pad.glb";
 
-// Todo lo que la partida acaba pidiendo: la manzana, las cuatro pieles, el coleccionable
-// y la nave del cazador.
+// Todo lo que la partida acaba pidiendo: la manzana, las cuatro pieles, el coleccionable,
+// los pads y la nave del cazador.
 export const GAME_MODEL_URLS: readonly string[] = [
   ...MAP_MODEL_URLS,
   ...CHARACTER_MODEL_URLS,
   CELL_MODEL_URL,
+  PAD_MODEL_URL,
   CHASER_MODEL_URL
 ];
 
