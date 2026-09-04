@@ -264,10 +264,12 @@ export const mapPieces: MapPiece[] = [
       height: 1
     }
   }
-  // Los 7 "cell-pad.glb" que había aquí marcaban las posiciones fijas de las
-  // antiguas collectibleSpawns (ver game-session.ts). Ahora las células nacen en
-  // cualquier punto transitable del mapa, así que un pad clavado en el suelo ya
-  // no señala nada real: se quita en vez de dejarlo mintiendo.
+  // Los pads NO van aquí. Hubo 7 "cell-pad.glb" en esta lista, uno por cada posición
+  // fija de las antiguas collectibleSpawns; se quitaron cuando las células pasaron a
+  // nacer en cualquier punto, porque ya no señalaban nada. Ahora vuelven a señalar
+  // —las células nacen SOLO en pads—, pero sus posiciones viven en `pads` del JSON del
+  // mapa, que es el fichero que obedece el servidor. Los pinta el componente Pads de
+  // GameScene leyendo de ahí. Ponerlos también en esta lista sería tener dos verdades.
 ];
 
 export const MAP_MODEL_URLS = [...new Set(mapPieces.map((p) => p.model))].map(

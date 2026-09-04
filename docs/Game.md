@@ -320,7 +320,18 @@ mapa (`apps/game-service/src/game/maps/<GAME_MAP>.json`), con:
 
 - `bounds`: área jugable `{minX, minZ, maxX, maxZ}` (el jugador no sale de aquí).
 - `obstacles`: rectángulos AABB de los edificios.
+- `pads`: las plataformas de la calle. Son las **únicas** posiciones donde nace una
+  célula, y también los destinos hacia los que camina la multitud. El cliente las
+  pinta leyendo este mismo campo, así que no puede haber un pad dibujado donde el
+  servidor no hace nacer nada.
 - `heightmap`: rejilla de alturas del suelo (para rampas/escalones).
+
+**Cuántos pads:** no es cosa de gusto. Al reponer una célula se descartan los pads
+con un infiltrado cerca (regla anticamping: plantarse en uno no da puntos), así que
+en el peor caso —7 infiltrados de los 8 jugadores máximos, cada uno tapando el suyo,
+más las 7 células ya repartidas— hacen falta **más de 14** para que el reparto no se
+quede sin sitio. `neon-block` trae 16 y `beta-city` 11 (mapa más pequeño y menos
+jugadores). El test de `map.spec.ts` comprueba esa cuenta, no un número redondo.
 
 `GAME_MAX_STEP` se afina por mapa según sus pendientes (rampa vs bordillo).
 
