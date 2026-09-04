@@ -2189,7 +2189,11 @@ function ScopeOverlay({ visible }: { visible: boolean }) {
         </div>
       </HoloFrame>
 
-      {/* Estado del sistema, abajo */}
+      {/* Estado del sistema, abajo. Comparte banda con el aviso de controles y el botón de
+          práctica, que también van centrados al pie; quien se aparta es el botón, que no se
+          dibuja mientras la mira está puesta (ver el pie de Game.tsx). Se probó a colgarlo
+          de la retícula y no vale: la retícula se mide en vmin, así que en una ventana
+          apaisada baja justo a la banda del pie. */}
       <div className="absolute bottom-[6vmin] left-1/2 flex -translate-x-1/2 items-center gap-2">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-neon-magenta shadow-[0_0_8px_currentColor]" />
         <p className="font-display text-[0.55rem] font-bold uppercase tracking-[0.32em] text-neon-magenta/90 [text-shadow:0_0_12px_currentColor]">

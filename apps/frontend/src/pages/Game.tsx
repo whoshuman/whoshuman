@@ -6,7 +6,12 @@ import ControlHints from "../game/components/ControlHints";
 import MobileGameControls from "../game/components/MobileGameControls";
 import { useKeyboardInput } from "../game/hooks/useKeyboardInput";
 import { isTouchPrimary } from "../game/input/touchInput";
-import { isPracticeMatch } from "../game/practice/practice"; // MODO DEBUG: quitar al retirarlo
+// MODO DEBUG: quitar al retirarlo
+import {
+  isPracticeMatch,
+  isRememberedPracticeGame,
+  rememberPracticeGame
+} from "../game/practice/practice";
 import { PracticeSwitchRoleButton } from "../game/practice/PracticeMode"; // MODO DEBUG: quitar al retirarlo
 import GameScene from "../game/scenes/GameScene";
 import { useGameStore } from "../game/store/gameStore";
@@ -112,6 +117,7 @@ function Game() {
   const selfUserId = useGameStore((s) => s.selfUserId);
   const selfRole = useGameStore((s) => s.selfRole);
   const selfAlive = useGameStore((s) => s.selfAlive);
+  const aiming = useGameStore((s) => s.aiming);
   const error = useGameStore((s) => s.error);
   const join = useGameStore((s) => s.join);
   const leave = useGameStore((s) => s.leave);
@@ -136,6 +142,15 @@ function Game() {
   useEffect(() => {
     if (targetGameId) join(targetGameId);
   }, [targetGameId, join]);
+
+  // MODO DEBUG: se apunta que la partida es de práctica mientras se sabe (o sea, mientras
+  // dura el `match` en memoria), para poder reconocerla después de un F5.
+  useEffect(() => {
+    if (targetGameId && isPracticeMatch(match)) rememberPracticeGame(targetGameId);
+  }, [targetGameId, match]);
+
+  // MODO DEBUG
+  const isPracticeGame = isPracticeMatch(match) || isRememberedPracticeGame(targetGameId);
 
   // Sin match nuevo ni partida recordada no hay nada que recuperar.
   if (!targetGameId) return <Navigate to="/lobby" />;
@@ -335,11 +350,21 @@ function Game() {
       <MobileGameControls enabled={playing && selfAlive} />
       <MobileGameGate enabled={playing} />
       {gameId && <GroupChatDock scope="game" channelId={gameId} game />}
-      {/* MODO DEBUG: quitar junto con game/practice/PracticeMode.tsx */}
-      {targetGameId && isPracticeMatch(match) && <PracticeSwitchRoleButton gameId={targetGameId} />}
 
-      {/* Controles. */}
-      {round?.phase === "playing" && selfAlive && selfRole && <ControlHints role={selfRole} />}
+      {/* Pie de la partida: el aviso de controles y, en modo práctica, el botón de rol.
+          Van apilados en una sola columna porque antes ocupaban EXACTAMENTE el mismo
+          sitio (los dos en bottom-4 centrados) y el botón, con más z-index, tapaba las
+          teclas enteras. Apilarlos deja ver los dos y vale igual cuando solo hay uno. */}
+      <div className="pointer-events-none absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2">
+        {/* MODO DEBUG: quitar junto con game/practice/PracticeMode.tsx.
+            Con la mira puesta no se enseña: la mira trae su propio rótulo centrado abajo y
+            el botón se le montaba encima. Y de paso quita el cambio de rol a media
+            puntería, que dejaba la cámara y la captura del ratón del rol viejo. */}
+        {targetGameId && isPracticeGame && !aiming && (
+          <PracticeSwitchRoleButton gameId={targetGameId} />
+        )}
+        {round?.phase === "playing" && selfAlive && selfRole && <ControlHints role={selfRole} />}
+      </div>
     </div>
   );
 }
