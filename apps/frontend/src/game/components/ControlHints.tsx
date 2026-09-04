@@ -145,7 +145,9 @@ export default function ControlHints({ role }: { role: PlayerRole }) {
         ];
 
   return (
-    <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2.5 border border-neon-cyan/25 bg-bg/70 px-3 py-1.5 backdrop-blur-sm">
+    // Sin posición propia: lo coloca el pie de Game.tsx, que lo apila con el botón de
+    // práctica. Cuando cada uno se colocaba por su cuenta caían en el mismo punto.
+    <div className="flex items-center gap-2.5 border border-neon-cyan/25 bg-bg/70 px-3 py-1.5 backdrop-blur-sm">
       {hints.map((hint, index) => (
         <span key={hint.label} className="flex items-center gap-2.5">
           {index > 0 && <Divider />}

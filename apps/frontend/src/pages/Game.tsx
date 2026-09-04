@@ -335,11 +335,18 @@ function Game() {
       <MobileGameControls enabled={playing && selfAlive} />
       <MobileGameGate enabled={playing} />
       {gameId && <GroupChatDock scope="game" channelId={gameId} game />}
-      {/* MODO DEBUG: quitar junto con game/practice/PracticeMode.tsx */}
-      {targetGameId && isPracticeMatch(match) && <PracticeSwitchRoleButton gameId={targetGameId} />}
 
-      {/* Controles. */}
-      {round?.phase === "playing" && selfAlive && selfRole && <ControlHints role={selfRole} />}
+      {/* Pie de la partida: el aviso de controles y, en modo práctica, el botón de rol.
+          Van apilados en una sola columna porque antes ocupaban EXACTAMENTE el mismo
+          sitio (los dos en bottom-4 centrados) y el botón, con más z-index, tapaba las
+          teclas enteras. Apilarlos deja ver los dos y vale igual cuando solo hay uno. */}
+      <div className="pointer-events-none absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2">
+        {/* MODO DEBUG: quitar junto con game/practice/PracticeMode.tsx */}
+        {targetGameId && isPracticeMatch(match) && (
+          <PracticeSwitchRoleButton gameId={targetGameId} />
+        )}
+        {round?.phase === "playing" && selfAlive && selfRole && <ControlHints role={selfRole} />}
+      </div>
     </div>
   );
 }

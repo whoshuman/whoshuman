@@ -30,13 +30,19 @@ export function PracticeEntry() {
   );
 }
 
-/** Botón flotante para alternar de rol, solo se monta cuando la partida es practice. */
+/**
+ * Botón para alternar de rol, solo se monta cuando la partida es practice.
+ *
+ * No se coloca a sí mismo: lo apila el pie de Game.tsx junto al aviso de controles.
+ * Cuando se posicionaba solo (fixed bottom-4 centrado, z-50) caía justo encima de
+ * las teclas del HUD y las tapaba enteras.
+ */
 export function PracticeSwitchRoleButton({ gameId }: { gameId: string }) {
   return (
     <button
       type="button"
       onClick={() => switchPracticeRole(gameId)}
-      className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 border border-dashed border-text-muted/40 bg-bg/70 px-3 py-1.5 font-display text-[0.65rem] font-bold uppercase tracking-widest text-text-muted/70 backdrop-blur-sm transition hover:border-neon-cyan/60 hover:text-neon-cyan"
+      className="pointer-events-auto border border-dashed border-text-muted/40 bg-bg/70 px-3 py-1.5 font-display text-[0.65rem] font-bold uppercase tracking-widest text-text-muted/70 backdrop-blur-sm transition hover:border-neon-cyan/60 hover:text-neon-cyan"
     >
       [debug] Cambiar de rol
     </button>
