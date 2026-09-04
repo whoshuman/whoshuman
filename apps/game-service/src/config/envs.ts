@@ -30,7 +30,14 @@ const envSchema = joi
     // (medido: a 0.7, hasta 14 s parados; a 1.5, 2.4 s, el roce normal del gentío).
     GAME_MAX_SLOPE: joi.number().positive().default(1.5),
     GAME_MAP: joi.string().default("neon-block"),
-    GAME_NPC_COUNT: joi.number().integer().min(0).max(64).default(32),
+    // Estaba en 32 y neon-block no da para tanto: sus calles miden 0.45 de ancho y un
+    // cuerpo 0.18, así que caben DOS de frente y no queda hueco por el que rodear. Medido
+    // sobre 4 semillas × 30 s, pares cuerpo con cuerpo por tick: 32 → 4.04, 24 → 2.38,
+    // 16 → 1.25. Con 24 se quita el 41% de los roces y la calle sigue llena. No es cosa
+    // de la IA: se probó esquiva anticipada (apartarse del que viene antes de tocarlo) y
+    // a 32 no movía la cifra en ninguna combinación de radio y fuerza — falta sitio, no
+    // criterio. La otra salida sería ensanchar las calles a ~0.7 en el mapa.
+    GAME_NPC_COUNT: joi.number().integer().min(0).max(64).default(24),
     // Velocidad de toda la multitud, humanos incluidos. 0.36 = la zancada del clip
     // "sprint" (0.18 u de mundo por ciclo, medida sobre el pie de apoyo) entre la
     // duración con la que se animó (1.067 s), o sea: andar a su ritmo natural.
