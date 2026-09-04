@@ -2157,8 +2157,13 @@ function ScopeOverlay({ visible }: { visible: boolean }) {
         </div>
       </HoloFrame>
 
-      {/* Estado del sistema, abajo */}
-      <div className="absolute bottom-[6vmin] left-1/2 flex -translate-x-1/2 items-center gap-2">
+      {/* Estado del sistema, colgado del borde de abajo de la retícula.
+          Iba pegado al fondo de la pantalla (bottom-[6vmin]) y ahí se lo comían el aviso de
+          controles y el botón de práctica, que también viven centrados abajo. Anclarlo al
+          instrumento en vez de a la ventana lo resuelve de raíz: la retícula mide 56vmin, o
+          sea 28vmin de radio, y a 30vmin del centro cae justo debajo de ella sea cual sea la
+          pantalla — sin depender de cuántas cosas haya en el pie. */}
+      <div className="absolute left-1/2 top-[calc(50%_+_30vmin)] flex -translate-x-1/2 items-center gap-2">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-neon-magenta shadow-[0_0_8px_currentColor]" />
         <p className="font-display text-[0.55rem] font-bold uppercase tracking-[0.32em] text-neon-magenta/90 [text-shadow:0_0_12px_currentColor]">
           {t("game.scopeStatus")}
