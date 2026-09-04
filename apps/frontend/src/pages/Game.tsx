@@ -117,6 +117,7 @@ function Game() {
   const selfUserId = useGameStore((s) => s.selfUserId);
   const selfRole = useGameStore((s) => s.selfRole);
   const selfAlive = useGameStore((s) => s.selfAlive);
+  const aiming = useGameStore((s) => s.aiming);
   const error = useGameStore((s) => s.error);
   const join = useGameStore((s) => s.join);
   const leave = useGameStore((s) => s.leave);
@@ -355,8 +356,13 @@ function Game() {
           sitio (los dos en bottom-4 centrados) y el botón, con más z-index, tapaba las
           teclas enteras. Apilarlos deja ver los dos y vale igual cuando solo hay uno. */}
       <div className="pointer-events-none absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2">
-        {/* MODO DEBUG: quitar junto con game/practice/PracticeMode.tsx */}
-        {targetGameId && practicando && <PracticeSwitchRoleButton gameId={targetGameId} />}
+        {/* MODO DEBUG: quitar junto con game/practice/PracticeMode.tsx.
+            Con la mira puesta no se enseña: la mira trae su propio rótulo centrado abajo y
+            el botón se le montaba encima. Y de paso quita el cambio de rol a media
+            puntería, que dejaba la cámara y la captura del ratón del rol viejo. */}
+        {targetGameId && practicando && !aiming && (
+          <PracticeSwitchRoleButton gameId={targetGameId} />
+        )}
         {round?.phase === "playing" && selfAlive && selfRole && <ControlHints role={selfRole} />}
       </div>
     </div>
