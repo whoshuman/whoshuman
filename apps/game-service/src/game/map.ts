@@ -106,6 +106,24 @@ const validMapPoint = (point: unknown): point is MapPoint => {
   );
 };
 
+/**
+ * Por qué un pad no sirve, o null si sirve. Ser un par de números no basta: una célula
+ * nace justo encima, así que un pad fuera del área, metido en un edificio o sobre un
+ * hueco sin suelo produce una célula inalcanzable, y eso no se vería hasta media partida.
+ */
+export const padProblem = (m: MapDescriptor, pad: MapPoint): string | null => {
+  const b = m.bounds;
+  if (pad.x < b.minX || pad.x > b.maxX || pad.z < b.minZ || pad.z > b.maxZ) {
+    return "fuera del area jugable";
+  }
+  const inside = m.obstacles.some(
+    (o) => pad.x >= o.minX && pad.x <= o.maxX && pad.z >= o.minZ && pad.z <= o.maxZ
+  );
+  if (inside) return "dentro de un edificio";
+  if (sampleHeight(m.heightmap, pad.x, pad.z) === null) return "sin suelo debajo";
+  return null;
+};
+
 /** Carga maps/<name>.json. Si falta o es inválido lanza: un mapa mal configurado es fallo de despliegue. */
 export function loadMap(name: string): MapDescriptor {
   const file = join(__dirname, "maps", `${name}.json`);
@@ -113,12 +131,24 @@ export function loadMap(name: string): MapDescriptor {
   if (
     !validRect(m.bounds) ||
     !Array.isArray(m.obstacles) ||
+    !m.obstacles.every(validRect) ||
     !Array.isArray(m.pads) ||
     m.pads.length === 0 ||
     !m.pads.every(validMapPoint) ||
     !validHeightmap(m.heightmap)
   ) {
     throw new Error(`Invalid map descriptor: ${file}`);
+  }
+  // Los pads se comprueban aparte porque necesitan el resto del mapa ya validado, y el
+  // error dice cuál falla y por qué: son decenas por mapa y se generan con un script,
+  // así que "mapa inválido" a secas obligaría a buscarlo a ojo.
+  for (const [index, pad] of m.pads.entries()) {
+    const problem = padProblem(m, pad);
+    if (problem) {
+      throw new Error(
+        `Invalid map descriptor: ${file}: pad ${index} (${pad.x}, ${pad.z}) ${problem}`
+      );
+    }
   }
   return m;
 }

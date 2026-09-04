@@ -1,5 +1,5 @@
 import { GAME_RULES } from "./game-session";
-import { loadMap, sampleHeight } from "./map";
+import { loadMap, padProblem, sampleHeight, type MapDescriptor } from "./map";
 
 describe("loadMap", () => {
   it("carga beta-city con bounds válidos y obstacles array", () => {
@@ -58,5 +58,36 @@ describe("loadMap", () => {
 
   it("lanza si el mapa no existe", () => {
     expect(() => loadMap("no-existe")).toThrow();
+  });
+});
+
+// Lo de arriba comprueba los dos mapas que hay hoy; esto comprueba la puerta, que es lo
+// que protege a los que vengan. Un pad malo no rompe nada al arrancar: sale una célula
+// flotando o metida en un edificio a mitad de partida, y para entonces nadie relaciona
+// una cosa con la otra.
+describe("padProblem", () => {
+  const mapa: MapDescriptor = {
+    bounds: { minX: -1, minZ: -1, maxX: 1, maxZ: 1 },
+    obstacles: [{ minX: 0.4, minZ: 0.4, maxX: 0.8, maxZ: 0.8 }],
+    pads: [],
+    heightmap: {
+      minX: -1,
+      minZ: -1,
+      cell: 1,
+      cols: 3,
+      rows: 3,
+      // El hueco sin suelo es la esquina de arriba a la izquierda.
+      data: [null, 0, 0, 0, 0, 0, 0, 0, 0]
+    }
+  };
+
+  it("acepta un pad sobre calle", () => {
+    expect(padProblem(mapa, { x: 0.1, z: -0.1 })).toBeNull();
+  });
+
+  it("rechaza el que se sale del area, el que cae en un edificio y el que no tiene suelo", () => {
+    expect(padProblem(mapa, { x: 1.5, z: 0 })).toBe("fuera del area jugable");
+    expect(padProblem(mapa, { x: 0.6, z: 0.6 })).toBe("dentro de un edificio");
+    expect(padProblem(mapa, { x: -0.9, z: -0.9 })).toBe("sin suelo debajo");
   });
 });

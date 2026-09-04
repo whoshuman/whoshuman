@@ -539,6 +539,9 @@ export class GameSession {
         bestGap = gap;
       }
     }
+    // Nunca es null con un mapa cargado por loadMap, que rechaza los pads sin suelo
+    // debajo (ver padProblem). El 0 es para las sesiones de prueba, que arman la config
+    // a mano y no pasan por esa puerta.
     const height = sampleHeight(this.config.heightmap, best.x, best.z) ?? 0;
     return { collectibleId: randomUUID(), x: best.x, y: height + 0.14, z: best.z };
   }
