@@ -102,16 +102,16 @@ describe("GameService", () => {
     service.join({ userId: "u1", gameId: "g1" });
     const hider = service.join({ userId: "u2", gameId: "g1" })!;
 
-    expect(service.shoot({ userId: "u2", gameId: "g1", targetEntityId: hider.selfEntityId })).toBe(
-      false
-    );
-    expect(service.shoot({ userId: "u1", gameId: "g1", targetEntityId: hider.selfEntityId })).toBe(
-      false
-    );
+    expect(
+      service.shoot({ userId: "u2", gameId: "g1", targetEntityId: hider.selfEntityId }).hit
+    ).toBe(false);
+    expect(
+      service.shoot({ userId: "u1", gameId: "g1", targetEntityId: hider.selfEntityId }).hit
+    ).toBe(false);
     expect(service.aim({ userId: "u1", gameId: "g1", aiming: true })).toBe(true);
-    expect(service.shoot({ userId: "u1", gameId: "g1", targetEntityId: hider.selfEntityId })).toBe(
-      true
-    );
+    expect(
+      service.shoot({ userId: "u1", gameId: "g1", targetEntityId: hider.selfEntityId }).hit
+    ).toBe(true);
     await jest.advanceTimersByTimeAsync(50);
     expect(
       snapshots()

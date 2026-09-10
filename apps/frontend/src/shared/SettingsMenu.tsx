@@ -16,6 +16,8 @@ function SettingsMenu({ align = "left" }: SettingsMenuProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const musicEnabled = useMusic((state) => state.enabled);
+  const musicVolume = useMusic((state) => state.volume);
+  const setMusicVolume = useMusic((state) => state.setVolume);
   const toggleMusic = useMusic((state) => state.toggle);
 
   return (
@@ -90,6 +92,22 @@ function SettingsMenu({ align = "left" }: SettingsMenuProps) {
                 <span>{t("settings.music")}</span>
                 <span>{musicEnabled ? "ON" : "OFF"}</span>
               </button>
+              <div className="mt-3">
+                <div className="mb-1 flex items-center justify-between font-display text-[0.6rem] font-bold uppercase tracking-wider text-text-muted/70">
+                  <span>{t("settings.musicVolume")}</span>
+                  <span className="tabular-nums text-neon-cyan">{Math.round(musicVolume * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={Math.round(musicVolume * 100)}
+                  onChange={(event) => setMusicVolume(Number(event.target.value) / 100)}
+                  aria-label={t("settings.musicVolume")}
+                  className="w-full accent-neon-cyan"
+                />
+              </div>
             </div>
           </div>
         </>

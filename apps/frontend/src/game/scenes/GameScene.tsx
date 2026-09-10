@@ -1,4 +1,4 @@
-import { AdaptiveDpr, Clone, PerformanceMonitor, useGLTF } from "@react-three/drei";
+import { AdaptiveDpr, Clone, Html, PerformanceMonitor, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import type { GameCollectibleState, GameEntityState } from "@whoshuman/shared-types";
 import {
@@ -2222,6 +2222,76 @@ function useAimFlashKey(aiming: boolean): number {
 
 // Canvas propio de la partida: monta la ciudad GLB y conserva el descriptor
 // lógico sincronizado para colisiones, cámaras y fallback de carga.
+// Distancia (unidades de mundo) a partir de la cual el nametag de otro infiltrado deja
+// de verse: es para reconocerse de cerca, no un radar de todo el mapa.
+const HIDER_NAMETAG_MAX_DISTANCE = 6;
+// Altura sobre la cabeza a la que flota la etiqueta.
+const HIDER_NAMETAG_HEIGHT = 2.1;
+
+interface HiderNametagLabelProps {
+  entityId: string;
+  username: string;
+  selfEntityId: string | null;
+}
+
+function HiderNametagLabel({ entityId, username, selfEntityId }: HiderNametagLabelProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const [visible, setVisible] = useState(false);
+
+  useFrame(() => {
+    const entities = sampleWorld();
+    const target = entities.find((entity) => entity.entityId === entityId);
+    const self = selfEntityId ? entities.find((entity) => entity.entityId === selfEntityId) : null;
+    if (!target || !self || !groupRef.current) {
+      if (visible) setVisible(false);
+      return;
+    }
+    groupRef.current.position.set(target.x, target.y + HIDER_NAMETAG_HEIGHT, target.z);
+    const distance = Math.hypot(target.x - self.x, target.z - self.z);
+    const shouldShow = distance <= HIDER_NAMETAG_MAX_DISTANCE;
+    if (shouldShow !== visible) setVisible(shouldShow);
+  });
+
+  return (
+    <group ref={groupRef}>
+      {visible && (
+        <Html center distanceFactor={8} zIndexRange={[10, 0]} pointerEvents="none">
+          <div className="whitespace-nowrap rounded border border-neon-cyan/70 bg-bg/70 px-2 py-0.5 font-display text-[0.6rem] font-bold uppercase tracking-wider text-neon-cyan backdrop-blur-sm">
+            {username}
+          </div>
+        </Html>
+      )}
+    </group>
+  );
+}
+
+/**
+ * Nombre flotante de los demás infiltrados, visible SOLO para infiltrados y solo de
+ * cerca: el servidor no manda `hiderRoster` al cazador (ver GameStateSnapshotPayload),
+ * así que aquí basta con no pintar nada si el propio rol no es "hider" — no hay nada
+ * que ocultar porque el dato ni siquiera llega.
+ */
+function HiderNametags() {
+  const selfRole = useGameStore((s) => s.selfRole);
+  const selfEntityId = useGameStore((s) => s.selfEntityId);
+  const roster = useGameStore((s) => s.hiderRoster);
+  if (selfRole !== "hider") return null;
+  return (
+    <>
+      {roster
+        .filter((entry) => entry.entityId !== selfEntityId)
+        .map((entry) => (
+          <HiderNametagLabel
+            key={entry.entityId}
+            entityId={entry.entityId}
+            username={entry.username}
+            selfEntityId={selfEntityId}
+          />
+        ))}
+    </>
+  );
+}
+
 function GameScene() {
   const selfRole = useGameStore((s) => s.selfRole);
   const aiming = useGameStore((s) => s.aiming);
@@ -2266,6 +2336,7 @@ function GameScene() {
           <Pads />
           <Collectibles />
           <Units />
+          <HiderNametags />
           <SeekerCamera />
           {/* La nave la ven todos: el cazador la suya, y el resto la que llega por
               la red. Antes solo se montaba para el cazador, así que desde el suelo

@@ -38,6 +38,23 @@ const pads = [
 // de cada infiltrado al repartir. Aquí se usa como listón de la prueba anticamping.
 const PAD_CAMP_CLEARANCE_TEST = 0.9;
 
+// Puntos de spawn fijos para pruebas deterministas: reproduce en círculo alrededor
+// del centro del mapa, como hacía antes el propio motor (ahora aleatorio en partidas
+// reales — ver GameSessionConfig.spawnPoints). Sirve para que las pruebas de física
+// de movimiento partan de una posición/orientación conocida sin depender del azar.
+const circleSpawnPoints = (
+  bounds: { minX: number; minZ: number; maxX: number; maxZ: number },
+  count: number
+) => {
+  const cx = (bounds.minX + bounds.maxX) / 2;
+  const cz = (bounds.minZ + bounds.maxZ) / 2;
+  const radius = Math.min(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ) * 0.3;
+  return Array.from({ length: count }, (_, index) => {
+    const angle = (2 * Math.PI * index) / count;
+    return { x: cx + Math.cos(angle) * radius, z: cz + Math.sin(angle) * radius };
+  });
+};
+
 const config = {
   bounds: { minX: -10, minZ: -5, maxX: 10, maxZ: 5 },
   turnSpeed: 2,
@@ -47,7 +64,8 @@ const config = {
   maxSlope: 1,
   npcCount: 0,
   npcSpeed: 1.2,
-  minPlayers: 2
+  minPlayers: 2,
+  spawnPoints: circleSpawnPoints({ minX: -10, minZ: -5, maxX: 10, maxZ: 5 }, 2)
 };
 const members = [
   { userId: "u1", role: "hider" as const },
@@ -64,7 +82,8 @@ const crowdSession = (gameId: string) => {
     maxSlope: 1.5,
     npcCount: 32,
     npcSpeed: 0.36,
-    minPlayers: 2
+    minPlayers: 2,
+    spawnPoints: circleSpawnPoints(map.bounds, 2)
   });
 };
 const find = (s: GameSession, id: string) => s.playerSnapshot().find((p) => p.userId === id)!;
@@ -183,30 +202,19 @@ describe("GameSession", () => {
   // El juego consiste en no saber quién es humano. Cualquier diferencia mecánica entre
   // un jugador y un NPC sería un atajo para cazarlos sin observarles la conducta.
   describe("el humano se mueve como la multitud", () => {
-    it('pedir "atrás" da la vuelta de un tirón (giro corto) y anda de frente, no hace marcha atrás', () => {
+    it('pedir "atrás" anda de espaldas (moonwalk) sin girar el rumbo', () => {
       const s = crowdSession("media-vuelta");
       s.markPresent("u1");
       const start = find(s, "u1");
       expect(start.rotationY).toBe(0);
 
-      // La vuelta es una ACCIÓN disparada de una vez, no una rotación que se sostiene
-      // mientras se aguanta la tecla: se completa sola en un giro corto (REVERSE_FLIP_SECONDS).
       s.setInput("u1", -1, 0);
-      // A media vuelta (antes de completarse el giro de 0.18s) todavía no ha andado:
-      // gira sobre el sitio, no en arco.
-      s.tick(0.05);
-      s.tick(0.05);
-      expect(find(s, "u1").z).toBeCloseTo(start.z, 5);
-      expect(find(s, "u1").x).toBeCloseTo(start.x, 5);
-
-      for (let i = 0; i < 6; i += 1) s.tick(0.05);
-      expect(find(s, "u1").rotationY).toBeCloseTo(Math.PI, 5);
-
       for (let i = 0; i < 40; i += 1) s.tick(0.05);
       const after = find(s, "u1");
-      // Sigue mirando para allá (no ha vuelto a girar tick a tick).
-      expect(after.rotationY).toBeCloseTo(Math.PI, 5);
-      // Con heading π camina hacia -z (cos π = -1): se ha alejado, no clavado en su sitio.
+      // El rumbo no cambia: sigue mirando hacia donde miraba al empezar.
+      expect(after.rotationY).toBeCloseTo(0, 5);
+      // Con heading 0 (cos 0 = 1) y desplazamiento negativo por ir marcha atrás,
+      // se ha alejado en -z: hacia atrás, no hacia donde mira.
       expect(after.z - start.z).toBeLessThan(-0.1);
     });
 
@@ -397,15 +405,15 @@ describe("GameSession", () => {
     s.markPresent("u2");
     const npcId = s.npcSnapshot()[0].entityId;
 
-    expect(s.shoot("u1", npcId)).toBe(false);
-    expect(s.shoot("u2", npcId)).toBe(false);
+    expect(s.shoot("u1", npcId).hit).toBe(false);
+    expect(s.shoot("u2", npcId).hit).toBe(false);
     expect(s.setAiming("u1", true)).toBe(false);
     expect(s.setAiming("u2", true)).toBe(true);
-    expect(s.shoot("u2", npcId)).toBe(true);
+    expect(s.shoot("u2", npcId).hit).toBe(true);
     s.setAiming("u2", false);
-    expect(s.shoot("u2", hider.entityId)).toBe(false);
+    expect(s.shoot("u2", hider.entityId).hit).toBe(false);
     s.setAiming("u2", true);
-    expect(s.shoot("u2", hider.entityId)).toBe(true);
+    expect(s.shoot("u2", hider.entityId).hit).toBe(true);
     expect(s.snapshot()).toHaveLength(0);
   });
 
@@ -416,9 +424,14 @@ describe("GameSession", () => {
     const npcId = s.npcSnapshot()[0].entityId;
 
     s.setAiming("u2", true);
-    expect(s.shoot("u2", npcId)).toBe(true);
+    const npcShot = s.shoot("u2", npcId);
+    expect(npcShot.hit).toBe(true);
+    // Un NPC no es un acierto "de verdad": no lleva eliminated (jugador abatido).
+    expect(npcShot.eliminated).toBeUndefined();
     expect(find(s, "u2").score).toBe(GAME_RULES.npcHitPoints);
-    expect(s.shoot("u2", hider.entityId)).toBe(true);
+    const hiderShot = s.shoot("u2", hider.entityId);
+    expect(hiderShot.hit).toBe(true);
+    expect(hiderShot.eliminated).toMatchObject({ userId: "u1" });
     expect(find(s, "u2").score).toBe(GAME_RULES.npcHitPoints + GAME_RULES.hiderHitPoints);
     expect(s.roundSnapshot()).toMatchObject({
       phase: "intermission",
@@ -547,7 +560,8 @@ describe("GameSession", () => {
     const s = new GameSession("collectibles", [{ userId: "u1", username: "Uno", role: "hider" }], {
       ...config,
       bounds: { minX: -0.05, minZ: -0.05, maxX: 0.05, maxZ: 0.05 },
-      heightmap: tinyHeightmap
+      heightmap: tinyHeightmap,
+      spawnPoints: [{ x: 0, z: 0 }]
     });
     s.markPresent("u1");
 
@@ -583,7 +597,8 @@ describe("GameSession", () => {
         maxSlope: 1.5,
         npcCount: 0,
         npcSpeed: 0.36,
-        minPlayers: 2
+        minPlayers: 2,
+        spawnPoints: circleSpawnPoints(map.bounds, 2)
       });
       const items = s.collectibleSnapshot();
       expect(items).toHaveLength(GAME_RULES.collectibleCount);
@@ -720,7 +735,8 @@ describe("GameSession", () => {
       maxSlope: 1,
       npcCount: 0,
       npcSpeed: 1.2,
-      minPlayers: 1
+      minPlayers: 1,
+      spawnPoints: circleSpawnPoints({ minX: -10, minZ: -5, maxX: 10, maxZ: 5 }, 1)
     });
 
     it("un obstáculo delante bloquea el avance en z", () => {
@@ -764,12 +780,12 @@ describe("GameSession", () => {
     });
 
     it("ningún jugador nace dentro de un edificio", () => {
-      // 1 jugador nace en (radius,0)=(3,0); ponemos un muro que lo cubre
-      const s = new GameSession(
-        "g",
-        [{ userId: "u", role: "hider" }],
-        cfgWithWall([{ minX: 2, minZ: -1, maxX: 4, maxZ: 1 }])
-      );
+      // Sin spawnPoints fijo a propósito: el spawn real (randomWalkablePoint) es quien
+      // tiene que esquivar el edificio solo, no un punto de prueba pre-colocado fuera.
+      const s = new GameSession("g", [{ userId: "u", role: "hider" }], {
+        ...cfgWithWall([{ minX: 2, minZ: -1, maxX: 4, maxZ: 1 }]),
+        spawnPoints: undefined
+      });
       s.markPresent("u");
       const { x, z } = s.playerSnapshot()[0];
       const dentro = x >= 2 && x <= 4 && z >= -1 && z <= 1;
@@ -791,7 +807,10 @@ describe("GameSession", () => {
       minPlayers: 1
     });
     const walk = (f: (x: number, z: number) => number | null, maxSlope: number) => {
-      const s = new GameSession("g", [{ userId: "u", role: "hider" }], cfgH(f, maxSlope));
+      const s = new GameSession("g", [{ userId: "u", role: "hider" }], {
+        ...cfgH(f, maxSlope),
+        spawnPoints: circleSpawnPoints({ minX: -4, minZ: -4, maxX: 4, maxZ: 4 }, 1)
+      });
       s.markPresent("u");
       s.setInput("u", 1, 0);
       for (let i = 0; i < 40; i++) s.tick(0.05);

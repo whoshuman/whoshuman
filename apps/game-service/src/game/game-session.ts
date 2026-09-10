@@ -6,6 +6,7 @@ import type {
   GameRoundPhase,
   GameRoundState,
   GameScoreState,
+  GameShootResult,
   PlayerRole,
   SeekerPose,
   SeekerState
@@ -53,6 +54,10 @@ export interface GameSessionConfig {
   // Partida en solitario contra la multitud, sin cronómetro, para poder alternar el
   // propio rol (cazador ⇄ infiltrado) y ver el juego desde los dos lados.
   practice?: boolean;
+  // Solo para pruebas deterministas: si se da, cada jugador (por orden de entrada)
+  // nace en el punto de esta lista en vez de en uno aleatorio del mapa. Sin esto
+  // (el caso real de cualquier partida) el spawn siempre sale de randomWalkablePoint.
+  spawnPoints?: { x: number; z: number }[];
 }
 
 export interface GameRoundRecord {
@@ -86,16 +91,6 @@ interface SessionPlayer extends MovableState {
   // la simula, solo retransmite la última pose recibida para que el resto la vea.
   pose: SeekerPose | null;
   present: boolean; // ha hecho game:join
-  // true mientras se está pidiendo "atrás", para dar la vuelta una sola vez al
-  // empezar a pedirlo y no en cada tick (ver tickPlayer).
-  reversedFacing: boolean;
-  // Giro de 180° en curso al pedir "atrás" (ver REVERSE_FLIP_SECONDS en tickPlayer).
-  flipping: boolean;
-  flipElapsed: number;
-  // Radianes del medio giro YA aplicados al heading. El giro se suma en trozos en vez
-  // de asignar el rumbo entero: así lo que gire el jugador con `turn` durante esos
-  // 0.18 s se conserva, en vez de que el siguiente tick lo pise.
-  flipTurned: number;
 }
 
 interface SessionNpc extends MovableState {
@@ -314,14 +309,6 @@ const NPC_SPEED_VARIATION = 0;
 // velocidad máxima en un tick, y el tirón se notaba.
 const NPC_ACCELERATION = 1.8;
 const NPC_BRAKING = 2.8;
-// Duración del giro de 180° al pedir "atrás" (tickPlayer). Antes era un salto en un
-// solo tick y se veía como un corte brusco; con esto sigue siendo una acción, no una
-// rotación sostenida, pero se ve como un giro rápido en vez de un chasquido.
-const REVERSE_FLIP_SECONDS = 0.18;
-// Cuánto hay que pedir "atrás" para que cuente como querer darse la vuelta. El teclado
-// manda -1, así que le da igual; el umbral es para el joystick del móvil, donde el
-// valor es analógico y pasar la zona muerta (0.12) no es una intención, es el pulgar.
-const REVERSE_TRIGGER = 0.6;
 // Nº de modelos en apps/frontend/public/models/personajes: el cliente indexa por skinId.
 const CHARACTER_SKIN_COUNT = 4;
 // Separación a la que se deja de buscar sitio para una célula: no es un mínimo duro,
@@ -411,11 +398,7 @@ export class GameSession {
         velocity: 0,
         aiming: false,
         pose: null,
-        present: false,
-        reversedFacing: false,
-        flipping: false,
-        flipTurned: 0,
-        flipElapsed: 0
+        present: false
       });
     });
 
@@ -435,34 +418,31 @@ export class GameSession {
     this.npcs.length = 0;
     this.collectibles.length = 0;
     this.pendingCollectibles.length = 0;
-    const n = Math.max(userIds.length, 1);
-    const b = this.config.bounds;
-    const cx = (b.minX + b.maxX) / 2;
-    const cz = (b.minZ + b.maxZ) / 2;
-    const radius = Math.min(b.maxX - b.minX, b.maxZ - b.minZ) * 0.3;
+    // Sitio de partida aleatorio, no una formación en círculo alrededor del centro:
+    // con el círculo, cada ronda ponía a la misma gente en el mismo hueco (solo variaba
+    // según su orden de entrada). `crowd` se vacía y se va rellenando AQUÍ, según se
+    // coloca a cada jugador, para que randomWalkablePoint no meta a dos unos encima de
+    // otros; spawnNpcs() la reconstruye entera de todos modos al añadir la multitud.
+    this.crowd.clear();
     userIds.forEach((userId, index) => {
       const player = this.players.get(userId) as SessionPlayer;
-      const angle = (2 * Math.PI * index) / n;
-      const spawn = this.freeSpawn(
-        cx + Math.cos(angle) * radius,
-        cz + Math.sin(angle) * radius,
-        cx,
-        cz
-      );
       if (this.seekerUserId) {
         player.role = userId === this.seekerUserId ? "seeker" : "hider";
       }
       player.alive = true;
+      const fixed = this.config.spawnPoints?.[index];
+      const spawn = fixed
+        ? { x: fixed.x, z: fixed.z, h: sampleHeight(this.config.heightmap, fixed.x, fixed.z) ?? 0 }
+        : this.randomWalkablePoint(true);
       player.x = spawn.x;
       player.z = spawn.z;
-      player.h = sampleHeight(this.config.heightmap, spawn.x, spawn.z) ?? 0;
+      player.h = spawn.h;
       player.heading = 0;
       player.forward = 0;
       player.turn = 0;
       player.velocity = 0;
       player.aiming = false;
-      player.reversedFacing = false;
-      player.flipping = false;
+      if (this.hasBody(player)) this.crowd.add(player);
     });
 
     this.spawnNpcs();
@@ -653,16 +633,6 @@ export class GameSession {
     throw new Error("Map has no walkable point for NPCs");
   }
 
-  /** Si el spawn cae dentro de un edificio, lo acerca al centro (cx,cz) hasta que quede libre. */
-  // ponytail: asume que el centro del área jugable es transitable; si algún mapa no lo cumple, definir spawns en el descriptor.
-  private freeSpawn(x: number, z: number, cx: number, cz: number): { x: number; z: number } {
-    for (let i = 0; i < 20 && this.blocked(x, z); i++) {
-      x = cx + (x - cx) * 0.85;
-      z = cz + (z - cz) * 0.85;
-    }
-    return { x, z };
-  }
-
   markPresent(userId: string): { entityId: string; role: PlayerRole } | null {
     const p = this.players.get(userId);
     if (!p) return null;
@@ -712,7 +682,7 @@ export class GameSession {
     return null;
   }
 
-  shoot(userId: string, targetEntityId: string): boolean {
+  shoot(userId: string, targetEntityId: string): GameShootResult {
     const shooter = this.players.get(userId);
     if (
       this.roundPhase !== "playing" ||
@@ -721,10 +691,10 @@ export class GameSession {
       !shooter.aiming ||
       shooter.entityId === targetEntityId
     ) {
-      return false;
+      return { hit: false };
     }
 
-    for (const player of this.players.values()) {
+    for (const [targetUserId, player] of this.players) {
       if (player.entityId === targetEntityId && player.role === "hider" && player.alive) {
         player.alive = false;
         player.forward = 0;
@@ -733,16 +703,21 @@ export class GameSession {
         this.crowd.remove(player); // eliminado: su cuerpo deja de estorbar al instante
         shooter.score += GAME_RULES.hiderHitPoints;
         if (this.allHidersFound) this.endRound("all-hiders-found");
-        return true;
+        return {
+          hit: true,
+          eliminated: { userId: targetUserId, username: player.username }
+        };
       }
     }
 
     const npcIndex = this.npcs.findIndex((npc) => npc.entityId === targetEntityId);
-    if (npcIndex < 0) return false;
+    if (npcIndex < 0) return { hit: false };
     this.crowd.remove(this.npcs[npcIndex]);
     this.npcs.splice(npcIndex, 1);
     shooter.score += GAME_RULES.npcHitPoints;
-    return true;
+    // Acertar a un NPC (civil) no cuenta como acierto "de verdad": sonido y feedback
+    // se quedan igual que antes de distinguir jugador/NPC (solo el disparo, sin más).
+    return { hit: true };
   }
 
   // MODO DEBUG: retirar junto con el campo `practice` de arriba.
@@ -770,8 +745,6 @@ export class GameSession {
     player.turn = 0;
     player.velocity = 0;
     player.aiming = false;
-    player.reversedFacing = false;
-    player.flipping = false;
     return true;
   }
 
@@ -941,56 +914,14 @@ export class GameSession {
   private tickPlayer(player: SessionPlayer, dtSeconds: number): void {
     const cruise = this.cruiseSpeed(player.speedScale);
 
-    // "Atrás" no es marcha atrás: es la ACCIÓN de darse la vuelta, de un solo tirón
-    // (no una rotación que se sostiene mientras se aguanta la tecla), y a partir de ahí
-    // se anda de frente en la nueva dirección — nadie en este juego camina de espaldas.
-    // El giro en sí dura REVERSE_FLIP_SECONDS para no verse como un salto en seco.
-    // reversedFacing marca que el giro YA se disparó: sin él, cada tick que se
-    // mantenga pulsado dispararía otro medio giro y acabaría dando vueltas sobre sí
-    // mismo en vez de quedarse mirando para atrás.
-    //
-    // Hace falta pedirlo A PROPÓSITO (REVERSE_TRIGGER): en teclado `forward` es -1/0/1,
-    // pero con joystick es analógico y el pulgar cruza el cero constantemente al trazar
-    // el arco de un giro. Disparando con cualquier valor negativo, rozar la zona muerta
-    // (~5 px de stick) bastaba para media vuelta + parada en seco, y encadenadas dejaban
-    // al personaje girando sobre sí mismo sin avanzar: medido, 34 medias vueltas y 1/18
-    // del recorrido en 10 s. Entre 0 y -REVERSE_TRIGGER no se pide nada.
-    if (player.forward < -REVERSE_TRIGGER && !player.reversedFacing && !player.flipping) {
-      player.flipping = true;
-      player.flipTurned = 0;
-      player.flipElapsed = 0;
-      player.reversedFacing = true;
-      // Se para en seco al empezar a girar: si arrastrara la velocidad que ya llevaba
-      // saldría derrapando en la vieja dirección mientras gira, en vez de plantarse.
-      player.velocity = 0;
-    } else if (player.forward >= 0 && !player.flipping) {
-      player.reversedFacing = false;
-    }
-
-    if (player.flipping) {
-      player.flipElapsed += dtSeconds;
-      const t = Math.min(1, player.flipElapsed / REVERSE_FLIP_SECONDS);
-      // ease-out: arranca rápido y se asienta, no lineal ni instantáneo.
-      const eased = 1 - (1 - t) * (1 - t);
-      // Se suma lo que falta por girar, no se asigna el rumbo entero: asignándolo, el
-      // giro que el jugador metiera con `turn` se perdía al tick siguiente.
-      const turned = Math.PI * eased;
-      player.heading += turned - player.flipTurned;
-      player.flipTurned = turned;
-      if (t >= 1) player.flipping = false;
-    }
-
-    // De aquí en adelante solo cuenta la magnitud: el giro de arriba ya puso (o está
-    // poniendo) el rumbo en la dirección pedida, así que "atrás" ya no invierte el
-    // sentido del avance. Mientras gira no anda: es un giro sobre el sitio, no un
-    // arco caminando — si no, con el heading todavía a medio girar el paso saldría
-    // en diagonal en vez de hacia donde estaba mirando.
-    //
-    // Un "atrás" que no llega al umbral tampoco es un "adelante": se deja de pedir
-    // marcha y se frena por la rampa. Tomarlo como magnitud haría andar hacia delante
-    // a quien está tirando del stick justo al revés.
-    const requested = player.forward < 0 && !player.reversedFacing ? 0 : Math.abs(player.forward);
-    const target = player.flipping ? 0 : cruise * clamp(requested, 0, 1);
+    // "Atrás" es moonwalk: se desplaza hacia atrás SIN girar el rumbo (heading se queda
+    // mirando adelante). `velocity` guarda solo la magnitud de la marcha (siempre >= 0)
+    // y `dirSign` decide si esa marcha empuja al personaje adelante o atrás a lo largo
+    // de su heading actual — así el giro con `turn` sigue siendo lo único que cambia
+    // hacia dónde mira.
+    const dirSign = player.forward < 0 ? -1 : 1;
+    const requested = clamp(Math.abs(player.forward), 0, 1);
+    const target = cruise * requested;
     const braking = target < player.velocity;
     const rate = (braking ? NPC_BRAKING : NPC_ACCELERATION) * cruise * dtSeconds;
     player.velocity =
@@ -999,7 +930,8 @@ export class GameSession {
         : Math.max(target, player.velocity - rate);
 
     const moved =
-      player.velocity !== 0 && this.moveForward(player, player.velocity * dtSeconds, player);
+      player.velocity !== 0 &&
+      this.moveForward(player, dirSign * player.velocity * dtSeconds, player);
     // El giro debe responder también estando quieto: en móvil, desplazar el joystick
     // horizontalmente produce turn sin forward y antes no hacía absolutamente nada.
     if (player.turn !== 0) {
@@ -1500,6 +1432,18 @@ export class GameSession {
       role: player.role,
       alive: player.alive
     }));
+  }
+
+  /**
+   * Quién es cada infiltrado, SOLO para que otros infiltrados se reconozcan entre sí
+   * (nametag). A propósito NO se llama desde ningún sitio que llegue al cazador: quien
+   * reenvía el snapshot (realtime-gateway) filtra este campo antes de emitirlo a su
+   * socket. Ver el comentario de `entities` en GameStateSnapshotPayload.
+   */
+  hiderRoster(): { entityId: string; username: string }[] {
+    return [...this.players.values()]
+      .filter((player) => player.role === "hider" && player.alive && player.present)
+      .map((player) => ({ entityId: player.entityId, username: player.username }));
   }
 
   roundRecords(): GameRoundRecord[] {

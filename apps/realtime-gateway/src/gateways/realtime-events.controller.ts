@@ -28,7 +28,7 @@ export class RealtimeEventsController {
       return;
     }
 
-    this.rooms.broadcastGameState(payload);
+    void this.rooms.broadcastGameState(payload);
   }
 
   @EventPattern(MatchmakingSubjects.matchFound)

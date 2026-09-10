@@ -12,6 +12,7 @@ import type {
   GameJoinResponse,
   GameLeavePayload,
   GameShootPayload,
+  GameShootResult,
   GameStateSnapshotPayload,
   LobbyJoinPayload,
   LobbyLeavePayload,
@@ -54,7 +55,10 @@ export interface ClientToServerEvents {
   [ClientSocketEvents.gameJoin]: (payload: GameJoinPayload) => void;
   [ClientSocketEvents.gameLeave]: (payload?: GameLeavePayload) => void;
   [ClientSocketEvents.gameAim]: (payload: GameAimPayload) => void;
-  [ClientSocketEvents.gameShoot]: (payload: GameShootPayload) => void;
+  [ClientSocketEvents.gameShoot]: (
+    payload: GameShootPayload,
+    callback: (response: GameShootResult) => void
+  ) => void;
   [ClientSocketEvents.playerInput]: (payload: PlayerInputPayload) => void;
   [ClientSocketEvents.presenceList]: () => void;
   [ClientSocketEvents.chatSend]: (

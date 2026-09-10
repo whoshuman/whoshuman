@@ -85,13 +85,32 @@ export class RealtimeRoomsService {
     this.server.to(room).emit(ServerSocketEvents.chatMessage, payload);
   }
 
-  broadcastGameState(payload: GameStateSnapshotPayload) {
+  // El snapshot le llega igual a todo el mundo MENOS `hiderRoster`: ese campo dice
+  // quién es cada infiltrado (para que se vean el nombre entre ellos) y el cazador
+  // JAMÁS debe recibirlo, ni en el payload en bruto — no basta con que el cliente lo
+  // ignore, tiene que no llegarle. Por eso aquí no hay un solo broadcast al room, sino
+  // dos envíos por id de socket según el rol que tenga cada uno en esta partida.
+  async broadcastGameState(payload: GameStateSnapshotPayload) {
     if (!this.server) {
       this.logger.warn("Cannot broadcast game state snapshot: Socket.IO server is not ready");
       return;
     }
 
-    this.server.to(this.gameRoom(payload.gameId)).emit(ServerSocketEvents.gameState, payload);
+    const room = this.gameRoom(payload.gameId);
+    const sockets = await this.server.in(room).fetchSockets();
+    const hiderSocketIds: string[] = [];
+    const otherSocketIds: string[] = [];
+    for (const socket of sockets) {
+      (socket.data.selfRole === "hider" ? hiderSocketIds : otherSocketIds).push(socket.id);
+    }
+
+    if (otherSocketIds.length > 0) {
+      const { hiderRoster: _hiderRoster, ...publicPayload } = payload;
+      this.server.to(otherSocketIds).emit(ServerSocketEvents.gameState, publicPayload);
+    }
+    if (hiderSocketIds.length > 0) {
+      this.server.to(hiderSocketIds).emit(ServerSocketEvents.gameState, payload);
+    }
   }
 
   private normalizeId(value: string | undefined, fallback: string) {

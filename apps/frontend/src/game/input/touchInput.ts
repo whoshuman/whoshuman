@@ -43,11 +43,19 @@ export function normalizeJoystick(
   const scale = distance > radius ? radius / distance : 1;
   const knobX = rawX * scale;
   const knobY = rawY * scale;
-  const axisX = Math.max(-1, Math.min(1, rawX / radius));
-  const axisY = Math.max(-1, Math.min(1, rawY / radius));
-  const x = Math.abs(axisX) < deadZone ? 0 : axisX;
-  const y = Math.abs(axisY) < deadZone ? 0 : axisY;
-  return { knobX, knobY, x, y };
+  // Un joystick de verdad es circular, no cuadrado: el vector sale de la posicion YA
+  // recortada del pomo (dentro del circulo), no de recortar cada eje por separado.
+  // Recortar por eje dejaba que un arrastre en diagonal siguiera aumentando la señal
+  // mas alla de lo que el pomo enseñaba en pantalla (llegaba a 1 en ambos ejes a
+  // radius*√2 de distancia, no a radius), asi que se notaba desacoplado del dedo.
+  // La zona muerta tambien es radial (magnitud), no por eje: si no, un arrastre en
+  // diagonal muy corto podia colar un eje y filtrar el otro, y el personaje se movia
+  // solo hacia adelante o solo giraba cuando el dedo pedia las dos cosas a la vez.
+  const magnitude = distance > radius ? 1 : distance / radius;
+  if (magnitude < deadZone) return { knobX, knobY, x: 0, y: 0 };
+  const axisX = knobX / radius;
+  const axisY = knobY / radius;
+  return { knobX, knobY, x: axisX, y: axisY };
 }
 
 export function setTouchCamera(x: number, y: number): void {

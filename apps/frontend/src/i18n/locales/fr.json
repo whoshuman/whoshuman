@@ -28,7 +28,8 @@
     "language": "LANGUE",
     "languageSaveError": "La langue n'a pas pu être enregistrée.",
     "audio": "AUDIO",
-    "music": "MUSIQUE"
+    "music": "MUSIQUE",
+    "musicVolume": "VOLUME MUSIQUE"
   },
   "home": {
     "play": "Jouer",
@@ -444,6 +445,8 @@
     "scoreboard": "Classement",
     "round": "Manche {{current}} / {{total}}",
     "eliminated": "UNITÉ ÉLIMINÉE",
+    "eliminationBanner": "TU AS ÉLIMINÉ {{username}}",
+    "eliminatedShort": "[ÉLIMINÉ]",
     "waitNextRound": "Attendez le prochain déploiement.",
     "roundComplete": "MANCHE TERMINÉE",
     "roundRestarted": "MANCHE RELANCÉE",

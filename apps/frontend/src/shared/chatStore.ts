@@ -12,11 +12,7 @@ export const useChatDialogStore = create<ChatDialogState>((set) => ({
   peers: [],
   openDirect: (peer) => {
     if (peer.id === useAuthStore.getState().user?.id) return;
-    set((state) => ({
-      peers: state.peers.some((openPeer) => openPeer.id === peer.id)
-        ? state.peers
-        : [peer, ...state.peers]
-    }));
+    set({ peers: [peer] });
   },
   closeDirect: (peerId) =>
     set((state) => ({ peers: state.peers.filter((peer) => peer.id !== peerId) }))

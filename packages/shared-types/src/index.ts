@@ -86,6 +86,14 @@ export interface AuthVerifyResponse {
   payload?: AuthTokenPayload;
 }
 
+export interface GameShootResult {
+  hit: boolean;
+  // Solo presente si lo alcanzado era un jugador (hider) eliminado, no un NPC: el
+  // cliente usa esto para distinguir "acierto de verdad" (jugador) de "civil" (NPC),
+  // que suenan y se muestran distinto.
+  eliminated?: { userId: string; username: string };
+}
+
 export interface GameEntityState {
   entityId: string;
   skinId: number;
@@ -179,6 +187,10 @@ export interface GameStateSnapshotPayload {
   // Aparte de `entities` a propósito: esa lista es deliberadamente uniforme para que
   // no se distinga humano de NPC, y el cazador no juega a esconderse.
   seeker: SeekerState | null;
+  // Quién es cada infiltrado, para que se reconozcan entre ellos (nametag). SOLO llega
+  // al socket de un infiltrado: realtime-gateway lo quita antes de reenviar al cazador.
+  // No confundir con `entities`: ese sigue sin decir nunca quién es humano.
+  hiderRoster?: { entityId: string; username: string }[];
 }
 
 export type PlayerRole = "hider" | "seeker";
