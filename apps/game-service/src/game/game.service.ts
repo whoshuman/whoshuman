@@ -3,6 +3,7 @@ import { GameSubjects } from "@whoshuman/shared-events";
 import type {
   GameJoinResponse,
   GameScoreState,
+  GameShootResult,
   GameStateSnapshotPayload,
   MatchFoundPayload,
   SeekerPose
@@ -136,10 +137,12 @@ export class GameService {
     );
   }
 
-  shoot(payload: unknown): boolean {
-    if (!this.isShootRef(payload)) return false;
+  shoot(payload: unknown): GameShootResult {
+    if (!this.isShootRef(payload)) return { hit: false };
     return (
-      this.games.get(payload.gameId)?.session.shoot(payload.userId, payload.targetEntityId) ?? false
+      this.games.get(payload.gameId)?.session.shoot(payload.userId, payload.targetEntityId) ?? {
+        hit: false
+      }
     );
   }
 
@@ -265,7 +268,8 @@ export class GameService {
       collectibles: session.collectibleSnapshot(),
       round: session.roundSnapshot(),
       scores: session.scoreSnapshot(),
-      seeker: session.seekerSnapshot()
+      seeker: session.seekerSnapshot(),
+      hiderRoster: session.hiderRoster()
     };
     try {
       await this.messaging.publish(GameSubjects.stateSnapshot, event);

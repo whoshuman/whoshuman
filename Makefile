@@ -1,4 +1,4 @@
-.PHONY: help all clean fclean re install build certs dev dev-d db down purge logs ps stats images prune shell migrate generate studio reset
+.PHONY: help all clean fclean re install build certs dev dev-d db down purge logs ps stats images prune shell migrate generate studio reset tunnel tunnel-stop
 
 .DEFAULT_GOAL := all
 
@@ -61,9 +61,13 @@ purge: ## Para todos los servicios y borra los volúmenes (⚠️ borra la BD)
 logs: ## Ver logs de todos los servicios (o de uno: make logs s=auth-service)
 	docker compose logs -f $(s)
 
-ps: ## Ver estado de todos los contenedores
-	docker compose ps
-
+ps:
+	@C_RED=$$(printf '\033[1;31m'); \
+	C_YELLOW=$$(printf '\033[1;33m'); \
+	C_GREEN=$$(printf '\033[1;32m'); \
+	C_BLUE=$$(printf '\033[1;34m'); \
+	C_RESET=$$(printf '\033[0m'); \
+	docker compose ps --format "table $${C_RED}{{.Name}}$${C_RESET}\t$${C_YELLOW}{{.Service}}$${C_RESET}\t$${C_GREEN}{{.Status}}$${C_RESET}\t$${C_BLUE}{{.Ports}}$${C_RESET}"
 stats: ## Ver uso de CPU y memoria de los contenedores
 	docker stats
 
@@ -89,3 +93,16 @@ studio: ## Abre Prisma Studio en el navegador (requiere BD corriendo)
 
 reset: ## Resetea la BD completamente (⚠️ borra todos los datos)
 	pnpm db:reset
+
+# ─── Túnel público ────────────────────────────────────────────────────────────
+
+tunnel: ## Levanta todo y expone una URL pública temporal (Cloudflare Tunnel)
+	@command -v cloudflared >/dev/null 2>&1 || { echo "cloudflared no instalado: https://pkg.cloudflare.com/"; exit 1; }
+	docker compose up --build -d
+	nohup cloudflared tunnel --url https://localhost:443 --no-tls-verify > /tmp/whoshuman-tunnel.log 2>&1 & \
+	echo $$! > /tmp/whoshuman-tunnel.pid
+	@sleep 6
+	@grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' /tmp/whoshuman-tunnel.log | head -1
+
+tunnel-stop: ## Detiene el túnel público
+	@[ -f /tmp/whoshuman-tunnel.pid ] && kill $$(cat /tmp/whoshuman-tunnel.pid) && rm /tmp/whoshuman-tunnel.pid || echo "no hay túnel activo"

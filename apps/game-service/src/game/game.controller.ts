@@ -23,9 +23,9 @@ export class GameController {
     this.game.input(payload);
   }
 
-  @EventPattern(GameSubjects.shoot)
+  @MessagePattern(GameSubjects.shoot)
   handleShoot(@Payload() payload: unknown) {
-    this.game.shoot(payload);
+    return this.game.shoot(payload);
   }
 
   @EventPattern(GameSubjects.switchRole)

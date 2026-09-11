@@ -4,6 +4,7 @@ import type {
   GameJoinResponse,
   GameRoundState,
   GameScoreState,
+  GameShootResult,
   GameStateSnapshotPayload,
   PlayerRole,
   SeekerPose
@@ -33,9 +34,16 @@ interface GameState {
   round: GameRoundState | null;
   scores: GameScoreState[];
   collectibles: GameCollectibleState[];
+  // Solo llega poblado cuando el propio rol es "hider" (el servidor lo filtra para el
+  // cazador): entityId + username de los demás infiltrados, para su nametag.
+  hiderRoster: { entityId: string; username: string }[];
   // Nº de unidades presentes según el último snapshot (baja frecuencia de cambio:
   // solo se escribe cuando cambia, no por tick).
   presentCount: number;
+  // Última unidad que ha eliminado el propio cazador (para el aviso en su vista).
+  // `at` es un contador, no un timestamp: cambia siempre, incluso si se abate dos
+  // veces seguidas a la misma persona, así el efecto se retrigea cada vez.
+  lastElimination: { username: string; at: number } | null;
   error: string | null;
   join: (gameId: string) => void;
   leave: () => void;
@@ -95,6 +103,7 @@ function bindListeners() {
       selfRole: payload.role,
       selfAlive: true,
       aiming: false,
+      lastElimination: null,
       error: null
     });
   });
@@ -138,13 +147,13 @@ function bindListeners() {
     // `current` es todavia el estado anterior.
     if (!matchStartPlayed && payload.round.phase === "playing") {
       matchStartPlayed = true;
-      playSfx("matchStart");
+      void playSfx("matchStart");
       // La musica del lobby se apaga con un fade: la partida tiene su propio ambiente y
       // no se pisan. Al quedar `started` en false, volver al lobby la reanuda desde 0.
       useMusic.getState().stop();
     }
     if (payload.round.phase === "finished" && current.round?.phase !== "finished") {
-      playSfx("matchEnd");
+      void playSfx("matchEnd");
       // La musica de fondo no debe entrar encima de la musiquita de cierre: se retiene lo
       // que dura (ya esta decodificada, la precargo preloadGameSfx al entrar en la partida).
       useMusic.getState().hold(sfxDurationMs("matchEnd"));
@@ -156,7 +165,7 @@ function bindListeners() {
       (entry) => entry.userId === current.selfUserId
     )?.score;
     if (self?.role === "hider" && previousScore !== undefined && self.score > previousScore) {
-      playSfx("collect");
+      void playSfx("collect");
     }
 
     set({
@@ -164,6 +173,7 @@ function bindListeners() {
       round: payload.round,
       scores: payload.scores,
       collectibles: payload.collectibles,
+      hiderRoster: payload.hiderRoster ?? [],
       selfRole: self?.role ?? current.selfRole,
       selfAlive: self?.alive ?? current.selfAlive,
       aiming: roleChanged || payload.round.phase !== "playing" ? false : current.aiming
@@ -223,7 +233,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   round: null,
   scores: [],
   collectibles: [],
+  hiderRoster: [],
   presentCount: 0,
+  lastElimination: null,
   error: null,
 
   join: (gameId) => {
@@ -246,6 +258,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       round: null,
       scores: [],
       collectibles: [],
+      lastElimination: null,
       error: null
     });
     if (socket.connected) socket.emit(ClientSocketEvents.gameJoin, { gameId });
@@ -350,13 +363,39 @@ export const useGameStore = create<GameState>((set, get) => ({
     ) {
       return;
     }
-    // Suena en local sin esperar respuesta: el arma es del cazador y el feedback tiene
-    // que ser inmediato (el servidor no difunde el disparo, solo su resultado). El sonido
-    // es del arma, no del impacto: dispone tambien al fallar, antes de comprobar el blanco.
-    playSfx("shot");
-    // Sin blanco no hay nada que resolver en el servidor (fallar no cuesta nada al cazador).
-    if (!targetEntityId) return;
-    connectSocket().emit(ClientSocketEvents.gameShoot, { gameId, targetEntityId });
+    // Sin blanco no hay nada que resolver en el servidor (fallar no cuesta nada al cazador):
+    // suena el disparo en el acto, no hay nada que esperar.
+    if (!targetEntityId) {
+      void playSfx("shot");
+      return;
+    }
+    // Con blanco, el sonido espera la respuesta del servidor (quien sabe si era jugador
+    // o NPC): un solo sonido, no el disparo Y el acierto solapados. El cliente no puede
+    // distinguirlos antes de disparar (jugadores y NPC son visualmente idénticos, es la
+    // mecánica del juego), así que hay que preguntarle al servidor.
+    connectSocket()
+      .timeout(2000)
+      .emit(
+        ClientSocketEvents.gameShoot,
+        { gameId, targetEntityId },
+        (timeoutError: Error | null, result?: GameShootResult) => {
+          if (timeoutError || !result) {
+            void playSfx("shot");
+            return;
+          }
+          if (result.eliminated) {
+            void playSfx("hit");
+            set((state) => ({
+              lastElimination: {
+                username: result.eliminated!.username,
+                at: (state.lastElimination?.at ?? 0) + 1
+              }
+            }));
+          } else {
+            void playSfx("shot");
+          }
+        }
+      );
   },
 
   sendInput: (forward, turn) => {

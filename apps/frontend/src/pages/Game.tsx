@@ -118,7 +118,25 @@ function Game() {
   const selfRole = useGameStore((s) => s.selfRole);
   const selfAlive = useGameStore((s) => s.selfAlive);
   const aiming = useGameStore((s) => s.aiming);
+  const lastElimination = useGameStore((s) => s.lastElimination);
   const error = useGameStore((s) => s.error);
+  const [eliminationBanner, setEliminationBanner] = useState<string | null>(null);
+
+  // Aviso de "has eliminado a X" solo en la vista de quien dispara. `at` cambia en
+  // cada eliminación (incluso repetida sobre la misma persona), asi que el efecto
+  // se retrigea y reinicia el temporizador cada vez.
+  useEffect(() => {
+    // Sin esto, un lastElimination que pasa a null (partida nueva) solo cancelaba el
+    // temporizador pendiente: el cartel de la partida anterior se quedaba en pantalla
+    // para siempre, porque nada volvía a poner eliminationBanner a null.
+    if (!lastElimination) {
+      setEliminationBanner(null);
+      return;
+    }
+    setEliminationBanner(lastElimination.username);
+    const timer = setTimeout(() => setEliminationBanner(null), 2200);
+    return () => clearTimeout(timer);
+  }, [lastElimination]);
   const join = useGameStore((s) => s.join);
   const leave = useGameStore((s) => s.leave);
   const [leaveOpen, setLeaveOpen] = useState(false);
@@ -232,14 +250,30 @@ function Game() {
                 key={entry.userId}
                 className={`flex items-center justify-between text-xs ${
                   entry.userId === selfUserId ? "text-neon-magenta" : "text-text"
-                }`}
+                } ${entry.alive === false ? "opacity-40 line-through" : ""}`}
               >
                 <span className="min-w-0 truncate">
                   {index + 1}. {entry.username}
+                  {entry.alive === false && (
+                    <span className="ml-1 text-sun-orange no-underline">
+                      {t("game.eliminatedShort")}
+                    </span>
+                  )}
                 </span>
                 <span className="ml-3 font-display font-black tabular-nums">{entry.score}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Aviso de eliminación: solo lo ve el cazador que ha disparado, no el resto. */}
+      {eliminationBanner && (
+        <div className="pointer-events-none absolute inset-x-0 top-28 z-10 flex justify-center">
+          <div className="animate-unfold-down border border-neon-cyan/60 bg-bg/85 px-6 py-3 text-center backdrop-blur-sm">
+            <p className="font-display text-lg font-black uppercase text-neon-cyan [text-shadow:0_0_14px_rgba(36,245,255,0.6)]">
+              {t("game.eliminationBanner", { username: eliminationBanner })}
+            </p>
           </div>
         </div>
       )}

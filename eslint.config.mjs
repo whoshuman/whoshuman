@@ -22,6 +22,11 @@ export default tseslint.config(
         projectService: true,
         tsconfigRootDir: import.meta.dirname
       }
+    },
+    rules: {
+      // Permite `const { omitida, ...resto } = obj` para descartar un campo sin
+      // que salte no-unused-vars por la variable extraida y no usada.
+      "@typescript-eslint/no-unused-vars": ["error", { ignoreRestSiblings: true }]
     }
   },
   {

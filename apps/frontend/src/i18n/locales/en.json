@@ -28,7 +28,8 @@
     "language": "LANGUAGE",
     "languageSaveError": "The language could not be saved.",
     "audio": "AUDIO",
-    "music": "MUSIC"
+    "music": "MUSIC",
+    "musicVolume": "MUSIC VOLUME"
   },
   "home": {
     "play": "Play",
@@ -444,6 +445,8 @@
     "scoreboard": "Leaderboard",
     "round": "Round {{current}} / {{total}}",
     "eliminated": "UNIT ELIMINATED",
+    "eliminatedShort": "[ELIMINATED]",
+    "eliminationBanner": "YOU ELIMINATED {{username}}",
     "waitNextRound": "Wait for the next deployment.",
     "roundComplete": "ROUND COMPLETE",
     "roundRestarted": "ROUND RESTARTED",

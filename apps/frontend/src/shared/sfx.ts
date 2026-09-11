@@ -13,6 +13,9 @@ const SOUNDS = {
   access: "/sounds/digital-ui-access-granted-alert-vadi-sound-2-2-00-01.mp3",
   hologram: "/sounds/latent-rick-hologram-menu-appear-ui-546562.mp3",
   shot: "/sounds/disparo_2.mp3",
+  // Confirmacion de acierto: mismo archivo que "access" (alerta positiva/afirmativa),
+  // no el impact.mp3 original, que sonaba a error, no a exito.
+  hit: "/sounds/digital-ui-access-granted-alert-vadi-sound-2-2-00-01.mp3",
   collect: "/sounds/collect_Cell.mp3",
   matchStart: "/sounds/inicio_partida.mp3",
   matchEnd: "/sounds/end_game.mp3",
@@ -23,15 +26,14 @@ const SOUNDS = {
 
 export type SfxName = keyof typeof SOUNDS;
 
-// Sonidos de UI: se decodifican en la primera interaccion, esten donde esten.
-const UI_SFX: SfxName[] = ["click", "access", "hologram"];
 // Sonidos de partida: solo se decodifican al entrar en una partida.
-const GAME_SFX: SfxName[] = ["shot", "collect", "matchStart", "matchEnd", "shipMove"];
+const GAME_SFX: SfxName[] = ["shot", "hit", "collect", "matchStart", "matchEnd", "shipMove"];
 
 // Ganancia relativa por sonido (1 = volumen del bus). Equilibra pistas grabadas a
 // distinto nivel sin tener que reeditar los mp3.
 const SFX_GAIN: Partial<Record<SfxName, number>> = {
   shot: 0.85,
+  hit: 1,
   matchStart: 0.7,
   // La musiquita de cierre estaba grabada bastante mas alta que el resto y pegaba un
   // susto al acabar la partida.
@@ -44,7 +46,8 @@ const SFX_GAIN: Partial<Record<SfxName, number>> = {
 let context: AudioContext | null = null;
 let gain: GainNode | null = null;
 const buffers: Partial<Record<SfxName, AudioBuffer>> = {};
-// Nombres ya pedidos (aunque aun esten descargando): evita fetch/decode duplicados.
+// Promesas compartidas: un mismo sonido nunca se descarga/decodifica dos veces.
+const loading: Partial<Record<SfxName, Promise<AudioBuffer | null>>> = {};
 const requested = new Set<SfxName>();
 let installed = false;
 
@@ -62,26 +65,41 @@ function ensureContext(): boolean {
   return true;
 }
 
-// Descarga y decodifica los sonidos que aun no se hayan pedido.
-function load(names: readonly SfxName[]) {
-  if (!ensureContext()) return;
-  for (const name of names) {
-    if (requested.has(name)) continue;
-    requested.add(name);
-    void fetch(SOUNDS[name])
-      .then((response) => response.arrayBuffer())
-      .then((data) => context!.decodeAudioData(data))
-      .then((decoded) => {
-        buffers[name] = decoded;
-      })
-      .catch(() => {
-        // Si falla, se permite reintentar en la siguiente peticion del sonido.
-        requested.delete(name);
-      });
-  }
+// Descarga y decodifica un sonido una sola vez. La promesa compartida permite que la
+// primera reproduccion espere al buffer en lugar de perderse mientras se descarga.
+function loadOne(name: SfxName): Promise<AudioBuffer | null> {
+  if (!ensureContext()) return Promise.resolve(null);
+  if (buffers[name]) return Promise.resolve(buffers[name] ?? null);
+  if (loading[name]) return loading[name] ?? Promise.resolve(null);
+  requested.add(name);
+  const promise = fetch(SOUNDS[name])
+    .then((response) => {
+      if (!response.ok) throw new Error(`Unable to load ${SOUNDS[name]}`);
+      return response.arrayBuffer();
+    })
+    .then((data) => context!.decodeAudioData(data))
+    .then((decoded) => {
+      buffers[name] = decoded;
+      return decoded;
+    })
+    .catch(() => {
+      // Si falla, se permite reintentar en la siguiente peticion del sonido.
+      requested.delete(name);
+      return null;
+    });
+  loading[name] = promise;
+  void promise.then(() => {
+    delete loading[name];
+  });
+  return promise;
 }
 
-// Reproduce un sonido por nombre. Si aun no esta decodificado, no suena (los primeros ms).
+function load(names: readonly SfxName[]) {
+  if (!ensureContext()) return;
+  for (const name of names) void loadOne(name);
+}
+
+// Reproduce un sonido por nombre. La primera peticion espera la descarga y decodificacion.
 function play(name: SfxName) {
   if (!context || !gain) return;
   const buffer = buffers[name];
@@ -106,8 +124,10 @@ function play(name: SfxName) {
 // Reproduce un sonido por nombre desde fuera (p. ej. al abrirse un modal holografico
 // o al disparar). Garantiza que el audio este inicializado aunque no haya saltado aun
 // el listener de clicks.
-export function playSfx(name: SfxName) {
-  load([name]);
+export async function playSfx(name: SfxName) {
+  if (ensureContext() && context?.state === "suspended") void context.resume();
+  const buffer = await loadOne(name);
+  if (!buffer) return;
   play(name);
 }
 
@@ -252,14 +272,13 @@ export function installGlobalClickSound() {
       );
       if (!interactive) return;
 
-      load(UI_SFX);
       // Un ancestro con data-sfx define un sonido propio (p. ej. JUGAR); si no, "click".
       // data-sfx="silent" desactiva el click (p. ej. login/registro, que ya suenan al abrir
       // su modal con el sonido de holograma).
       const custom = target?.closest<HTMLElement>("[data-sfx]");
       const sfx = custom?.dataset.sfx ?? "click";
       if (sfx === "silent") return;
-      play(sfx as SfxName);
+      void playSfx(sfx as SfxName);
     },
     // Captura: garantiza el sonido aunque el handler del elemento detenga la propagacion.
     { capture: true }

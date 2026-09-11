@@ -31,6 +31,7 @@ import type {
   GameLeavePayload,
   GamePracticeSwitchRolePayload,
   GameShootPayload,
+  GameShootResult,
   LobbyJoinPayload,
   LobbyLeavePayload,
   PlayerInputPayload,
@@ -340,28 +341,37 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     });
   }
 
+  // Devuelve el resultado como ack (no como evento aparte): el cliente NO suelta el
+  // sonido de disparo hasta tener esta respuesta, para poder elegir un solo sonido
+  // (disparo normal, o el de acierto si era un jugador) en vez de solapar los dos.
   @SubscribeMessage(ClientSocketEvents.gameShoot)
   async handleGameShoot(
     @ConnectedSocket() socket: RealtimeSocket,
     @MessageBody() payload: GameShootPayload
-  ) {
-    const user = this.requireUser(socket);
-    const gameId = this.requireId(socket, payload?.gameId, "gameId");
-    const targetEntityId = this.requireId(socket, payload?.targetEntityId, "targetEntityId");
+  ): Promise<GameShootResult> {
+    try {
+      const user = this.requireUser(socket);
+      const gameId = this.requireId(socket, payload?.gameId, "gameId");
+      const targetEntityId = this.requireId(socket, payload?.targetEntityId, "targetEntityId");
 
-    if (socket.data.gameId !== gameId) {
-      socket.emit(ServerSocketEvents.gatewayError, {
-        message: "Socket is not joined to this game"
+      if (socket.data.gameId !== gameId) {
+        socket.emit(ServerSocketEvents.gatewayError, {
+          message: "Socket is not joined to this game"
+        });
+        return { hit: false };
+      }
+
+      return await this.messaging.request<GameShootResult>(GameSubjects.shoot, {
+        userId: user.sub,
+        gameId,
+        targetEntityId,
+        socketId: socket.id
       });
-      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Failed to process ${GameSubjects.shoot}: ${message}`);
+      return { hit: false };
     }
-
-    await this.publishToNats(GameSubjects.shoot, {
-      userId: user.sub,
-      gameId,
-      targetEntityId,
-      socketId: socket.id
-    });
   }
 
   // MODO DEBUG: retirar junto con GameSubjects.switchRole, ClientSocketEvents.gamePracticeSwitchRole

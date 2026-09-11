@@ -8,10 +8,10 @@ import { playSfx } from "./sfx";
 export function useHologramSound(delayMs = 0) {
   useEffect(() => {
     if (delayMs <= 0) {
-      playSfx("hologram");
+      void playSfx("hologram");
       return;
     }
-    const timer = setTimeout(() => playSfx("hologram"), delayMs);
+    const timer = setTimeout(() => void playSfx("hologram"), delayMs);
     return () => clearTimeout(timer);
   }, [delayMs]);
 }

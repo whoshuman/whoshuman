@@ -28,7 +28,8 @@
     "language": "IDIOMA",
     "languageSaveError": "No se pudo guardar el idioma.",
     "audio": "AUDIO",
-    "music": "MÚSICA"
+    "music": "MÚSICA",
+    "musicVolume": "VOLUMEN MÚSICA"
   },
   "home": {
     "play": "Jugar",
@@ -100,7 +101,7 @@
   "lobby": {
     "eyebrow": "TERMINAL DE OPERACIONES",
     "deployTitle": "ZONA DE DESPLIEGUE",
-    "statsWinRate": "ACIERTO",
+    "statsWinRate": "GANADO",
     "autoDeployTitle": "DESPLIEGUE AUTOMÁTICO",
     "autoDeployText": "El sistema te asignará una operación y un rol de forma automática.",
     "units": "unidades",
@@ -444,6 +445,8 @@
     "scoreboard": "Clasificación",
     "round": "Ronda {{current}} / {{total}}",
     "eliminated": "UNIDAD ELIMINADA",
+    "eliminatedShort": "[ELIMINADO]",
+    "eliminationBanner": "HAS ELIMINADO A {{username}}",
     "waitNextRound": "Espera al siguiente despliegue.",
     "roundComplete": "RONDA COMPLETADA",
     "roundRestarted": "RONDA REINICIADA",
