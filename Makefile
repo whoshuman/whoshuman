@@ -97,9 +97,24 @@ reset: ## Resetea la BD completamente (⚠️ borra todos los datos)
 # ─── Túnel público ────────────────────────────────────────────────────────────
 
 tunnel: ## Levanta todo y expone una URL pública temporal (Cloudflare Tunnel)
-	@command -v cloudflared >/dev/null 2>&1 || { echo "cloudflared no instalado: https://pkg.cloudflare.com/"; exit 1; }
-	docker compose up --build -d
-	nohup cloudflared tunnel --url https://localhost:443 --no-tls-verify > /tmp/whoshuman-tunnel.log 2>&1 & \
+	@CF="$$(command -v cloudflared || true)"; \
+	if [ -z "$$CF" ] && [ -x "$(HOME)/.local/bin/cloudflared" ]; then \
+		CF="$(HOME)/.local/bin/cloudflared"; \
+	fi; \
+	if [ -z "$$CF" ]; then \
+		echo "cloudflared no encontrado: instalando sin sudo en $(HOME)/.local/bin ..."; \
+		mkdir -p "$(HOME)/.local/bin"; \
+		case "$$(uname -m)" in \
+			x86_64|amd64) asset=cloudflared-linux-amd64 ;; \
+			aarch64|arm64) asset=cloudflared-linux-arm64 ;; \
+			*) echo "Arquitectura $$(uname -m) no soportada por el instalador automatico. Instala a mano: https://pkg.cloudflare.com/"; exit 1 ;; \
+		esac; \
+		curl -fLo "$(HOME)/.local/bin/cloudflared" "https://github.com/cloudflare/cloudflared/releases/latest/download/$$asset" || { echo "Descarga fallida"; exit 1; }; \
+		chmod +x "$(HOME)/.local/bin/cloudflared"; \
+		CF="$(HOME)/.local/bin/cloudflared"; \
+	fi; \
+	docker compose up --build -d; \
+	nohup "$$CF" tunnel --url https://localhost:4433 --no-tls-verify > /tmp/whoshuman-tunnel.log 2>&1 & \
 	echo $$! > /tmp/whoshuman-tunnel.pid
 	@sleep 6
 	@grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' /tmp/whoshuman-tunnel.log | head -1
