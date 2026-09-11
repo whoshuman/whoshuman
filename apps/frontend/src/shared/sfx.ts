@@ -27,14 +27,7 @@ const SOUNDS = {
 export type SfxName = keyof typeof SOUNDS;
 
 // Sonidos de partida: solo se decodifican al entrar en una partida.
-const GAME_SFX: SfxName[] = [
-  "shot",
-  "hit",
-  "collect",
-  "matchStart",
-  "matchEnd",
-  "shipMove"
-];
+const GAME_SFX: SfxName[] = ["shot", "hit", "collect", "matchStart", "matchEnd", "shipMove"];
 
 // Ganancia relativa por sonido (1 = volumen del bus). Equilibra pistas grabadas a
 // distinto nivel sin tener que reeditar los mp3.

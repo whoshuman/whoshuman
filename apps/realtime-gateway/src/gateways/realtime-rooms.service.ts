@@ -105,7 +105,7 @@ export class RealtimeRoomsService {
     }
 
     if (otherSocketIds.length > 0) {
-      const { hiderRoster: _hiderRoster, ...publicPayload } = payload;
+      const { hiderRoster, ...publicPayload } = payload;
       this.server.to(otherSocketIds).emit(ServerSocketEvents.gameState, publicPayload);
     }
     if (hiderSocketIds.length > 0) {

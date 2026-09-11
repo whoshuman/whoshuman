@@ -95,7 +95,9 @@ function SettingsMenu({ align = "left" }: SettingsMenuProps) {
               <div className="mt-3">
                 <div className="mb-1 flex items-center justify-between font-display text-[0.6rem] font-bold uppercase tracking-wider text-text-muted/70">
                   <span>{t("settings.musicVolume")}</span>
-                  <span className="tabular-nums text-neon-cyan">{Math.round(musicVolume * 100)}%</span>
+                  <span className="tabular-nums text-neon-cyan">
+                    {Math.round(musicVolume * 100)}%
+                  </span>
                 </div>
                 <input
                   type="range"

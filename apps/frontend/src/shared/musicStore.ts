@@ -48,11 +48,7 @@ function clearFade() {
 
 // Baja el volumen progresivamente y, al llegar a 0, pausa y rebobina. Restaura el volumen
 // para la proxima reproduccion. Pasos de ~50ms durante DURATION_MS.
-function fadeOut(
-  element: HTMLAudioElement,
-  restoreVolume: () => number,
-  onDone: () => void
-) {
+function fadeOut(element: HTMLAudioElement, restoreVolume: () => number, onDone: () => void) {
   clearFade();
   const STEP_MS = 50;
   const DURATION_MS = 900;
@@ -140,7 +136,11 @@ export const useMusic = create<MusicState>((set, get) => ({
     set({ started: false });
     clearHold();
     if (audio && !audio.paused) {
-      fadeOut(audio, () => get().volume, () => {});
+      fadeOut(
+        audio,
+        () => get().volume,
+        () => {}
+      );
     }
   },
   hold: (ms) => {

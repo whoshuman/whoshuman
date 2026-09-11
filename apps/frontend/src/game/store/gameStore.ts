@@ -147,13 +147,13 @@ function bindListeners() {
     // `current` es todavia el estado anterior.
     if (!matchStartPlayed && payload.round.phase === "playing") {
       matchStartPlayed = true;
-      playSfx("matchStart");
+      void playSfx("matchStart");
       // La musica del lobby se apaga con un fade: la partida tiene su propio ambiente y
       // no se pisan. Al quedar `started` en false, volver al lobby la reanuda desde 0.
       useMusic.getState().stop();
     }
     if (payload.round.phase === "finished" && current.round?.phase !== "finished") {
-      playSfx("matchEnd");
+      void playSfx("matchEnd");
       // La musica de fondo no debe entrar encima de la musiquita de cierre: se retiene lo
       // que dura (ya esta decodificada, la precargo preloadGameSfx al entrar en la partida).
       useMusic.getState().hold(sfxDurationMs("matchEnd"));
@@ -165,7 +165,7 @@ function bindListeners() {
       (entry) => entry.userId === current.selfUserId
     )?.score;
     if (self?.role === "hider" && previousScore !== undefined && self.score > previousScore) {
-      playSfx("collect");
+      void playSfx("collect");
     }
 
     set({
@@ -366,7 +366,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Sin blanco no hay nada que resolver en el servidor (fallar no cuesta nada al cazador):
     // suena el disparo en el acto, no hay nada que esperar.
     if (!targetEntityId) {
-      playSfx("shot");
+      void playSfx("shot");
       return;
     }
     // Con blanco, el sonido espera la respuesta del servidor (quien sabe si era jugador
@@ -380,11 +380,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         { gameId, targetEntityId },
         (timeoutError: Error | null, result?: GameShootResult) => {
           if (timeoutError || !result) {
-            playSfx("shot");
+            void playSfx("shot");
             return;
           }
           if (result.eliminated) {
-            playSfx("hit");
+            void playSfx("hit");
             set((state) => ({
               lastElimination: {
                 username: result.eliminated!.username,
@@ -392,7 +392,7 @@ export const useGameStore = create<GameState>((set, get) => ({
               }
             }));
           } else {
-            playSfx("shot");
+            void playSfx("shot");
           }
         }
       );
