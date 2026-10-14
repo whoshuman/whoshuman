@@ -251,6 +251,12 @@ function AppLayout() {
             >
               {t("footer.system")}
             </Link>
+            <p className="font-display text-[0.6rem] uppercase tracking-[0.25em] text-text-muted/40">
+              {t("footer.hostedBy")}{" "}
+              <a href="https://volmer.es/" className="underline underline-offset-2 transition hover:text-neon-cyan">
+                Volmer
+              </a>
+            </p>
           </footer>
         )}
       </div>

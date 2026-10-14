@@ -8,7 +8,8 @@
     "designSystem": "Design System"
   },
   "footer": {
-    "system": "SYSTÈME DE SURVEILLANCE WHO'S HUMAN // 42"
+    "system": "SYSTÈME DE SURVEILLANCE WHO'S HUMAN // 42",
+    "hostedBy": "Hébergée par"
   },
   "boot": {
     "loading": "INITIALISATION DU SYSTÈME..."
