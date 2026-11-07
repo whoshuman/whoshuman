@@ -1,0 +1,6 @@
+# Lo que genera `pnpm capture` y `pnpm render`: pesa cientos de MB y se regenera.
+capture-raw/
+public/clips/
+out/
+# Cuentas de la base local que crea el script de captura.
+.capture-users.json

@@ -1,0 +1,30 @@
+{
+  "name": "@whoshuman/trailer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "capture": "node scripts/capture.mjs",
+    "render": "pnpm run render:feed && pnpm run render:cinematic",
+    "render:cinematic": "remotion render src/index.ts TrailerCinematic out/whoshuman-trailer-16x9.mp4",
+    "render:feed": "remotion render src/index.ts TrailerFeed out/whoshuman-trailer-4x5.mp4",
+    "screenshots": "node scripts/screenshots.mjs",
+    "studio": "remotion studio src/index.ts"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^9.6.1",
+    "@remotion/cli": "4.0.527",
+    "@remotion/google-fonts": "4.0.527",
+    "@remotion/three": "4.0.527",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "remotion": "4.0.527",
+    "three": "0.182.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/three": "0.182.0",
+    "playwright-core": "^1.63.0"
+  }
+}

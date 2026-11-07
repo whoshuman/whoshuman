@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Who's Human">
+  <defs>
+    <clipPath id="tile">
+      <rect width="512" height="512" rx="112" />
+    </clipPath>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#12072b" />
+      <stop offset="0.42" stop-color="#3b1361" />
+      <stop offset="0.6" stop-color="#8e2a86" />
+      <stop offset="0.657" stop-color="#e0538c" />
+      <stop offset="0.657" stop-color="#0a0320" />
+      <stop offset="1" stop-color="#050014" />
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff4b8" />
+      <stop offset="0.35" stop-color="#ffc94d" />
+      <stop offset="0.62" stop-color="#ff8a3d" />
+      <stop offset="0.86" stop-color="#ff4fa3" />
+      <stop offset="1" stop-color="#ff2bd6" />
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b0b33" />
+      <stop offset="1" stop-color="#07021a" />
+    </linearGradient>
+    <!-- Las franjas que deshacen la mitad baja del sol, como en el menú del juego. -->
+    <mask id="sunCut">
+      <rect width="512" height="512" fill="#fff" />
+      <rect y="258" width="512" height="5" />
+      <rect y="276" width="512" height="7" />
+      <rect y="296" width="512" height="9" />
+      <rect y="317" width="512" height="11" />
+    </mask>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="haze" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="22" />
+    </filter>
+    <!-- Un chibi del juego: cabeza grande, cinta con visor y cuerpo pequeño. -->
+    <g id="chibi">
+      <path d="M-40 70 C-40 58 -26 52 -14 52 L14 52 C26 52 40 58 40 70 L48 150 L-48 150 Z" fill="url(#body)" />
+      <rect x="-34" y="140" width="28" height="56" rx="10" fill="#07021a" />
+      <rect x="6" y="140" width="28" height="56" rx="10" fill="#07021a" />
+      <circle r="64" fill="#10061f" />
+    </g>
+  </defs>
+
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="url(#sky)" />
+
+    <!-- Sol -->
+    <circle cx="256" cy="226" r="150" fill="#ff2bd6" opacity="0.35" filter="url(#haze)" />
+    <circle cx="256" cy="226" r="124" fill="url(#sun)" mask="url(#sunCut)" />
+
+    <!-- Suelo: la rejilla neón que se pierde en el horizonte -->
+    <g stroke="#24f5ff" stroke-width="2.5" opacity="0.6">
+      <path d="M0 346H512M0 360H512M0 382H512M0 414H512M0 458H512" />
+      <path d="M256 336V512M256 336 176 512M256 336 336 512M256 336 88 512M256 336 424 512M256 336 -8 512M256 336 520 512M256 336 -120 512M256 336 632 512" />
+    </g>
+    <path d="M0 336H512" stroke="#ff2bd6" stroke-width="4" filter="url(#glow)" />
+
+    <!-- La multitud: todos iguales, con el visor cian -->
+    <g transform="translate(104 300) scale(0.7)">
+      <circle cy="-66" r="20" fill="#10061f" />
+      <use href="#chibi" />
+      <circle r="64" fill="none" stroke="#24f5ff" stroke-width="4" opacity="0.45" />
+      <rect x="-60" y="-10" width="120" height="24" rx="12" fill="#24f5ff" filter="url(#glow)" />
+    </g>
+    <g transform="translate(410 304) scale(0.66)">
+      <path d="M-58 -30 C-58 -80 58 -80 58 -30 Z" fill="#1d0b3a" />
+      <use href="#chibi" />
+      <circle r="64" fill="none" stroke="#24f5ff" stroke-width="4" opacity="0.45" />
+      <rect x="-60" y="-10" width="120" height="24" rx="12" fill="#24f5ff" filter="url(#glow)" />
+    </g>
+
+    <!-- El que no es como los demás: contraluz del sol y visor magenta -->
+    <g transform="translate(256 256)">
+      <use href="#chibi" />
+      <circle r="64" fill="none" stroke="#ffcf7a" stroke-width="5" opacity="0.8" />
+      <rect x="-60" y="-12" width="120" height="28" rx="14" fill="#ff2bd6" filter="url(#glow)" />
+      <rect x="-44" y="-5" width="36" height="6" rx="3" fill="#ffd6f6" />
+    </g>
+
+    <!-- La mira del cazador, fijada sobre él -->
+    <g stroke="#ff2bd6" stroke-linecap="round" fill="none" filter="url(#glow)">
+      <circle cx="256" cy="258" r="104" stroke-width="9" stroke-dasharray="123.4 40" stroke-dashoffset="143.4" />
+      <path d="M256 132V172M256 344V384M130 258H170M342 258H382" stroke-width="9" />
+    </g>
+  </g>
+
+  <!-- Canto del icono -->
+  <rect x="4" y="4" width="504" height="504" rx="108" fill="none" stroke="#24f5ff" stroke-width="6" opacity="0.55" />
+</svg>
