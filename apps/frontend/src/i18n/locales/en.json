@@ -488,5 +488,65 @@
     "descLine1": "The requested address does not exist in this system.",
     "descLine2": "Cyborg trying to escape?",
     "back": "RETURN TO BASE"
+  },
+  "seo": {
+    "home": {
+      "title": "Who's Human? · Social stealth multiplayer game in your browser",
+      "description": "A hunter, cyborgs posing as NPCs and a cyberpunk city. Up to 8 players per match, right in your browser, nothing to install. Can you spot the human?"
+    },
+    "about": {
+      "title": "The team",
+      "description": "The people behind Who's Human: a ft_transcendence project by five 42 students turned into a cyberpunk multiplayer game."
+    },
+    "manual": {
+      "title": "How to play",
+      "description": "Who's Human rules: three rounds, rotating hunter and cyborg roles, energy orbs and how to score without being caught."
+    },
+    "faq": {
+      "title": "FAQ",
+      "description": "Quick answers about Who's Human: accounts, matches, controls, mobile, languages and what to do if something breaks."
+    },
+    "support": {
+      "title": "Support",
+      "description": "Help with connection, session or performance problems in Who's Human."
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "description": "What data Who's Human stores, what it is used for and how you can review it or delete your account."
+    },
+    "terms": {
+      "title": "Terms of service",
+      "description": "Who's Human terms of use: accounts, rules of conduct and service availability."
+    },
+    "login": {
+      "title": "Log in"
+    },
+    "register": {
+      "title": "Sign up"
+    },
+    "oauth": {
+      "title": "Signing in"
+    },
+    "lobby": {
+      "title": "Lobby"
+    },
+    "game": {
+      "title": "Match"
+    },
+    "profile": {
+      "title": "Profile"
+    },
+    "friends": {
+      "title": "Friends"
+    },
+    "status": {
+      "title": "System status"
+    },
+    "designSystem": {
+      "title": "Design System"
+    },
+    "notFound": {
+      "title": "Page not found"
+    }
   }
 }
