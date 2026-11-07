@@ -6,6 +6,7 @@ allowBuilds:
   "@prisma/client": true
   "@prisma/engines": true
   bcrypt: true
+  esbuild: false
   prisma: true
   unrs-resolver: false
 onlyBuiltDependencies:
