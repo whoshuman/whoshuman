@@ -488,5 +488,65 @@
     "descLine1": "La dirección solicitada no existe en este sistema.",
     "descLine2": "¿Cyborg intentando escapar?",
     "back": "VOLVER A BASE"
+  },
+  "seo": {
+    "home": {
+      "title": "¿Who's Human? · Juego multijugador de sigilo social en el navegador",
+      "description": "Un cazador, cyborgs que se hacen pasar por NPC y una ciudad cyberpunk. Partidas de hasta 8 jugadores en el navegador, sin instalar nada. ¿Sabrías encontrar al humano?"
+    },
+    "about": {
+      "title": "El equipo",
+      "description": "Quién está detrás de Who's Human: el proyecto ft_transcendence de cinco estudiantes de 42 convertido en un juego multijugador cyberpunk."
+    },
+    "manual": {
+      "title": "Cómo se juega",
+      "description": "Reglas de Who's Human: tres rondas, roles que rotan entre cazador y cyborgs, orbes de energía y cómo puntuar sin que te descubran."
+    },
+    "faq": {
+      "title": "Preguntas frecuentes",
+      "description": "Respuestas rápidas sobre Who's Human: cuentas, partidas, controles, móvil, idiomas y qué hacer si algo falla."
+    },
+    "support": {
+      "title": "Soporte",
+      "description": "Ayuda para resolver problemas de conexión, sesión o rendimiento en Who's Human."
+    },
+    "privacy": {
+      "title": "Política de privacidad",
+      "description": "Qué datos guarda Who's Human, para qué se usan y cómo puedes consultarlos o borrar tu cuenta."
+    },
+    "terms": {
+      "title": "Términos del servicio",
+      "description": "Las condiciones de uso de Who's Human: cuentas, normas de conducta y disponibilidad del servicio."
+    },
+    "login": {
+      "title": "Iniciar sesión"
+    },
+    "register": {
+      "title": "Crear cuenta"
+    },
+    "oauth": {
+      "title": "Iniciando sesión"
+    },
+    "lobby": {
+      "title": "Lobby"
+    },
+    "game": {
+      "title": "Partida"
+    },
+    "profile": {
+      "title": "Perfil"
+    },
+    "friends": {
+      "title": "Amigos"
+    },
+    "status": {
+      "title": "Estado del sistema"
+    },
+    "designSystem": {
+      "title": "Design System"
+    },
+    "notFound": {
+      "title": "Página no encontrada"
+    }
   }
 }

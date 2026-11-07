@@ -18,6 +18,7 @@ import SettingsMenu from "../shared/SettingsMenu";
 import { AUTH_UNAUTHORIZED_EVENT } from "../shared/api/httpClient";
 import BootOverlay from "../shared/BootOverlay";
 import { useBootReady } from "../shared/useBootReady";
+import { usePageMeta } from "../shared/usePageMeta";
 
 // El fondo 3D va en un chunk aparte: arrastra three.js, el postprocesado y los GLB de la
 // plaza. AppLayout envuelve TODAS las rutas, asi que importarlo aqui de forma estatica metia
@@ -88,6 +89,7 @@ function AppLayout() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  usePageMeta(pathname);
   const restore = useAuthStore((s) => s.restore);
   const clearSession = useAuthStore((s) => s.clearSession);
   const signOut = useAuthStore((s) => s.signOut);

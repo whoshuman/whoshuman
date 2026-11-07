@@ -488,5 +488,65 @@
     "descLine1": "L'adresse demandée n'existe pas dans ce système.",
     "descLine2": "Un cyborg qui tente de s'échapper ?",
     "back": "RETOUR À LA BASE"
+  },
+  "seo": {
+    "home": {
+      "title": "Who's Human ? · Jeu multijoueur d'infiltration sociale dans le navigateur",
+      "description": "Un chasseur, des cyborgs déguisés en PNJ et une ville cyberpunk. Jusqu'à 8 joueurs par partie, directement dans le navigateur, sans rien installer. Sauras-tu trouver l'humain ?"
+    },
+    "about": {
+      "title": "L'équipe",
+      "description": "Qui se cache derrière Who's Human : le projet ft_transcendence de cinq étudiants de 42 devenu un jeu multijoueur cyberpunk."
+    },
+    "manual": {
+      "title": "Comment jouer",
+      "description": "Règles de Who's Human : trois manches, rôles de chasseur et de cyborg qui tournent, orbes d'énergie et comment marquer sans se faire repérer."
+    },
+    "faq": {
+      "title": "Questions fréquentes",
+      "description": "Réponses rapides sur Who's Human : comptes, parties, contrôles, mobile, langues et que faire en cas de problème."
+    },
+    "support": {
+      "title": "Assistance",
+      "description": "Aide pour les problèmes de connexion, de session ou de performance dans Who's Human."
+    },
+    "privacy": {
+      "title": "Politique de confidentialité",
+      "description": "Quelles données Who's Human conserve, à quoi elles servent et comment les consulter ou supprimer ton compte."
+    },
+    "terms": {
+      "title": "Conditions d'utilisation",
+      "description": "Les conditions d'utilisation de Who's Human : comptes, règles de conduite et disponibilité du service."
+    },
+    "login": {
+      "title": "Connexion"
+    },
+    "register": {
+      "title": "Créer un compte"
+    },
+    "oauth": {
+      "title": "Connexion en cours"
+    },
+    "lobby": {
+      "title": "Lobby"
+    },
+    "game": {
+      "title": "Partie"
+    },
+    "profile": {
+      "title": "Profil"
+    },
+    "friends": {
+      "title": "Amis"
+    },
+    "status": {
+      "title": "État du système"
+    },
+    "designSystem": {
+      "title": "Design System"
+    },
+    "notFound": {
+      "title": "Page introuvable"
+    }
   }
 }
